@@ -1,0 +1,63 @@
+@extends('layouts.user_type.auth')
+
+@section('content')
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-header pb-0 d-flex flex-row justify-content-between">
+        <div>
+          <h5 class="mb-0">Courses List</h5>
+        </div>
+        <a href="{{ route('admin.courses.create' ) }}"
+          class="btn bg-gradient-primary btn-sm mb-0"
+          type="button">
+          +&nbsp; New Course
+        </a>
+      </div>
+      <div class="card-body px-0 pt-0 pb-2">
+        <div class="table-responsive p-0">
+          <table class="table align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder ">Kode Blok</th>
+                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder  ">Nama</th>
+                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder ">Dosen</th>
+                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder ">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach ($course as $course)
+              <tr>
+                <td class="align-middle text-center">
+                  <span class=" text-sm font-weight-bold">{{ $course->kode_blok }}</span>
+                </td>
+                <td class="align-middle text-center">
+                  <span class=" text-sm font-weight-bold">{{ $course->name }}</span>
+                </td>
+                <td class="align-middle text-center">
+                  <span class="text-sm font-weight-bold">
+                    {{ $course->lecturers->pluck('name')->join(', ') }}
+                  </span>
+                </td>
+                <td class="align-middle text-center">
+                  <a href="{{ route('admin.courses.edit', [$course->id]) }}"
+                    class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
+                    <i class="fa-solid fa-pen "></i>
+                  </a>
+
+                  <a href="{{ route('admin.courses.show', [$course->id]) }}"
+                    class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
+                    <i class="fas fa-info-circle "></i>
+                  </a>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+@push('dashboard')
