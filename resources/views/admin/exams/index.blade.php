@@ -11,7 +11,7 @@
         <a href=""
           class="btn bg-gradient-primary btn-sm mb-0"
           type="button">
-          +&nbsp; Add Exam
+          +&nbsp; Add Exam test
         </a>
       </div>
     </div>
