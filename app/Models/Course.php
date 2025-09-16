@@ -29,10 +29,14 @@ class Course extends Model
     // {
     //     return $this->hasMany(CourseQuestion::class, 'course_id', 'id');
     // }
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 
     public function students()
     {
-        return $this->belongsToMany(User::class, 'course_student', 'course_id', 'user_id');
+        return $this->belongsToMany(User::class, 'course_students', 'course_id', 'user_id');
     }
 
     public function lecturers()

@@ -40,12 +40,12 @@
                   </span>
                 </td>
                 <td class="align-middle text-center">
-                  <a href="{{ route('admin.courses.edit', [$course->id]) }}"
+                  <a href="{{ route('admin.courses.edit', [$course->slug]) }}"
                     class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                     <i class="fa-solid fa-pen "></i>
                   </a>
 
-                  <a href="{{ route('admin.courses.show', [$course->id]) }}"
+                  <a href="{{ route('admin.courses.show', [$course->slug]) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                     <i class="fas fa-info-circle "></i>
                   </a>

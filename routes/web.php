@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseStudent;
+use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
@@ -101,9 +103,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 	Route::get('/courses/create', [CourseController::class, 'create'])->name('courses.create');
 	Route::post('/courses/store', [CourseController::class, 'store'])->name('courses.store');
 	Route::post('/courses/import', [CourseController::class, 'import'])->name('courses.import');
-	Route::get('/courses/edit/{id}', [CourseController::class, 'edit'])->name('courses.edit');
-	Route::post('/courses/update/{id}', [CourseController::class, 'update'])->name('courses.update');
-	Route::get('/courses/{id}', [CourseController::class, 'show'])->name('courses.show');
+	Route::get('/courses/edit/{course}', [CourseController::class, 'edit'])->name('courses.edit');
+	Route::put('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
+	Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+	Route::get('/course/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
+	Route::get('/course/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
+	Route::post('/course/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
 
 	Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
 	Route::view('/reports', 'admin.reports.index')->name('reports');

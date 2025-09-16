@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
@@ -71,18 +72,32 @@ class CourseController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(Course $course, Request $request)
     {
-        $course = Course::with('lecturers', 'students')->findOrFail($id);
-        return view('admin.courses.show', compact('course'));
+        $sort = $request->get('sort', 'nim'); // default sort berdasarkan nim
+        $direction = $request->get('direction', 'asc'); // default ascending
+
+        // Ambil mahasiswa dengan relasi student, lalu urutkan
+        $students = $course->students()->with('student')
+            ->get()
+            ->sortBy(function ($item) use ($sort) {
+                return $sort === 'nim' ? $item->student->nim : $item->student->name;
+            }, SORT_REGULAR, $direction === 'desc');
+
+        // Simpan direction dan sort agar bisa digunakan di view
+        $currentSort = $sort;
+        $currentDirection = $direction;
+
+        return view('admin.courses.show', compact('course', 'students', 'sort', 'direction'));
     }
+
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Course $course)
     {
-        $course = Course::with('lecturers')->findOrFail($id);
+        $course->load(['lecturers', 'students.student']);
         $lecturers = User::role('lecturer')->get();
 
         return view('admin.courses.edit', compact('course', 'lecturers'));
@@ -91,18 +106,21 @@ class CourseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Course $course)
     {
-        $course = Course::findOrFail($id);
-
         $request->validate([
-            'kode_blok' => 'required|string|max:255|unique:courses,kode_blok,' . $course->id,
+            'kode_blok' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('courses', 'kode_blok')->ignore($course->id),
+            ],
             'name'      => 'required|string|max:255',
             'cover'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'lecturers' => 'nullable|array',
         ]);
 
-        $data = $request->only(['kode_blok', 'name']);
+        $data = $request->only(['kode_blok', 'name', 'cover']);
         $data['slug'] = Str::slug($data['name']);
 
         // Handle cover
@@ -122,7 +140,9 @@ class CourseController extends Controller
         // Sync lecturers
         $course->lecturers()->sync($request->lecturers ?? []);
 
-        return redirect()->back()->with('success', 'Course berhasil diperbarui!');
+        return redirect()
+            ->route('admin.courses.edit', $course->slug)
+            ->with('success', 'Course berhasil diperbarui!');
     }
 
 
@@ -130,8 +150,18 @@ class CourseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Course $course)
     {
-        //
+        // Hapus cover jika ada
+        if ($course->cover && Storage::exists('public/' . $course->cover)) {
+            Storage::delete('public/' . $course->cover);
+        }
+
+        // Lepas relasi dosen
+        $course->lecturers()->detach();
+
+        $course->delete();
+
+        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil dihapus!');
     }
 }
