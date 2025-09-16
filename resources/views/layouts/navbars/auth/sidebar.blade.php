@@ -118,7 +118,7 @@
               </g>
             </svg>
           </div>
-          <span class="nav-link-text ms-1">Kelola Mahasiswa</span>
+          <span class="nav-link-text ms-1">Peserta Mata Kuliah</span>
         </a>
       </li>
       <li class="nav-item mt-2">

@@ -18,9 +18,13 @@ class CourseController extends Controller
      */
     public function index()
     {
-        $course = Course::with('lecturers')->orderBy('name', 'asc')->get();
-        return view('admin.courses.index', compact('course'));
+        $courses = Course::with('lecturers')
+            ->orderBy('name', 'asc')
+            ->paginate(15);
+
+        return view('admin.courses.index', compact('courses'));
     }
+
 
     /**
      * Show the form for creating a new resource.

@@ -26,7 +26,7 @@
               </tr>
             </thead>
             <tbody>
-              @foreach ($course as $course)
+              @foreach ($courses as $course)
               <tr>
                 <td class="align-middle text-center">
                   <span class=" text-sm font-weight-bold">{{ $course->kode_blok }}</span>
@@ -40,20 +40,22 @@
                   </span>
                 </td>
                 <td class="align-middle text-center">
-                  <a href="{{ route('admin.courses.edit', [$course->slug]) }}"
+                  <a href="{{ route('admin.courses.edit', $course->slug) }}"
                     class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
-                    <i class="fa-solid fa-pen "></i>
+                    <i class="fa-solid fa-pen"></i>
                   </a>
-
-                  <a href="{{ route('admin.courses.show', [$course->slug]) }}"
+                  <a href="{{ route('admin.courses.show', $course->slug) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                    <i class="fas fa-info-circle "></i>
+                    <i class="fas fa-info-circle"></i>
                   </a>
                 </td>
               </tr>
               @endforeach
             </tbody>
           </table>
+          <div class="d-flex justify-content-center mt-3">
+            <x-pagination :paginator="$courses" />
+          </div>
         </div>
       </div>
     </div>

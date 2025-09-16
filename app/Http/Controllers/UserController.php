@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
-    public function indexAdmin($type = null)
+    public function indexAdmin(Request $request, $type = null)
     {
         $query = User::with('roles');
 
@@ -23,19 +23,58 @@ class UserController extends Controller
             $query->role('lecturer')->with('lecturer');
         }
 
-        $users = $query->get();
+        if ($request->filled('name')) {
+            $query->where('name', 'like', "%{$request->name}%");
+        }
 
-        return view('admin.users.index', compact('users', 'type'));
+        if ($request->filled('email')) {
+            $query->where('email', 'like', "%{$request->email}%");
+        }
+
+        if ($request->filled('nim')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('nim', 'like', "%{$request->nim}%");
+            });
+        }
+        if ($request->filled('nidn')) {
+            $query->whereHas('lecturer', function ($q) use ($request) {
+                $q->where('nidn', 'like', "%{$request->nidn}%");
+            });
+        }
+
+        // SORTING
+        $sort = $request->get('sort', 'name'); // default name
+        $dir  = $request->get('dir', 'asc');   // default asc
+
+        if ($sort === 'nim') {
+            $query->whereHas('student')
+                ->join('students', 'users.id', '=', 'students.user_id')
+                ->orderBy('students.nim', $dir)
+                ->select('users.*');
+        } elseif ($sort === 'nidn') {
+            $query->whereHas('lecturer')
+                ->join('lecturers', 'users.id', '=', 'lecturers.user_id')
+                ->orderBy('lecturers.nidn', $dir)
+                ->select('users.*');
+        } else {
+            $query->orderBy($sort, $dir);
+        }
+
+
+        $users = $query->paginate(15)->appends($request->all());
+
+        return view('admin.users.index', compact('users', 'type', 'sort', 'dir'));
     }
-
 
     public function indexLecturer()
     {
         $users = User::role('student')
             ->with(['roles', 'student'])
-            ->get();
+            ->paginate(5); // ganti get() dengan paginate(15)
+
         return view('lecturer.students.index', compact('users'));
     }
+
 
     public function create($type)
     {
@@ -144,5 +183,31 @@ class UserController extends Controller
         $user = User::with(['student', 'lecturer'])->findOrFail($id);
 
         return view('admin.users.show', compact('user', 'type'));
+    }
+
+    public function destroy($type, $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Optional: validasi type
+        if ($type === 'student' && !$user->hasRole('student')) {
+            return redirect()->back()->with('error', 'User ini bukan student.');
+        }
+        if ($type === 'lecturer' && !$user->hasRole('lecturer')) {
+            return redirect()->back()->with('error', 'User ini bukan lecturer.');
+        }
+
+        // Hapus relasi student/lecturer jika ada
+        if ($type === 'student' && $user->student) {
+            $user->student->delete();
+        }
+        if ($type === 'lecturer' && $user->lecturer) {
+            $user->lecturer->delete();
+        }
+
+        // Hapus user
+        $user->delete();
+
+        return redirect()->route('admin.users.index', $type)->with('success', 'User berhasil dihapus.');
     }
 }

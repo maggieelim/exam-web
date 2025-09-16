@@ -97,6 +97,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 	Route::get('/users/{type}/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
 	Route::post('/users/{type}/update/{id}', [UserController::class, 'update'])->name('users.update');
 	Route::get('/users/{type}/{id}', [UserController::class, 'show'])->name('users.show');
+	Route::delete('/users/{type}/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
 
 
 	Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');

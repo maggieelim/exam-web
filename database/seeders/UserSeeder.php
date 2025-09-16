@@ -5,23 +5,29 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
-        DB::table('users')->insert([
-            'id' => 1,
-            'name' => 'admin',
-            'email' => 'admin@softui.com',
-            'password' => Hash::make('secret'),
+        // Buat user baru
+        $userId = DB::table('users')->insertGetId([
+            'name' => 'Steven',
+            'email' => 'stevenwijaya0405@gmail.com',
+            'password' => Hash::make('12345678'),
             'created_at' => now(),
             'updated_at' => now()
+        ]);
+
+        // Pastikan role admin ada
+        $role = Role::firstOrCreate(['name' => 'admin']);
+
+        // Assign role admin ke user
+        DB::table('model_has_roles')->insert([
+            'role_id' => $role->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id' => $userId
         ]);
     }
 }
