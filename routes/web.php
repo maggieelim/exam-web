@@ -14,7 +14,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\SoalController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -65,6 +65,11 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::get('static-sign-up', function () {
 		return view('static-sign-up');
 	})->name('sign-up');
+
+	Route::get('/soal/upload', [SoalController::class, 'uploadForm'])->name('soal.upload');
+	Route::post('/soal/import', [SoalController::class, 'import'])->name('soal.import');
+	Route::get('/soal/kode', [SoalController::class, 'listKode'])->name('soal.listKode');
+	Route::get('/soal/kode/{kode}', [SoalController::class, 'showByKode'])->name('soal.showByKode');
 
 	Route::get('/logout', [SessionsController::class, 'destroy']);
 	Route::get('/user-profile', [InfoUserController::class, 'create']);
