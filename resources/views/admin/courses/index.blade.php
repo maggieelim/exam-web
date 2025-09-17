@@ -8,23 +8,75 @@
         <div>
           <h5 class="mb-0">Courses List</h5>
         </div>
-        <a href="{{ route('admin.courses.create' ) }}"
-          class="btn bg-gradient-primary btn-sm mb-0"
-          type="button">
-          +&nbsp; New Course
-        </a>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-filter"></i> Filter
+          </button>
+          <a href="{{ route('admin.courses.create' ) }}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
+            +&nbsp; New Course
+          </a>
+        </div>
       </div>
+
+      <!-- Collapse Form -->
+      <div class="collapse" id="filterCollapse">
+        <form method="GET" action="{{ route('admin.courses.index') }}">
+          <div class="mx-3 my-2 py-2">
+            <div class="row g-2">
+              <!-- Input Blok -->
+              <div class="col-md-6">
+                <label for="blok" class="form-label mb-1">Blok</label>
+                <input type="text" class="form-control form-control-sm" name="name" value="{{ request('name') }}">
+              </div>
+
+              <!-- Input Dosen -->
+              <div class="col-md-6">
+                <label for="dosen" class="form-label mb-1">Dosen</label>
+                <input type="text" class="form-control form-control-sm" name="lecturer" value="{{ request('lecturer') }}">
+              </div>
+
+              <!-- Buttons -->
+              <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                <a href="{{ route('admin.courses.index') }}" class="btn btn-light btn-sm">Reset</a>
+                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
       <div class="card-body px-0 pt-0 pb-2">
         <div class="table-responsive p-0">
           <table class="table align-items-center mb-0">
             <thead>
               <tr>
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder ">Kode Blok</th>
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder  ">Nama</th>
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder ">Dosen</th>
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder ">Action</th>
+                <th class="text-center">
+                  <a href="{{ route('admin.courses.index', array_merge(request()->all(), [
+          'sort' => 'kode_blok',
+          'dir' => ($sort === 'kode_blok' && $dir === 'asc') ? 'desc' : 'asc'
+      ])) }}">
+                    Kode Blok
+                    @if($sort === 'kode_blok')
+                    <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
+                    @endif
+                  </a>
+                </th>
+                <th class="text-center">
+                  <a href="{{ route('admin.courses.index', array_merge(request()->all(), [
+          'sort' => 'name',
+          'dir' => ($sort === 'name' && $dir === 'asc') ? 'desc' : 'asc'
+      ])) }}">
+                    Nama
+                    @if($sort === 'name')
+                    <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
+                    @endif
+                  </a>
+                </th>
+                <th class="text-center">Dosen</th>
+                <th class="text-center">Action</th>
               </tr>
             </thead>
+
             <tbody>
               @foreach ($courses as $course)
               <tr>

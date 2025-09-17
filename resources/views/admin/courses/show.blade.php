@@ -22,14 +22,41 @@
 
     <!-- Card Daftar Mahasiswa -->
     <div class="card mb-4">
-      <div class="card-header pb-0 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">Daftar Mahasiswa</h6>
-        <form method="GET" action="{{ route('admin.courses.show', $course->slug) }}" class="d-flex">
-          <input type="text" name="nim" class="form-control form-control-sm me-2" placeholder="Filter NIM" value="{{ request('nim') }}">
-          <input type="text" name="name" class="form-control form-control-sm me-2" placeholder="Filter Nama" value="{{ request('name') }}">
-          <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+      <div class="card-header d-flex justify-content-end">
+        <button class="btn btn-sm btn-outline-secondary" type="button"
+          data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+          aria-expanded="false" aria-controls="filterCollapse">
+          <i class="fas fa-filter"></i> Filter
+        </button>
+      </div>
+
+      <div class="collapse" id="filterCollapse">
+        <form method="GET" action="{{ route('admin.courses.show', $course->slug) }}">
+          <div class="mx-3 my-2 py-2">
+            <div class="row g-2">
+              <!-- Input Blok -->
+              <div class="col-md-6">
+                <label for="blok" class="form-label mb-1">NIM</label>
+                <input type="text" name="nim" class="form-control form-control-sm me-2" placeholder="Filter NIM" value="{{ request('nim') }}">
+              </div>
+
+              <!-- Input Dosen -->
+              <div class="col-md-6">
+                <label for="dosen" class="form-label mb-1">Nama</label>
+                <input type="text" name="name" class="form-control form-control-sm me-2" placeholder="Filter Nama" value="{{ request('name') }}">
+              </div>
+
+              <!-- Buttons -->
+              <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                <a href="{{ route('admin.courses.show', $course->slug) }}" class="btn btn-light btn-sm">Reset</a>
+                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
+
+
 
       <div class="card-body px-0 pt-0 pb-2">
         <div class="table-responsive p-0">
@@ -66,7 +93,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </div>
 @endsection

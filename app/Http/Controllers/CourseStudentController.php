@@ -85,15 +85,46 @@ class CourseStudentController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request, string $slug)
     {
-        $course = Course::with(['lecturers', 'students'])
-            ->where('id', $id)
+        $course = Course::with(['lecturers'])
+            ->where('slug', $slug)
             ->firstOrFail();
+
         $lecturers = User::role('lecturer')->get();
 
-        return view('admin.courses.student.edit', compact('course', 'lecturers'));
+        // Query mahasiswa yang terdaftar di course ini
+        $query = $course->students()->with('student'); // relasi user->student
+
+        // FILTER
+        if ($request->filled('nim')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('nim', 'like', '%' . $request->nim . '%');
+            });
+        }
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        // SORTING
+        $sort = $request->get('sort', 'name'); // default sort by name
+        $dir  = $request->get('dir', 'asc');   // default ascending
+
+        if ($sort === 'nim') {
+            $query->join('students', 'users.id', '=', 'students.user_id')
+                ->orderBy('students.nim', $dir)
+                ->select('users.*'); // pastikan users.* di-select supaya model tetap User
+        } else {
+            $query->orderBy($sort, $dir);
+        }
+
+        // PAGINATION
+        $students = $query->paginate(15)->appends($request->all());
+
+        return view('admin.courses.student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir'));
     }
+
 
     /**
      * Update the specified resource in storage.

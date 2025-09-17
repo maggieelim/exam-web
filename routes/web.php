@@ -7,6 +7,7 @@ use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SessionsController;
@@ -38,9 +39,6 @@ Route::group(['middleware' => 'auth'], function () {
 		return view('billing');
 	})->name('billing');
 
-	Route::get('profile', function () {
-		return view('profile');
-	})->name('profile');
 
 	Route::get('rtl', function () {
 		return view('rtl');
@@ -75,6 +73,7 @@ Route::group(['middleware' => 'auth'], function () {
 });
 
 
+Route::get('profile', [ProfileController::class, 'index'])->name('profile');
 
 Route::group(['middleware' => 'guest'], function () {
 	Route::get('/register', [RegisterController::class, 'create']);

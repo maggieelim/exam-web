@@ -16,13 +16,42 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::with('lecturers')
-            ->orderBy('name', 'asc')
-            ->paginate(15);
+        // Ambil query Course dengan relasi lecturers
+        $query = Course::with('lecturers');
 
-        return view('admin.courses.index', compact('courses'));
+        // Filter berdasarkan kode blok / nama blok
+        if ($request->filled('name')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->name . '%')
+                    ->orWhere('kode_blok', 'like', '%' . $request->name . '%');
+            });
+        }
+
+        // Filter berdasarkan dosen
+        if ($request->filled('lecturer')) {
+            $query->whereHas('lecturers', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->lecturer . '%');
+            });
+        }
+        // Ambil parameter sort & direction
+        $sort = $request->get('sort', 'name'); // default sort by name
+        $dir  = $request->get('dir', 'asc');   // default asc
+
+        // Validasi kolom yang bisa di-sort
+        $allowedSorts = ['name', 'kode_blok'];
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'name';
+        }
+
+        // Terapkan sorting
+        $query->orderBy($sort, $dir);
+
+        // Pagination 15 per page, tetap simpan query params
+        $courses = $query->paginate(15)->appends($request->all());
+
+        return view('admin.courses.index', compact('courses', 'sort', 'dir'));
     }
 
 

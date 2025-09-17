@@ -13,6 +13,56 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
+
+    public function index(Request $request)
+    {
+        $query = User::with('roles');
+
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', "%{$request->name}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('email', 'like', "%{$request->email}%");
+        }
+
+        if ($request->filled('nim')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('nim', 'like', "%{$request->nim}%");
+            });
+        }
+        if ($request->filled('nidn')) {
+            $query->whereHas('lecturer', function ($q) use ($request) {
+                $q->where('nidn', 'like', "%{$request->nidn}%");
+            });
+        }
+
+        // SORTING
+        $sort = $request->get('sort', 'name'); // default name
+        $dir  = $request->get('dir', 'asc');   // default asc
+
+        if ($sort === 'nim') {
+            $query->whereHas('student')
+                ->join('students', 'users.id', '=', 'students.user_id')
+                ->orderBy('students.nim', $dir)
+                ->select('users.*');
+        } elseif ($sort === 'nidn') {
+            $query->whereHas('lecturer')
+                ->join('lecturers', 'users.id', '=', 'lecturers.user_id')
+                ->orderBy('lecturers.nidn', $dir)
+                ->select('users.*');
+        } else {
+            $query->orderBy($sort, $dir);
+        }
+
+
+        $users = $query->paginate(15)->appends($request->all());
+
+        return view('admin.users.index', compact('users', 'type', 'sort', 'dir'));
+    }
+
+
     public function indexAdmin(Request $request, $type = null)
     {
         $query = User::with('roles');
@@ -65,16 +115,6 @@ class UserController extends Controller
 
         return view('admin.users.index', compact('users', 'type', 'sort', 'dir'));
     }
-
-    public function indexLecturer()
-    {
-        $users = User::role('student')
-            ->with(['roles', 'student'])
-            ->paginate(5); // ganti get() dengan paginate(15)
-
-        return view('lecturer.students.index', compact('users'));
-    }
-
 
     public function create($type)
     {
