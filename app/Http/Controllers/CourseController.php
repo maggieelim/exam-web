@@ -51,7 +51,7 @@ class CourseController extends Controller
         // Pagination 15 per page, tetap simpan query params
         $courses = $query->paginate(15)->appends($request->all());
 
-        return view('admin.courses.index', compact('courses', 'sort', 'dir'));
+        return view('courses.index', compact('courses', 'sort', 'dir'));
     }
 
 
@@ -60,7 +60,7 @@ class CourseController extends Controller
      */
     public function create()
     {
-        return view('admin.courses.create');
+        return view('courses.create');
     }
 
     /**
@@ -121,7 +121,7 @@ class CourseController extends Controller
         $currentSort = $sort;
         $currentDirection = $direction;
 
-        return view('admin.courses.show', compact('course', 'students', 'sort', 'direction'));
+        return view('courses.show', compact('course', 'students', 'sort', 'direction'));
     }
 
 
@@ -133,7 +133,7 @@ class CourseController extends Controller
         $course->load(['lecturers', 'students.student']);
         $lecturers = User::role('lecturer')->get();
 
-        return view('admin.courses.edit', compact('course', 'lecturers'));
+        return view('courses.edit', compact('course', 'lecturers'));
     }
 
     /**
@@ -174,7 +174,7 @@ class CourseController extends Controller
         $course->lecturers()->sync($request->lecturers ?? []);
 
         return redirect()
-            ->route('admin.courses.edit', $course->slug)
+            ->route('courses.edit', $course->slug)
             ->with('success', 'Course berhasil diperbarui!');
     }
 
@@ -193,8 +193,23 @@ class CourseController extends Controller
         // Lepas relasi dosen
         $course->lecturers()->detach();
 
+        // Lepas relasi mahasiswa
+        $course->students()->detach();
+
+        // Hapus semua exam terkait course
+        foreach ($course->exams as $exam) {
+            // Hapus semua soal di exam
+            foreach ($exam->questions as $question) {
+                // Hapus semua jawaban soal
+                $question->options()->delete();
+                $question->delete();
+            }
+            $exam->delete();
+        }
+
+        // Hapus course
         $course->delete();
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil dihapus!');
+        return redirect()->route('courses.index')->with('success', 'Course beserta semua data terkait berhasil dihapus!');
     }
 }

@@ -4,12 +4,51 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Exam extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['course_id', 'exam_type_id', 'exam_date', 'room', 'duration'];
+    protected $fillable = [
+        'exam_code',
+        'title',
+        'course_id',
+        'exam_type_id',
+        'exam_date',
+        'room',
+        'duration',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected static function booted()
+    {
+        static::creating(function ($exam) {
+            $lastExam = self::orderBy('id', 'desc')->first();
+            $nextNumber = $lastExam ? ((int) substr($lastExam->exam_code, 4)) + 1 : 1;
+
+            $exam->exam_code = 'EXM-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        });
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (Auth::check()) {
+                $model->created_by = Auth::id();
+                $model->updated_by = Auth::id();
+            }
+        });
+
+        static::updating(function ($model) {
+            if (Auth::check()) {
+                $model->updated_by = Auth::id();
+            }
+        });
+    }
 
     public function course()
     {
@@ -27,5 +66,15 @@ class Exam extends Model
     public function answers()
     {
         return $this->hasMany(ExamAnswer::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

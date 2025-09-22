@@ -11,7 +11,7 @@
 
       <div class="card-body px-4 pt-2 pb-2">
 
-        <form method="POST" action="{{ route('admin.courses.import') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('courses.import') }}" enctype="multipart/form-data">
           @csrf
           <div class="mb-3">
             <label>Import Course via Excel</label>
@@ -32,7 +32,7 @@
     </div>
     <div class="card-body px-4 pt-2 pb-2">
 
-      <form method="POST" action="{{ route('admin.courses.store') }}" enctype="multipart/form-data">
+      <form method="POST" action="{{ route('courses.store') }}" enctype="multipart/form-data">
         @csrf
         <div class="mb-3">
           <label>Kode Blok</label>

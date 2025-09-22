@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Student;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -16,7 +17,7 @@ class CourseStudentController extends Controller
     public function index()
     {
         $course = Course::with('lecturers', 'students')->orderBy('name', 'asc')->get();
-        return view('admin.courses.student.index', compact('course'));
+        return view('courses.student.index', compact('course'));
     }
 
     /**
@@ -33,10 +34,10 @@ class CourseStudentController extends Controller
     public function store(Request $request, string $courseId)
     {
         $course = Course::findOrFail($courseId);
+        $now = Carbon::now();
 
         // --- Case 1: Input manual banyak NIM (copy dari Excel)
         if ($request->filled('nim')) {
-            // Pisahkan berdasarkan newline
             $nims = preg_split('/\r\n|\r|\n/', trim($request->nim));
 
             foreach ($nims as $nim) {
@@ -45,7 +46,13 @@ class CourseStudentController extends Controller
 
                 $student = Student::where('nim', $nim)->first();
                 if ($student) {
-                    $course->students()->syncWithoutDetaching([$student->user_id]);
+                    // Hanya attach jika belum ada
+                    if (!$course->students()->where('user_id', $student->user_id)->exists()) {
+                        $course->students()->attach($student->user_id, [
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
                 }
             }
 
@@ -62,7 +69,12 @@ class CourseStudentController extends Controller
 
                 $student = Student::where('nim', $nim)->first();
                 if ($student) {
-                    $course->students()->syncWithoutDetaching([$student->user_id]);
+                    if (!$course->students()->where('user_id', $student->user_id)->exists()) {
+                        $course->students()->attach($student->user_id, [
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
                 }
             }
 
@@ -71,6 +83,7 @@ class CourseStudentController extends Controller
 
         return back()->withErrors(['error' => 'Tidak ada data yang dikirim']);
     }
+
 
 
 
@@ -122,7 +135,7 @@ class CourseStudentController extends Controller
         // PAGINATION
         $students = $query->paginate(15)->appends($request->all());
 
-        return view('admin.courses.student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir'));
+        return view('courses.student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir'));
     }
 
 
@@ -137,11 +150,16 @@ class CourseStudentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $courseId, string $studentId)
+    public function destroy(Course $course, $studentId)
     {
-        $course = Course::findOrFail($courseId);
-        $course->students()->detach($studentId);
+        // pastikan mahasiswa ada di course
+        $exists = $course->students()->where('user_id', $studentId)->exists();
 
+        if (!$exists) {
+            return back()->with('error', 'Mahasiswa tidak ditemukan di course ini.');
+        }
+
+        $course->students()->detach($studentId); // hapus relasi
         return back()->with('success', 'Mahasiswa berhasil dihapus dari course.');
     }
 }

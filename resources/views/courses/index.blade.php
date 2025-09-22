@@ -12,7 +12,7 @@
           <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filter
           </button>
-          <a href="{{ route('admin.courses.create' ) }}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
+          <a href="{{ route('courses.create' ) }}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
             +&nbsp; New Course
           </a>
         </div>
@@ -20,7 +20,7 @@
 
       <!-- Collapse Form -->
       <div class="collapse" id="filterCollapse">
-        <form method="GET" action="{{ route('admin.courses.index') }}">
+        <form method="GET" action="{{ route('courses.index') }}">
           <div class="mx-3 my-2 py-2">
             <div class="row g-2">
               <!-- Input Blok -->
@@ -37,7 +37,7 @@
 
               <!-- Buttons -->
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                <a href="{{ route('admin.courses.index') }}" class="btn btn-light btn-sm">Reset</a>
+                <a href="{{ route('courses.index') }}" class="btn btn-light btn-sm">Reset</a>
                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
               </div>
             </div>
@@ -51,18 +51,18 @@
             <thead>
               <tr>
                 <th class="text-center">
-                  <a href="{{ route('admin.courses.index', array_merge(request()->all(), [
-          'sort' => 'kode_blok',
-          'dir' => ($sort === 'kode_blok' && $dir === 'asc') ? 'desc' : 'asc'
-      ])) }}">
+                  <a href="{{ route('courses.index', array_merge(request()->all(), [
+                              'sort' => 'kode_blok',
+                              'dir' => ($sort === 'kode_blok' && $dir === 'asc') ? 'desc' : 'asc'
+                              ])) }}">
                     Kode Blok
                     @if($sort === 'kode_blok')
                     <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
                     @endif
                   </a>
                 </th>
-                <th class="text-center">
-                  <a href="{{ route('admin.courses.index', array_merge(request()->all(), [
+                <th>
+                  <a href="{{ route('courses.index', array_merge(request()->all(), [
           'sort' => 'name',
           'dir' => ($sort === 'name' && $dir === 'asc') ? 'desc' : 'asc'
       ])) }}">
@@ -73,6 +73,7 @@
                   </a>
                 </th>
                 <th class="text-center">Dosen</th>
+                <th class="text-center">Students</th>
                 <th class="text-center">Action</th>
               </tr>
             </thead>
@@ -83,7 +84,7 @@
                 <td class="align-middle text-center">
                   <span class=" text-sm font-weight-bold">{{ $course->kode_blok }}</span>
                 </td>
-                <td class="align-middle text-center">
+                <td class="">
                   <span class=" text-sm font-weight-bold">{{ $course->name }}</span>
                 </td>
                 <td class="align-middle text-center">
@@ -92,11 +93,29 @@
                   </span>
                 </td>
                 <td class="align-middle text-center">
-                  <a href="{{ route('admin.courses.edit', $course->slug) }}"
-                    class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
-                    <i class="fa-solid fa-pen"></i>
-                  </a>
-                  <a href="{{ route('admin.courses.show', $course->slug) }}"
+                  <span class=" text-sm font-weight-bold"> {{ $course->students->count() }}</span>
+                </td>
+                <td class="align-middle text-center">
+                  <div class="btn-group">
+                    <button type="button" class="btn bg-gradient-primary m-1 p-2 px-3 dropdown-toggle"
+                      data-bs-toggle="dropdown" aria-expanded="false" title="Manage">
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="{{ route('courses.edit', $course->slug) }}">
+                          Kelola Blok
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ route('courses.editStudent',[$course->slug] ) }}">
+                          Kelola Peserta Blok
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <a href="{{ route('courses.show', $course->slug) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                     <i class="fas fa-info-circle"></i>
                   </a>

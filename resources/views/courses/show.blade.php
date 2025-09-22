@@ -31,7 +31,7 @@
       </div>
 
       <div class="collapse" id="filterCollapse">
-        <form method="GET" action="{{ route('admin.courses.show', $course->slug) }}">
+        <form method="GET" action="{{ route('courses.show', $course->slug) }}">
           <div class="mx-3 my-2 py-2">
             <div class="row g-2">
               <!-- Input Blok -->
@@ -48,7 +48,7 @@
 
               <!-- Buttons -->
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                <a href="{{ route('admin.courses.show', $course->slug) }}" class="btn btn-light btn-sm">Reset</a>
+                <a href="{{ route('courses.show', $course->slug) }}" class="btn btn-light btn-sm">Reset</a>
                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
               </div>
             </div>
@@ -76,11 +76,11 @@
                 <td class="align-middle text-center">{{ $student->student->nim }}</td>
                 <td class="align-middle text-center">{{ $student->name }}</td>
                 <td class="align-middle text-center">
-                  <a href="{{ route('admin.courses.edit', $course->slug) }}"
+                  <a href="{{ route('courses.edit', $course->slug) }}"
                     class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                     <i class="fa-solid fa-pen"></i>
                   </a>
-                  <a href="{{ route('admin.courses.show', $course->slug) }}"
+                  <a href="{{ route('courses.show', $course->slug) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                     <i class="fas fa-info-circle"></i>
                   </a>

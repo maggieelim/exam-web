@@ -20,7 +20,7 @@
 
       <!-- Collapse Form -->
       <div class="collapse" id="filterCollapse">
-        <form method="GET" action="{{ route('admin.courses.editStudent',[$course->slug] ) }}">
+        <form method="GET" action="{{ route('courses.editStudent',[$course->slug] ) }}">
           <div class="mx-3 my-2 py-2">
             <div class="row g-2">
               <!-- Input Blok -->
@@ -37,7 +37,7 @@
 
               <!-- Buttons -->
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                <a href="{{ route('admin.courses.index') }}" class="btn btn-light btn-sm">Reset</a>
+                <a href="{{ route('courses.index') }}" class="btn btn-light btn-sm">Reset</a>
                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
               </div>
             </div>
@@ -52,7 +52,7 @@
               <tr>
                 {{-- Kolom NIM --}}
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  <a href="{{ route('admin.courses.editStudent', $course->slug) }}?{{ http_build_query(array_merge(request()->except('page'), [
+                  <a href="{{ route('courses.editStudent', $course->slug) }}?{{ http_build_query(array_merge(request()->except('page'), [
             'sort' => 'nim',
             'dir'  => ($sort === 'nim' && $dir === 'asc') ? 'desc' : 'asc'
         ])) }}"
@@ -66,7 +66,7 @@
 
                 {{-- Kolom Nama --}}
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  <a href="{{ route('admin.courses.editStudent', $course->slug) }}?{{ http_build_query(array_merge(request()->except('page'), [
+                  <a href="{{ route('courses.editStudent', $course->slug) }}?{{ http_build_query(array_merge(request()->except('page'), [
             'sort' => 'name',
             'dir'  => ($sort === 'name' && $dir === 'asc') ? 'desc' : 'asc'
         ])) }}"
@@ -77,7 +77,9 @@
                     @endif
                   </a>
                 </th>
-
+                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                  Email
+                </th>
                 {{-- Kolom Action --}}
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                   Action
@@ -99,14 +101,18 @@
                   </span>
                 </td>
                 <td class="align-middle text-center">
-                  <a href="{{ route('admin.courses.edit', [$course->id]) }}"
-                    class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
-                    <i class="fa-solid fa-pen"></i>
-                  </a>
-                  <a href="{{ route('admin.courses.show', [$course->id]) }}"
-                    class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                    <i class="fas fa-info-circle"></i>
-                  </a>
+                  <span class="text-sm font-weight-bold">
+                    {{ $studentUser->email }}
+                  </span>
+                </td>
+                <td class="align-middle text-center">
+                  <form action="{{ route('courses.student.destroy', [$course->slug, $studentUser->id]) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus mahasiswa ini dari course?')" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn bg-gradient-danger m-1 p-2 px-3" title="Hapus Mahasiswa">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
                 </td>
               </tr>
               @endforeach
@@ -125,7 +131,7 @@
 <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form action="{{ route('admin.courses.addStudent', $course->id) }}" method="POST" enctype="multipart/form-data">
+      <form action="{{ route('courses.addStudent', $course->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title" id="addStudentModalLabel">Add Students to Course</h5>

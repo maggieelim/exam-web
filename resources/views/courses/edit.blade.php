@@ -9,7 +9,7 @@
         <h5 class="mb-0">Edit Course</h5>
       </div>
       <div class="card-body px-4 pt-2 pb-2">
-        <form method="POST" action="{{ route('admin.courses.update', $course->slug) }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('courses.update', $course->slug) }}" enctype="multipart/form-data">
           @csrf
           @method('PUT')
 

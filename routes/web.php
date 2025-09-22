@@ -5,6 +5,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseStudent;
 use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
 use App\Http\Controllers\ProfileController;
@@ -91,10 +92,10 @@ Route::group(['middleware' => 'guest'], function () {
 	Route::post('/reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
 });
 
-// ================= ADMIN =================
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-	Route::get('/users/{type?}', [UserController::class, 'indexAdmin'])
-		->name('users.index');
+// ================= ADMIN ONLY =================
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+	// users khusus admin
+	Route::get('/users/{type?}', [UserController::class, 'indexAdmin'])->name('users.index');
 	Route::get('/users/{type}/create', [UserController::class, 'create'])->name('users.create');
 	Route::post('/users/{type}/store', [UserController::class, 'store'])->name('users.store');
 	Route::post('/users/{type}/import', [UserController::class, 'import'])->name('users.import');
@@ -103,8 +104,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 	Route::get('/users/{type}/{id}', [UserController::class, 'show'])->name('users.show');
 	Route::delete('/users/{type}/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
+	Route::view('/reports', 'admin.reports.index')->name('reports');
+});
 
-
+// ================= SHARED ADMIN & LECTURER =================
+Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
+	// courses
 	Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 	Route::get('/courses/create', [CourseController::class, 'create'])->name('courses.create');
 	Route::post('/courses/store', [CourseController::class, 'store'])->name('courses.store');
@@ -116,19 +121,25 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 	Route::get('/course/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
 	Route::get('/course/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
 	Route::post('/course/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
+	Route::delete('/course/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])
+		->name('courses.student.destroy');
 
-	Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
-	Route::view('/reports', 'admin.reports.index')->name('reports');
-});
 
-// ================= LECTURER =================
-Route::middleware(['auth'])->prefix('lecturer')->name('lecturer.')->group(function () {
-	Route::view('/exams', 'lecturer.exams.index')->name('exams');
-	Route::view('/questions', 'lecturer.questions.index')->name('questions');
-	Route::view('/exams', 'lecturer.exams.index')->name('exams');
-	Route::view('/grading', 'lecturer.grading.index')->name('grading');
-	Route::view('/reports', 'lecturer.reports.index')->name('reports');
-	Route::get('/students', [UserController::class, 'indexLecturer'])->name('students');
+	// exams
+	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', 'previous|upcoming')->name('exams.index');
+	Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
+	Route::post('/exams/store', [ExamController::class, 'import'])->name('exams.import');
+	Route::get('/exams/edit/{exam_code}', [ExamController::class, 'edit'])->name('exams.edit');
+	Route::get('/exams/{exam_code}', [ExamController::class, 'show'])->name('exams.show');
+	Route::put('/exams/update/{exam_code}', [ExamController::class, 'update'])->name('exams.update');
+	Route::delete('/exams/{exam_code}', [ExamController::class, 'destroy'])->name('exams.destroy');
+
+	// exam questions
+	Route::get('exams/{exam_code}/questions', [ExamQuestionController::class, 'index'])->name('exams.questions');
+	Route::put('exams/{exam_code}/questions/{question}', [ExamQuestionController::class, 'update'])->name('exams.questions.update');
+	Route::post('exams/{exam_code}/questions/update-excel', [ExamQuestionController::class, 'updateByExcel'])->name('exams.questions.updateByExcel');
+	Route::delete('/exams/{examCode}/questions/{question}', [ExamQuestionController::class, 'destroy'])
+		->name('exams.questions.destroy');
 });
 
 // ================= STUDENT =================

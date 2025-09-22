@@ -34,9 +34,12 @@ class Course extends Model
         return 'slug';
     }
 
+    // Course.php
     public function students()
     {
-        return $this->belongsToMany(User::class, 'course_students', 'course_id', 'user_id');
+        return $this->belongsToMany(User::class, 'course_students', 'course_id', 'user_id')
+            ->withTimestamps()
+            ->withPivot('deleted_at');
     }
 
     public function lecturers()

@@ -8,7 +8,7 @@
   </div>
 
   <hr class="horizontal dark mt-0">
-  <div class="collapse navbar-collapse  w-auto h-auto" id="sidenav-collapse-main">
+  <div class="collapse navbar-collapse w-auto h-auto" id="sidenav-collapse-main">
     <ul class="navbar-nav">
       <li class="nav-item">
         <a class="nav-link {{ (Request::is('dashboard') ? 'active' : '') }}" href="{{ url('dashboard') }}">
@@ -38,7 +38,6 @@
         <a class="nav-link {{ request()->is('admin/users/student*') ? 'active' : '' }}" href="{{ url('admin/users/student') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -52,14 +51,13 @@
               </g>
             </svg>
           </div>
-          <span class="nav-link-text ms-1">Mahasiswa</span>
+          <span class="nav-link-text ms-1">Students</span>
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {{ request()->is('admin/users/lecturer*') ? 'active' : '' }}" href="{{ url('admin/users/lecturer') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -73,17 +71,16 @@
               </g>
             </svg>
           </div>
-          <span class="nav-link-text ms-1">Dosen</span>
+          <span class="nav-link-text ms-1">Lecturers</span>
         </a>
       </li>
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('admin/courses*') ? 'active' : '' }}" href="{{ url('admin/courses') }}">
+        <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}" href="{{ url('courses') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -97,14 +94,13 @@
               </g>
             </svg>
           </div>
-          <span class="nav-link-text ms-1">Kelola Mata Kuliah</span>
+          <span class="nav-link-text ms-1">Manage Courses</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link {{ request()->is('admin/course/student*') ? 'active' : '' }}" href="{{ url('admin/course/students') }}">
+      <!-- <li class="nav-item">
+        <a class="nav-link {{ request()->is('course/student*') ? 'active' : '' }}" href="{{ url('course/students') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -120,15 +116,14 @@
           </div>
           <span class="nav-link-text ms-1">Peserta Mata Kuliah</span>
         </a>
-      </li>
+      </li> -->
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exam</h6>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('admin/exams*') ? 'active' : '' }}" href="{{ url('admin/exams') }}">
+        <a class="nav-link {{ request()->is('exams') ? 'active' : '' }}" href="{{ url('exams') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -142,14 +137,13 @@
               </g>
             </svg>
           </div>
-          <span class="nav-link-text ms-1">Jadwal Ujian</span>
+          <span class="nav-link-text ms-1">Exams</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('admin/exams*') ? 'active' : '' }}" href="{{ url('admin/exams') }}">
+        <a class="nav-link {{ request()->is('exams/upcoming') ? 'active' : '' }}" href="{{ url('exams/upcoming') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -167,10 +161,9 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('admin/exams*') ? 'active' : '' }}" href="{{ url('admin/exams') }}">
+        <a class="nav-link {{ request()->is('exams/previous') ? 'active' : '' }}" href="{{ url('exams/previous') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -187,11 +180,10 @@
           <span class="nav-link-text ms-1">Previous Exam</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+      <!-- <li class="nav-item">
+        <a class="nav-link {{ request()->is('exam-questions') ? 'active' : '' }}" href="{{ url('exam-questions') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -207,7 +199,7 @@
           </div>
           <span class="nav-link-text ms-1">Bank Soal</span>
         </a>
-      </li>
+      </li> -->
 
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Report</h6>
@@ -216,7 +208,6 @@
         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g id="Rounded-Icons" transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
@@ -309,7 +300,6 @@
         <a class="nav-link {{ (Request::is('profile') ? 'active' : '') }}" href="{{ url('profile') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 46 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>customer-support</title>
               <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <g transform="translate(-1717.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                   <g transform="translate(1716.000000, 291.000000)">

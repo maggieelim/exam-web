@@ -9,24 +9,32 @@ use Illuminate\Support\Str;
 
 class CoursesImport implements ToModel, WithHeadingRow
 {
+  private $processed = [];
+
   public function model(array $row)
   {
-    if (Course::where('kode_blok', $row['kode_blok'])->exists()) {
-      throw new \Exception("Kode blok {$row['kode_blok']} sudah ada.");
+    $kodeBlok = $row['kode_blok'] ?? null;
+    $nama = $row['name'] ?? null;
+
+    // Lewati jika kode_blok kosong atau sudah pernah diproses
+    if (empty($kodeBlok) || in_array($kodeBlok, $this->processed)) {
+      return null;
     }
 
-    if (empty($row['name'])) {
-      throw new \Exception("Nama course tidak boleh kosong.");
+    // Tandai sudah diproses
+    $this->processed[] = $kodeBlok;
+
+    // Lewati jika nama kosong
+    if (empty($nama)) {
+      return null;
     }
 
-    $coverPath = isset($row['cover']) && $row['cover'] != ''
-      ? $row['cover']
-      : 'covers/default.png'; // pastikan file default.png ada di storage/app/public/covers
+    $coverPath = $row['cover'] ?? 'covers/default.png';
 
     return new Course([
-      'kode_blok' => $row['kode_blok'],
-      'name'      => $row['name'],
-      'slug'      => Str::slug($row['name']),
+      'kode_blok' => $kodeBlok,
+      'name'      => $nama,
+      'slug'      => Str::slug($nama),
       'cover'     => $coverPath,
     ]);
   }

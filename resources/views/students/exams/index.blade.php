@@ -8,11 +8,12 @@
         <div>
           <h5 class="mb-0">Exams List</h5>
         </div>
-        <a href=""
+        <a href="{{ route('exams.create') }}"
           class="btn bg-gradient-primary btn-sm mb-0"
           type="button">
           +&nbsp; Add Exam test
         </a>
+
       </div>
     </div>
     <div class="row">

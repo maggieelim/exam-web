@@ -44,7 +44,7 @@
                 </p>
 
                 <!-- Read more -->
-                <a class="text-body text-sm font-weight-bold mb-0 icon-move-right mt-auto" href="{{ route('admin.courses.editStudent',[$course->slug] ) }}">
+                <a class="text-body text-sm font-weight-bold mb-0 icon-move-right mt-auto" href="{{ route('courses.editStudent',[$course->slug] ) }}">
                   Read More
                   <i class="fas fa-arrow-right text-sm ms-1" aria-hidden="true"></i>
                 </a>
