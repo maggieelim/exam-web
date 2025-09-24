@@ -63,24 +63,32 @@
           <table class="table align-items-center mb-0">
             <thead>
               <tr>
+                {{-- Hanya tampilkan NIM/NIDN jika student atau lecturer --}}
+                @if(in_array($type, ['student', 'lecturer']))
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                   @if ($type === 'student')
                   <a href="{{ route('admin.users.index', ['type' => $type, 'sort' => 'nim', 'dir' => $sort === 'nim' && $dir === 'asc' ? 'desc' : 'asc']) }}">
                     NIM {!! $sort === 'nim' ? ($dir === 'asc' ? '↑' : '↓') : '' !!}
                   </a>
-                  @else
+                  @elseif ($type === 'lecturer')
                   <a href="{{ route('admin.users.index', ['type' => $type, 'sort' => 'nidn', 'dir' => $sort === 'nidn' && $dir === 'asc' ? 'desc' : 'asc']) }}">
                     NIDN {!! $sort === 'nidn' ? ($dir === 'asc' ? '↑' : '↓') : '' !!}
                   </a>
                   @endif
                 </th>
+                @endif
+
+                {{-- Nama --}}
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                   <a href="{{ route('admin.users.index', ['type' => $type, 'sort' => 'name', 'dir' => $sort === 'name' && $dir === 'asc' ? 'desc' : 'asc']) }}">
                     Nama {!! $sort === 'name' ? ($dir === 'asc' ? '↑' : '↓') : '' !!}
                   </a>
                 </th>
+
+                {{-- Email --}}
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Email</th>
 
+                {{-- Action --}}
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Action</th>
               </tr>
             </thead>
@@ -88,44 +96,51 @@
             <tbody>
               @foreach ($users as $user)
               <tr>
-                @if ($user->hasRole('student'))
+                {{-- NIM / NIDN hanya jika student/lecturer --}}
+                @if($user->hasRole('student'))
                 <td class="align-middle text-center">
                   <span class="text-sm font-weight-bold">{{ $user->student->nim ?? '-' }}</span>
                 </td>
-                @endif
-
-                @if ($user->hasRole('lecturer'))
+                @elseif($user->hasRole('lecturer'))
                 <td class="align-middle text-center">
                   <span class="text-sm font-weight-bold">{{ $user->lecturer->nidn ?? '-' }}</span>
                 </td>
                 @endif
+
+                {{-- Nama --}}
                 <td class="align-middle text-center">
-                  <span class=" text-sm font-weight-bold">{{ $user->name }}</span>
-                </td>
-                <td class="align-middle text-center">
-                  <span class=" text-sm font-weight-bold">{{ $user->email }}</span>
+                  <span class="text-sm font-weight-bold">{{ $user->name }}</span>
                 </td>
 
+                {{-- Email --}}
+                <td class="align-middle text-center">
+                  <span class="text-sm font-weight-bold">{{ $user->email }}</span>
+                </td>
+
+                {{-- Action --}}
                 <td class="align-middle text-center">
                   <a href="{{ route('admin.users.edit', [$type, $user->id]) }}"
                     class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
-                    <i class="fa-solid fa-pen "></i>
+                    <i class="fa-solid fa-pen"></i>
                   </a>
 
                   <a href="{{ route('admin.users.show', [$type, $user->id]) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                    <i class="fas fa-info-circle "></i>
+                    <i class="fas fa-info-circle"></i>
                   </a>
                 </td>
               </tr>
               @endforeach
             </tbody>
           </table>
+
+          {{-- Pagination --}}
           <div class="d-flex justify-content-center mt-3">
             <x-pagination :paginator="$users" />
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>

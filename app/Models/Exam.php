@@ -17,9 +17,14 @@ class Exam extends Model
         'exam_type_id',
         'exam_date',
         'room',
+        'password',
         'duration',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'exam_date' => 'datetime',
     ];
 
     protected static function booted()
@@ -76,5 +81,15 @@ class Exam extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function attempts()
+    {
+        return $this->hasMany(ExamAttempt::class);
+    }
+    public function userAttempt($userId = null)
+    {
+        $userId = $userId ?? auth()->id();
+        return $this->hasOne(ExamAttempt::class)->where('user_id', $userId);
     }
 }

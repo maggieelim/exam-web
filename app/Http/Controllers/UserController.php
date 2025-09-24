@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -71,6 +72,8 @@ class UserController extends Controller
             $query->role('student')->with('student');
         } elseif ($type === 'lecturer') {
             $query->role('lecturer')->with('lecturer');
+        } elseif ($type === 'admin') {
+            $query->role('admin');
         }
 
         if ($request->filled('name')) {
@@ -118,7 +121,7 @@ class UserController extends Controller
 
     public function create($type)
     {
-        if (!in_array($type, ['student', 'lecturer'])) {
+        if (!in_array($type, ['student', 'lecturer', 'admin'])) {
             abort(404);
         }
         return view('admin.users.create', compact('type'));
@@ -180,27 +183,58 @@ class UserController extends Controller
         }
     }
 
-
     public function edit($type, $id)
     {
-        $user = User::with($type)->findOrFail($id); // ambil user + relasi
-        return view('admin.users.edit', compact('user', 'type'));
+        if (in_array($type, ['student', 'lecturer'])) {
+            $user = User::with($type)->findOrFail($id);
+        } else {
+            $user = User::findOrFail($id); // untuk admin atau role lain
+        }
+
+        $roles = Role::pluck('name', 'id'); // Ambil semua role
+        return view('admin.users.edit', compact('user', 'type', 'roles'));
     }
+
 
     public function update(Request $request, $type, $id)
     {
         $user = User::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required',
+        // Validasi umum user
+        $rules = [
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-        ]);
+        ];
 
+        // Validasi tambahan untuk lecturer
+        if ($type === 'lecturer') {
+            $rules['nidn'] = 'required|string';
+            $rules['faculty'] = 'required|string';
+            $rules['role'] = 'required|exists:roles,name'; // Role baru
+        }
+
+        // Validasi tambahan untuk student
+        if ($type === 'student') {
+            $rules['nim'] = 'required|string';
+            $rules['tahun_ajaran'] = 'required|string';
+            $rules['kelas'] = 'required|string';
+            $rules['angkatan'] = 'required|string';
+        }
+
+        $request->validate($rules);
+
+        // Update data user
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
         ]);
 
+        // Update role jika lecturer
+        if ($type === 'lecturer' && $request->filled('role')) {
+            $user->syncRoles([$request->role]); // Mengganti role lama dengan role baru
+        }
+
+        // Update relasi student
         if ($type === 'student') {
             $user->student()->update([
                 'nim' => $request->nim,
@@ -208,15 +242,27 @@ class UserController extends Controller
                 'kelas' => $request->kelas,
                 'angkatan' => $request->angkatan,
             ]);
-        } elseif ($type === 'lecturer') {
-            $user->lecturer()->update([
-                'nidn' => $request->nidn,
-                'faculty' => $request->faculty,
-            ]);
         }
 
-        return redirect()->route('admin.users.index', $type)->with('success', ucfirst($type) . ' updated successfully.');
+        // Update relasi lecturer
+        if ($type === 'lecturer') {
+            if ($user->lecturer) {
+                $user->lecturer->update([
+                    'nidn' => $request->nidn,
+                    'faculty' => $request->faculty,
+                ]);
+            } else {
+                $user->lecturer()->create([
+                    'nidn' => $request->nidn,
+                    'faculty' => $request->faculty,
+                ]);
+            }
+        }
+
+        return redirect()->route('admin.users.index', $type)
+            ->with('success', ucfirst($type) . ' updated successfully.');
     }
+
 
     public function show($type, $id)
     {

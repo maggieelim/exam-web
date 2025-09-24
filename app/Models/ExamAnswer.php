@@ -9,7 +9,7 @@ class ExamAnswer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['exam_id', 'exam_question_id', 'user_id', 'answer', 'is_correct', 'score'];
+    protected $fillable = ['exam_id', 'exam_question_id', 'user_id', 'answer', 'marked_doubt', 'is_correct', 'score'];
 
     public function exam()
     {
@@ -24,5 +24,9 @@ class ExamAnswer extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    public function selectedOption()
+    {
+        return $this->belongsTo(ExamQuestionAnswer::class, 'answer');
     }
 }

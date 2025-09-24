@@ -51,4 +51,17 @@ class ExamQuestion extends Model
     {
         return $this->hasMany(ExamAnswer::class);
     }
+    public function isAnsweredBy($userId)
+    {
+        return $this->answers()->where('user_id', $userId)->exists();
+    }
+
+    // Cek apakah ditandai ragu-ragu oleh user
+    public function isDoubtBy($userId)
+    {
+        return $this->answers()
+            ->where('user_id', $userId)
+            ->where('marked_doubt', true)
+            ->exists();
+    }
 }

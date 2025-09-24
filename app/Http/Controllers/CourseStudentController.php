@@ -17,7 +17,7 @@ class CourseStudentController extends Controller
     public function index()
     {
         $course = Course::with('lecturers', 'students')->orderBy('name', 'asc')->get();
-        return view('courses.student.index', compact('course'));
+        return view('students.courses.index', compact('course'));
     }
 
     /**

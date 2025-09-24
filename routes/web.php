@@ -2,8 +2,9 @@
 
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
-use App\Http\Controllers\CourseStudent;
 use App\Http\Controllers\CourseStudentController;
+use App\Http\Controllers\ExamAnswerController;
+use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\HomeController;
@@ -13,8 +14,6 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SoalController;
 /*
@@ -117,6 +116,7 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	Route::get('/courses/edit/{course}', [CourseController::class, 'edit'])->name('courses.edit');
 	Route::put('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
 	Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+	Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
 	Route::get('/course/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
 	Route::get('/course/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
@@ -144,7 +144,14 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 
 // ================= STUDENT =================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
-	Route::view('/exams', 'student.exams.index')->name('exams');
+	Route::get('/courses', [CourseStudentController::class, 'index'])->name('student.courses');
+	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', 'previous|upcoming')->name('studentExams.index');
+
+	Route::post('/exams/{exam}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
+	Route::get('/exams/{exam}/{question?}', [ExamAttemptController::class, 'do'])->name('exams.do');
+	Route::post('/exams/{exam}/{question}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
+	Route::post('/exams/{exam}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
+
 	Route::view('/history', 'student.history.index')->name('history');
 	Route::view('/results', 'student.results.index')->name('results');
 });

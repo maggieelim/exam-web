@@ -2,7 +2,6 @@
 
 @section('auth')
 
-
 @if(\Request::is('static-sign-up'))
 @include('layouts.navbars.guest.nav')
 @yield('content')
@@ -15,6 +14,7 @@
 
 @else
 @if (\Request::is('rtl'))
+{{-- Tetap tampilkan sidebar dan navbar untuk rtl --}}
 @include('layouts.navbars.auth.sidebar-rtl')
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg overflow-hidden">
     @include('layouts.navbars.auth.nav-rtl')
@@ -25,6 +25,7 @@
 </main>
 
 @elseif (\Request::is('profile'))
+{{-- Tetap tampilkan untuk profile --}}
 @include('layouts.navbars.auth.sidebar')
 <div class="main-content position-relative bg-gray-100 max-height-vh-100 h-100">
     @include('layouts.navbars.auth.nav')
@@ -32,6 +33,7 @@
 </div>
 
 @elseif (\Request::is('virtual-reality'))
+{{-- Tetap tampilkan untuk virtual-reality --}}
 @include('layouts.navbars.auth.nav')
 <div class="border-radius-xl mt-3 mx-3 position-relative" style="background-image: url('../assets/img/vr-bg.jpg') ; background-size: cover;">
     @include('layouts.navbars.auth.sidebar')
@@ -42,18 +44,33 @@
 @include('layouts.footers.auth.footer')
 
 @else
+{{-- Hanya tampilkan sidebar, navbar, dan footer jika tidak ada section hide --}}
+@php
+$hideSidebar = View::hasSection('hideSidebar') ? true : false;
+$hideNavbar = View::hasSection('hideNavbar') ? true : false;
+$hideFooter = View::hasSection('hideFooter') ? true : false;
+@endphp
+
+@if(!$hideSidebar)
 @include('layouts.navbars.auth.sidebar')
+@endif
+
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
+    @if(!$hideNavbar)
     @include('layouts.navbars.auth.nav')
+    @endif
+
     <div class="container-fluid py-4">
         @yield('content')
+
+        {{-- Hanya tampilkan footer jika tidak dihide --}}
+        @if(!$hideFooter)
         @include('layouts.footers.auth.footer')
+        @endif
     </div>
 </main>
 @endif
 
 @endif
-
-
 
 @endsection

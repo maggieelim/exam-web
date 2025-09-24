@@ -13,15 +13,15 @@ class UserSeeder extends Seeder
     {
         // Buat user baru
         $userId = DB::table('users')->insertGetId([
-            'name' => 'Steven',
-            'email' => 'stevenwijaya0405@gmail.com',
+            'name' => 'Mag',
+            'email' => 'moonglitzzz@gmail.com',
             'password' => Hash::make('12345678'),
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
         // Pastikan role admin ada
-        $role = Role::firstOrCreate(['name' => 'admin']);
+        $role = Role::firstOrCreate(['name' => 'lecturer']);
 
         // Assign role admin ke user
         DB::table('model_has_roles')->insert([

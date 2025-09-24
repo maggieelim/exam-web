@@ -18,8 +18,14 @@ class CourseController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil query Course dengan relasi lecturers
         $query = Course::with('lecturers');
+        $user = auth()->user();
+
+        if ($user->hasRole('lecturer')) {
+            $query->whereHas('lecturers', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+        }
 
         // Filter berdasarkan kode blok / nama blok
         if ($request->filled('name')) {
@@ -35,32 +41,29 @@ class CourseController extends Controller
                 $q->where('name', 'like', '%' . $request->lecturer . '%');
             });
         }
-        // Ambil parameter sort & direction
-        $sort = $request->get('sort', 'name'); // default sort by name
-        $dir  = $request->get('dir', 'asc');   // default asc
 
-        // Validasi kolom yang bisa di-sort
+        $sort = $request->get('sort', 'name');
+        $dir  = $request->get('dir', 'asc');
+
         $allowedSorts = ['name', 'kode_blok'];
         if (!in_array($sort, $allowedSorts)) {
             $sort = 'name';
         }
 
-        // Terapkan sorting
         $query->orderBy($sort, $dir);
 
-        // Pagination 15 per page, tetap simpan query params
         $courses = $query->paginate(15)->appends($request->all());
 
         return view('courses.index', compact('courses', 'sort', 'dir'));
     }
-
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        return view('courses.create');
+        $lecturers = User::role('lecturer')->get();
+        return view('courses.create', compact('lecturers'));
     }
 
     /**
@@ -72,6 +75,8 @@ class CourseController extends Controller
             'kode_blok' => 'required|string|max:255|unique:courses,kode_blok',
             'name'      => 'required|string|max:255',
             'cover'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'lecturers' => 'nullable|array',   // jika admin yang create, bisa pilih dosen
+            'lecturers.*' => 'exists:users,id', // validasi ID dosen valid
         ]);
 
         $data = $request->only(['kode_blok', 'name']);
@@ -84,10 +89,33 @@ class CourseController extends Controller
             $data['cover'] = 'covers/' . $filename;
         }
 
-        Course::create($data);
+        // Buat course
+        $course = Course::create($data);
+
+        $user = auth()->user();
+
+        if ($user->hasRole('lecturer')) {
+            // selalu tambahkan dirinya sendiri
+            $lecturers = [$user->id];
+
+            // kalau dia juga input dosen lain, gabungkan
+            if ($request->filled('lecturers')) {
+                $lecturers = array_merge($lecturers, $request->lecturers);
+            }
+
+            $course->lecturers()->sync($lecturers);
+        }
+
+        if ($user->hasRole('admin')) {
+            if ($request->filled('lecturers')) {
+                $course->lecturers()->sync($request->lecturers);
+            }
+        }
+
 
         return redirect()->back()->with('success', 'Course berhasil dibuat!');
     }
+
 
     public function import(Request $request)
     {
@@ -200,7 +228,6 @@ class CourseController extends Controller
         foreach ($course->exams as $exam) {
             // Hapus semua soal di exam
             foreach ($exam->questions as $question) {
-                // Hapus semua jawaban soal
                 $question->options()->delete();
                 $question->delete();
             }

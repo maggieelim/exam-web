@@ -47,14 +47,20 @@
                 </div>
 
                 <!-- Pilih Course -->
-                <div class="mb-3">
-                    <label for="course_id" class="form-label">Pilih Course</label>
-                    <select name="course_id" id="course_id" class="form-select" required>
-                        <option value="">-- Pilih Course --</option>
-                        @foreach($courses as $course)
-                        <option value="{{ $course->id }}">{{ $course->name }}</option>
-                        @endforeach
-                    </select>
+                <div class="row">
+                    <div class=" col-md-6 mb-3">
+                        <label for="course_id" class="form-label">Pilih Course</label>
+                        <select name="course_id" id="course_id" class="form-select" required>
+                            <option value="">-- Pilih Course --</option>
+                            @foreach($courses as $course)
+                            <option value="{{ $course->id }}">{{ $course->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="password">Password</label>
+                        <input type="text" name="password" class="form-control" required>
+                    </div>
                 </div>
                 <!-- Upload file Excel -->
                 <div class="form-group mb-3">

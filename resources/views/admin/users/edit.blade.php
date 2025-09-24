@@ -49,13 +49,23 @@
           </div>
           @elseif ($type === 'lecturer')
           <div class="row g-3 mb-3">
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label>NIDN</label>
-              <input type="text" name="nidn" class="form-control" value="{{ $user->lecturer->nidn }}" required>
+              <input type="text" name="nidn" class="form-control" value="{{ optional($user->lecturer)->nidn ?? '' }}" required>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label>Faculty</label>
-              <input type="text" name="faculty" class="form-control" value="{{ $user->lecturer->faculty }}" required>
+              <input type="text" name="faculty" class="form-control" value="{{ optional($user->lecturer)->faculty ?? '' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label for="role" class="form-label">Role</label>
+              <select name="role" id="role" class="form-select" required>
+                @foreach($roles as $id => $name)
+                <option value="{{ $name }}" {{ $user->hasRole($name) ? 'selected' : '' }}>
+                  {{ ucfirst($name) }}
+                </option>
+                @endforeach
+              </select>
             </div>
           </div>
           @endif
