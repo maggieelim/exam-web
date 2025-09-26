@@ -38,11 +38,16 @@
     <!-- Card List Soal -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Daftar Soal</h4>
-      <button class="btn btn-outline-secondary btn-sm " type="button"
-        data-bs-toggle="collapse" data-bs-target="#filterCollapse"
-        aria-expanded="false" aria-controls="filterCollapse">
-        <i class="fas fa-filter"></i> Filter
-      </button>
+      <div class="d-flex gap-3">
+        <a href="{{ route('exams.questions', $exam->exam_code) }}" class="btn btn-sm btn-warning">
+          Edit Questions
+        </a>
+        <button class="btn btn-outline-secondary btn-sm " type="button"
+          data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+          aria-expanded="false" aria-controls="filterCollapse">
+          <i class="fas fa-filter"></i> Filter
+        </button>
+      </div>
     </div>
 
     <div class="collapse" id="filterCollapse">
@@ -69,12 +74,22 @@
       @foreach($questions as $index => $question)
       <div class="card mb-3 shadow-sm">
         <div class="card-body">
-          <!-- Nomor soal & judul -->
-          <p class="fw-bold mb-1">{{ $index + 1 }}. {{ $question->badan_soal }}</p>
+          <div class="d-flex justify-content-between">
+            <p class="fw-bold mb-1">{{ $index + 1 }}. {{ $question->badan_soal }}</p>
+            <small class="text-muted">
+              Category: {{ $question->category ? $question->category->name : 'Tidak ada kategori' }}
+            </small>
+          </div>
           <!-- Kalimat tanya -->
           <p class="mb-2">{{ $question->kalimat_tanya }}</p>
-
-
+          @if($question->image)
+          <div class="my-3">
+            <img src="{{ asset('storage/' . $question->image) }}"
+              alt="Gambar Soal"
+              class="img-fluid rounded shadow-sm"
+              style="max-width: 400px;">
+          </div>
+          @endif
           <!-- Pilihan jawaban dalam 2 kolom -->
           @if($question->options->count() > 0)
           <div class="row mt-2">

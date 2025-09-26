@@ -22,7 +22,7 @@
 
                 <!-- Exam type -->
                 <p class="mb-1 text-secondary">
-                  {{ $exam->examType->name }}
+                  {{ $exam->course->name }}
                 </p>
 
                 <!-- Date & time -->
@@ -95,7 +95,12 @@
                       </form>
                     </div>
                   </div>
-
+                  @elseif($exam->exam_ended)
+                  <div class="text-center">
+                    <small class="text-muted">
+                      Exam has ended
+                    </small>
+                  </div>
                   @else
                   <!-- Exam belum available -->
                   <div class="text-center">

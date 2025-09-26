@@ -53,12 +53,22 @@
     <form method="GET" action="{{ route('exams.questions', $exam->exam_code) }}">
       <div class="mx-3 my-2 py-2">
         <div class="row g-2">
-          <div class="col-md-12">
+          <div class="col-md-8">
             <label for="title" class="form-label mb-1">Soal</label>
             <input type="text" name="search" class="form-control" placeholder="Cari Soal Ujian"
               value="{{ request('search') }}">
           </div>
-
+          <div class="col-md-4">
+            <label for="category" class="form-label mb-1">Category</label>
+            <select name="category" class="form-control">
+              <option value="">-- Choose Category --</option>
+              @foreach($categories as $category)
+              <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
+                {{ $category->name }}
+              </option>
+              @endforeach
+            </select>
+          </div>
           <div class="col-12 d-flex justify-content-end gap-2 mt-2">
             <a href="{{ route('exams.questions', $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
@@ -72,11 +82,25 @@
   <div class="card mb-4">
     <div class="card-header pb-0 px-3 d-flex justify-content-between align-items-center">
       <h6 class="mb-0">Soal {{ $index + 1 }}</h6>
-      <small class="text-muted">Exam: {{ $exam->title }}</small>
+      <div class="d-flex gap-3">
+        <div class="d-flex flex-column text-end">
+          <small class="text-muted">Exam: {{ $exam->title }}</small>
+          <small class="text-muted">
+            Category: {{ $question->category ? $question->category->name : 'Tidak ada kategori' }}
+          </small>
+        </div>
+        <form action="{{ route('exams.questions.destroy', [$exam->exam_code, $question->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus soal ini?')">
+          @csrf
+          @method('DELETE')
+          <button type="submit" class="btn btn-lg btn-link  p-0" title="Hapus Soal">
+            <i class="fas text-danger fa-times"></i>
+          </button>
+        </form>
+      </div>
     </div>
 
     <div class="card-body pt-0 p-3">
-      <form action="{{ route('exams.questions.update', [$exam->exam_code, $question->id]) }}" method="POST">
+      <form action="{{ route('exams.questions.update', [$exam->exam_code, $question->id]) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -89,6 +113,24 @@
           <label class="form-label">Kalimat Tanya</label>
           <input name="kalimat_tanya" class="form-control" rows="2" value="{{ $question->kalimat_tanya }}"></input>
         </div>
+        <div class="mb-3">
+          <label for="image" class="form-label">Upload Gambar (Opsional)</label>
+          <input type="file" name="image" id="image" class="form-control" accept="image/*">
+          @if(!empty($question->image))
+          <div class="mt-2 position-relative d-inline-block">
+            <img src="{{ asset('storage/'.$question->image) }}" alt="Soal Image" width="300" class="border rounded">
+            <!-- Tombol X -->
+            <button type="button"
+              class="btn btn-danger btn-sm rounded-circle align-items-center justify-content-center position-absolute "
+              style="width: 30px; height: 30px; padding: 0;"
+              onclick="document.getElementById('delete_image').value=1; this.closest('form').submit();">
+              x
+            </button>
+
+          </div>
+          @endif
+        </div>
+        <input type="hidden" name="delete_image" id="delete_image" value="0">
 
         <div class="mb-3">
           <label class="form-label">Pilihan Jawaban</label>
@@ -116,22 +158,14 @@
             @endforeach
           </div>
         </div>
-
-
-        <button type="submit" class="btn btn-sm btn-primary">Update Soal</button>
-      </form>
-      <form action="{{ route('exams.questions.destroy', [$exam->exam_code, $question->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus soal ini?')">
-        @csrf
-        @method('DELETE')
-        <button type="submit" class="btn btn-sm btn-danger">Hapus Soal</button>
+        <button type="submit" name="action" value="update" class="btn btn-sm btn-primary">Update Soal</button>
+        <button type="submit" name="action" value="anulir" class="btn btn-sm btn-warning">Anulir Soal</button>
       </form>
     </div>
   </div>
   @endforeach
-
   <div class="d-flex justify-content-center mt-3">
     <x-pagination :paginator="$questions" />
   </div>
-
 </div>
 @endsection

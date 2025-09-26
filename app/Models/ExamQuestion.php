@@ -12,9 +12,11 @@ class ExamQuestion extends Model
 
     protected $fillable = [
         'exam_id',
+        'category_id',
         'badan_soal',
         'kalimat_tanya',
         'kode_soal',
+        'image',
         'created_by',
         'updated_by',
     ];
@@ -63,5 +65,9 @@ class ExamQuestion extends Model
             ->where('user_id', $userId)
             ->where('marked_doubt', true)
             ->exists();
+    }
+    public function category()
+    {
+        return $this->belongsTo(ExamQuestionCategory::class, 'category_id');
     }
 }

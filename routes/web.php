@@ -7,6 +7,7 @@ use App\Http\Controllers\ExamAnswerController;
 use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamQuestionController;
+use App\Http\Controllers\ExamResultsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
 use App\Http\Controllers\ProfileController;
@@ -152,8 +153,9 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
 	Route::post('/exams/{exam}/{question}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
 	Route::post('/exams/{exam}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
 
+	Route::get('/results', [ExamResultsController::class, 'index'])->name('results.index');
+
 	Route::view('/history', 'student.history.index')->name('history');
-	Route::view('/results', 'student.results.index')->name('results');
 });
 
 Route::get('/login', function () {

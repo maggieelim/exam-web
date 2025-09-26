@@ -27,4 +27,9 @@ class ExamAttempt extends Model
     {
         return $this->belongsTo(Exam::class);
     }
+    public function answers()
+    {
+        return $this->hasMany(ExamAnswer::class, 'exam_id', 'exam_id')
+            ->where('user_id', $this->user_id);
+    }
 }

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
-use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use Auth;
 use Illuminate\Http\Request;
@@ -193,58 +192,5 @@ class ExamAttemptController extends Controller
                 'message' => 'Gagal menandai soal: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 }

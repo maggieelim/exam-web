@@ -13,6 +13,14 @@
         <div class="mt-2">
           <p><strong>{{ $currentQuestion->badan_soal }}</strong></p>
           <p>{{ $currentQuestion->kalimat_tanya }}</p>
+          @if($currentQuestion->image)
+          <div class="my-3">
+            <img src="{{ asset('storage/' . $currentQuestion->image) }}"
+              alt="Gambar Soal"
+              class="img-fluid "
+              style="max-width: 600px;">
+          </div>
+          @endif
         </div>
 
         {{-- Form AJAX --}}
@@ -75,7 +83,7 @@
             class="btn btn-xs d-flex align-items-center justify-content-center question-nav
             @if($q->id == $currentQuestion->id) border border-2 border-primary
             @elseif($q->isDoubtBy(auth()->id())) btn-warning
-      @elseif(isset($userAnswers[$q->id]) && $userAnswers[$q->id] !== null) btn-success
+            @elseif(isset($userAnswers[$q->id]) && $userAnswers[$q->id] !== null) btn-success
             @else btn-secondary @endif"
             style="min-width: 28px; height: 35px; font-size: 0.9rem; padding: 0;"
             data-question-id="{{ $q->id }}"
@@ -93,6 +101,9 @@
           </button>
         </form>
         @endif
+        <form id="autoFinishForm" action="{{ route('student.exams.finish', $exam->id) }}" method="POST" style="display: none;">
+          @csrf
+        </form>
       </div>
     </div>
   </div>
@@ -126,7 +137,7 @@
         document.getElementById("timer").innerHTML = "WAKTU HABIS";
         localStorage.removeItem('examEndTime_{{ $exam->id }}');
         alert('Waktu ujian telah habis!');
-        document.getElementById('finishForm').submit();
+        document.getElementById('autoFinishForm').submit();
       }
     }
 

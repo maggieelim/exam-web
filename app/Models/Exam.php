@@ -92,4 +92,9 @@ class Exam extends Model
         $userId = $userId ?? auth()->id();
         return $this->hasOne(ExamAttempt::class)->where('user_id', $userId);
     }
+
+    public function categories()
+    {
+        return $this->hasMany(ExamQuestionCategory::class);
+    }
 }
