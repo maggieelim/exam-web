@@ -34,47 +34,36 @@
 
       <form method="POST" action="{{ route('admin.users.store', $type) }}">
         @csrf
-        <div class="mb-3">
-          <label>Name</label>
-          <input type="text" name="name" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label>Email</label>
-          <input type="email" name="email" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label>Password</label>
-          <input type="password" name="password" class="form-control" required>
-        </div>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label>Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" required autocomplete="off">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" required autocomplete="new-password">
+          </div>
 
-        @if ($type === 'student')
-        <div class="mb-3">
-          <label>NIM</label>
-          <input type="text" name="nim" class="form-control" required>
+          @if ($type === 'student')
+          <div class="col-md-4 mb-3">
+            <label>NIM</label>
+            <input type="text" name="nim" class="form-control" required>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label>Angkatan</label>
+            <input type="text" name="angkatan" class="form-control" required>
+          </div>
+          @elseif ($type === 'lecturer')
+          <div class="col-md-3 mb-3">
+            <label>NIDN</label>
+            <input type="text" name="nidn" class="form-control" required>
+          </div>
+          @endif
         </div>
-        <div class="mb-3">
-          <label>Tahun Ajaran</label>
-          <input type="text" name="tahun_ajaran" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label>Kelas</label>
-          <input type="text" name="kelas" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label>Angkatan</label>
-          <input type="text" name="angkatan" class="form-control" required>
-        </div>
-        @elseif ($type === 'lecturer')
-        <div class="mb-3">
-          <label>NIDN</label>
-          <input type="text" name="nidn" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label>Faculty</label>
-          <input type="text" name="faculty" class="form-control" required>
-        </div>
-        @endif
-
         <button type="submit" class="btn bg-gradient-primary">Save</button>
       </form>
 

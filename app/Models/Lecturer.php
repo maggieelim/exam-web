@@ -16,6 +16,17 @@ class Lecturer extends Model
         'faculty',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($lecturer) {
+            if (empty($lecturer->faculty)) {
+                $lecturer->faculty = 'Kedokteran';
+            }
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

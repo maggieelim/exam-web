@@ -65,11 +65,6 @@ Route::group(['middleware' => 'auth'], function () {
 		return view('static-sign-up');
 	})->name('sign-up');
 
-	Route::get('/soal/upload', [SoalController::class, 'uploadForm'])->name('soal.upload');
-	Route::post('/soal/import', [SoalController::class, 'import'])->name('soal.import');
-	Route::get('/soal/kode', [SoalController::class, 'listKode'])->name('soal.listKode');
-	Route::get('/soal/kode/{kode}', [SoalController::class, 'showByKode'])->name('soal.showByKode');
-
 	Route::get('/logout', [SessionsController::class, 'destroy']);
 	Route::get('/user-profile', [InfoUserController::class, 'create']);
 	Route::post('/user-profile', [InfoUserController::class, 'store']);
@@ -107,6 +102,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 	Route::view('/reports', 'admin.reports.index')->name('reports');
 });
 
+Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
+	Route::get('/results/{status?}', [ExamResultsController::class, 'indexLecturer'])->where('status', '(ungraded|graded|published)')->name('results.index');
+	Route::get('/results/{exam_code}', [ExamResultsController::class, 'grade'])->name('results.grade');
+	Route::get('/results/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show');
+	Route::put('/results/{exam_code}/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
+	Route::get('/results/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback');
+	Route::put('/results/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
+});
 // ================= SHARED ADMIN & LECTURER =================
 Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	// courses
@@ -127,13 +130,17 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 
 
 	// exams
-	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', 'previous|upcoming')->name('exams.index');
+	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')
+		->name('exams.index');
 	Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
 	Route::post('/exams/store', [ExamController::class, 'import'])->name('exams.import');
 	Route::get('/exams/edit/{exam_code}', [ExamController::class, 'edit'])->name('exams.edit');
 	Route::get('/exams/{exam_code}', [ExamController::class, 'show'])->name('exams.show');
 	Route::put('/exams/update/{exam_code}', [ExamController::class, 'update'])->name('exams.update');
 	Route::delete('/exams/{exam_code}', [ExamController::class, 'destroy'])->name('exams.destroy');
+
+	Route::put('/exams/{exam}/start', [ExamController::class, 'start'])->name('exams.start');
+	Route::put('/exams/{exam}/end', [ExamController::class, 'end'])->name('exams.end');
 
 	// exam questions
 	Route::get('exams/{exam_code}/questions', [ExamQuestionController::class, 'index'])->name('exams.questions');
@@ -146,15 +153,14 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 // ================= STUDENT =================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
 	Route::get('/courses', [CourseStudentController::class, 'index'])->name('student.courses');
-	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', 'previous|upcoming')->name('studentExams.index');
+	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')
+		->name('studentExams.index');
+	Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
+	Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');
+	Route::post('/exams/{exam_code}/{kode_soal}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
+	Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
 
-	Route::post('/exams/{exam}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
-	Route::get('/exams/{exam}/{question?}', [ExamAttemptController::class, 'do'])->name('exams.do');
-	Route::post('/exams/{exam}/{question}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
-	Route::post('/exams/{exam}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
-
-	Route::get('/results', [ExamResultsController::class, 'index'])->name('results.index');
-
+	Route::get('/results', [ExamResultsController::class, 'studentIndex'])->name('results.index');
 	Route::view('/history', 'student.history.index')->name('history');
 });
 

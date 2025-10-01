@@ -78,9 +78,6 @@
                   </a>
                 </th>
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  Blok
-                </th>
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                   Exam Questions
                 </th>
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
@@ -93,18 +90,6 @@
                   Updated By
                 </th> -->
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  <a href="{{ route('exams.index') }}?{{ http_build_query(array_merge(request()->except('page'), [
-            'sort' => 'exam_date',
-            'dir'  => ($sort === 'exam_date' && $dir === 'asc') ? 'desc' : 'asc'
-        ])) }}"
-                    class="text-dark text-decoration-none">
-                    Date
-                    @if($sort === 'exam_date')
-                    <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                    @endif
-                  </a>
-                </th>
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                   Action
                 </th>
               </tr>
@@ -113,18 +98,15 @@
             <tbody>
               @foreach($exams as $exam)
               <tr>
-                <td class="align-middle text-center">
+                <td class="align-middle px-3">
                   <span class="text-sm font-weight-bold">
-                    {{ $exam->title }}
+                    {{ $exam->title }} <br>
+                    {{ $exam->course->name }} <br>
+                  </span>
+                  <span class="text-sm">
+                    Date Modified: {{ \Carbon\Carbon::parse($exam->updated_at)->format('j/n/y H.i') }}
                   </span>
                 </td>
-
-                <td class="align-middle text-center">
-                  <span class="text-sm font-weight-bold">
-                    {{ $exam->course->name }}
-                  </span>
-                </td>
-
                 <td class="align-middle text-center">
                   <span class="text-sm font-weight-bold">
                     {{ $exam->questions_count > 0 ? $exam->questions_count . ' Questions' : 'No Questions Yet' }}
@@ -140,18 +122,26 @@
                     {{ $exam->creator?->name ?? '-' }}
                   </span>
                 </td>
-                <!-- <td class="align-middle text-center">
-                  <span class="text-sm font-weight-bold">
-                    {{ $exam->updater?->name ?? '-' }}
-                  </span>
-                </td> -->
                 <td class="align-middle text-center">
-                  <span class="text-sm font-weight-bold">
-                    {{ \Carbon\Carbon::parse($exam->exam_date)->format('j/n/y H.i') }}
-                  </span>
-                </td>
-
-                <td class="align-middle text-center">
+                  @if($exam->status === 'upcoming')
+                  <button type="button"
+                    class="btn bg-gradient-success m-1 p-2 px-3 start-exam-btn"
+                    data-exam-id="{{ $exam->id }}"
+                    data-exam-title="{{ $exam->title }}"
+                    data-action-url="{{ route('exams.start', $exam->id) }}">
+                    Start
+                  </button>
+                  @elseif($exam->status === 'ongoing')
+                  <button type="button"
+                    class="btn bg-gradient-danger m-1 p-2 px-3 end-exam-btn"
+                    data-exam-id="{{ $exam->id }}"
+                    data-exam-title="{{ $exam->title }}"
+                    data-action-url="{{ route('exams.end', $exam->id) }}">
+                    End
+                  </button>
+                  @else
+                  <span class="badge bg-secondary">Ended</span>
+                  @endif
                   <div class="btn-group">
                     <button type="button" class="btn bg-gradient-primary m-1 p-2 px-3 dropdown-toggle"
                       data-bs-toggle="dropdown" aria-expanded="false" title="Kelola">
@@ -170,7 +160,6 @@
                       </li>
                     </ul>
                   </div>
-
                   <a href="{{ route('exams.show', [$exam->exam_code]) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                     <i class="fas fa-info-circle"></i>
@@ -187,5 +176,94 @@
       </div>
     </div>
   </div>
+
+  <div class="modal fade" id="startExamModal" tabindex="-1" aria-labelledby="startExamModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="startExamModalLabel">Konfirmasi Mulai Ujian</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Apakah Anda yakin ingin memulai ujian <strong id="startExamTitle"></strong>?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <form id="startExamForm" method="POST" class="d-inline">
+            @csrf
+            @method('PUT')
+            <button type="submit" class="btn btn-sm btn-success">Ya, Mulai Ujian</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi End (Satu untuk semua) -->
+  <div class="modal fade" id="endExamModal" tabindex="-1" aria-labelledby="endExamModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="endExamModalLabel">Konfirmasi Akhiri Ujian</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Apakah Anda yakin ingin mengakhiri ujian <strong id="endExamTitle"></strong>?</p>
+          <i class="fas fa-exclamation-circle"></i>
+          <strong>Peringatan:</strong> Setelah ujian diakhiri:
+          <ul class="mb-0">
+            <li>Siswa tidak dapat lagi mengerjakan ujian</li>
+            <li>Semua attempt yang sedang berjalan akan otomatis diselesaikan</li>
+            <li>Tindakan ini tidak dapat dibatalkan</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <form id="endExamForm" method="POST" class="d-inline">
+            @csrf
+            @method('PUT')
+            <button type="submit" class="btn btn-sm btn-danger">Ya Akhiri Ujian</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.start-exam-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const examId = this.getAttribute('data-exam-id');
+          const examTitle = this.getAttribute('data-exam-title');
+          const actionUrl = this.getAttribute('data-action-url');
+
+          // Update modal content
+          document.getElementById('startExamTitle').textContent = examTitle;
+          document.getElementById('startExamForm').action = actionUrl;
+
+          // Show modal
+          const modal = new bootstrap.Modal(document.getElementById('startExamModal'));
+          modal.show();
+        });
+      });
+
+      // Handle End Exam buttons
+      document.querySelectorAll('.end-exam-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const examId = this.getAttribute('data-exam-id');
+          const examTitle = this.getAttribute('data-exam-title');
+          const actionUrl = this.getAttribute('data-action-url');
+
+          // Update modal content
+          document.getElementById('endExamTitle').textContent = examTitle;
+          document.getElementById('endExamForm').action = actionUrl;
+
+          // Show modal
+          const modal = new bootstrap.Modal(document.getElementById('endExamModal'));
+          modal.show();
+        });
+      });
+    });
+  </script>
   @endsection
   @push('dashboard')

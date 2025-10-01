@@ -21,6 +21,8 @@ class Exam extends Model
         'duration',
         'created_by',
         'updated_by',
+        'status',
+        'is_published'
     ];
 
     protected $casts = [

@@ -49,8 +49,6 @@ class UsersImport implements ToModel, WithHeadingRow
             Student::create([
                 'user_id'      => $user->id,
                 'nim'          => $row['nim'],
-                'tahun_ajaran' => $row['tahun_ajaran'],
-                'kelas'        => $row['kelas'],
                 'angkatan'     => $row['angkatan'],
             ]);
         }
@@ -61,7 +59,6 @@ class UsersImport implements ToModel, WithHeadingRow
             Lecturer::create([
                 'user_id' => $user->id,
                 'nidn'    => $row['nidn'],
-                'faculty' => $row['faculty'],
             ]);
         }
 

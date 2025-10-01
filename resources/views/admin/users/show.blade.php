@@ -33,16 +33,14 @@
             <p>{{ $user->student->nim }}</p>
           </div>
           <div class="col-md-6 mb-3">
-            <strong>Tahun Ajaran:</strong>
-            <p>{{ $user->student->tahun_ajaran }}</p>
+            <strong>Angkatan:</strong>
+            <p>{{ $user->student->angkatan }}</p>
           </div>
           <div class="col-md-6 mb-3">
             <strong>Kelas:</strong>
-            <p>{{ $user->student->kelas }}</p>
-          </div>
-          <div class="col-md-6 mb-3">
-            <strong>Angkatan:</strong>
-            <p>{{ $user->student->angkatan }}</p>
+            @foreach($course as $course)
+            <p>- {{ $course->name }}</p>
+            @endforeach
           </div>
           @elseif ($type === 'lecturer' && $user->lecturer)
           <div class="col-md-6 mb-3">
@@ -52,6 +50,12 @@
           <div class="col-md-6 mb-3">
             <strong>Faculty:</strong>
             <p>{{ $user->lecturer->faculty }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Kelas:</strong>
+            @foreach($course as $course)
+            <p>- {{ $course->name }}</p>
+            @endforeach
           </div>
           @endif
         </div>

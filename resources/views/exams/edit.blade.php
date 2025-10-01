@@ -14,27 +14,22 @@
 
         <!-- Informasi Jadwal Ujian -->
         <div class="row">
-          <div class="col-md-4 mb-3">
+          <div class="col-md-3 mb-3">
             <label for="title">Judul Ujian</label>
             <input type="text" name="title" class="form-control" required value="{{ $exam->title }}">
           </div>
 
-          <div class="col-md-2 mb-3">
+          <div class="col-md-3 mb-3">
             <label for="exam_date">Tanggal</label>
             <input type="date" name="exam_date" class="form-control" required value="{{ old('exam_date', isset($exam->exam_date) ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '') }}">
           </div>
 
-          <div class="col-md-2 mb-3">
-            <label for="clock">Jam</label>
-            <input type="time" name="clock" class="form-control" required value="{{ old('clock', isset($exam->exam_date) ? \Carbon\Carbon::parse($exam->exam_date)->format('H:i') : '') }}">
-          </div>
-
-          <div class="col-md-2 mb-3">
+          <div class="col-md-3 mb-3">
             <label for="duration">Durasi (menit)</label>
             <input type="number" name="duration" class="form-control" required min="1" value="{{ $exam->duration }}">
           </div>
 
-          <div class="col-md-2 mb-3">
+          <div class="col-md-3 mb-3">
             <label for="room">Ruangan</label>
             <input type="text" name="room" class="form-control" value="{{ $exam->room }}">
           </div>

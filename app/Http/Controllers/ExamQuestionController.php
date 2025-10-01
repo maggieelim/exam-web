@@ -256,8 +256,8 @@ class ExamQuestionController extends Controller
                     ExamQuestionAnswer::create([
                         'exam_question_id' => $question->id,
                         'option'           => $opt,
-                        'text'             => $row[3 + $i],
-                        'is_correct'       => (str_contains($row[8] ?? '', $opt)) ? 1 : 0,
+                        'text'             => $row[4 + $i],
+                        'is_correct'       => (str_contains($row[9] ?? '', $opt)) ? 1 : 0,
                     ]);
                 }
             }

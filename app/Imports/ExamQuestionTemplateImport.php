@@ -74,17 +74,23 @@ class ExamQuestionTemplateImport implements ToModel
 
     private function generateKodeSoal()
     {
-        $lastSoal = ExamQuestion::where('exam_id', $this->examId)
-            ->orderBy('id', 'desc')
-            ->first();
+        // Prefix bebas
+        $prefix = 'Q-';
 
-        if ($lastSoal) {
-            $lastNumber = (int) substr($lastSoal->kode_soal, 4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
+        // Karakter yang dipakai (A–Z, 0–9)
+        $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+        // Panjang kode (misalnya 6)
+        $random = substr(str_shuffle(str_repeat($characters, 6)), 0, 6);
+
+        $kode = $prefix . $random;
+
+        // Pastikan unik di exam_id ini
+        while (ExamQuestion::where('exam_id', $this->examId)->where('kode_soal', $kode)->exists()) {
+            $random = substr(str_shuffle(str_repeat($characters, 6)), 0, 6);
+            $kode = $prefix . $random;
         }
 
-        return 'SWG-' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        return $kode;
     }
 }

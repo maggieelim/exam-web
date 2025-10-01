@@ -20,6 +20,7 @@ class CourseController extends Controller
     {
         $query = Course::with('lecturers');
         $user = auth()->user();
+        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
         if ($user->hasRole('lecturer')) {
             $query->whereHas('lecturers', function ($q) use ($user) {
@@ -93,6 +94,7 @@ class CourseController extends Controller
         $course = Course::create($data);
 
         $user = auth()->user();
+        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
         if ($user->hasRole('lecturer')) {
             // selalu tambahkan dirinya sendiri

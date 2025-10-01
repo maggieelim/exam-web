@@ -29,12 +29,18 @@
 
     <!-- Card Daftar Mahasiswa -->
     <div class="card mb-4">
-      <div class="card-header d-flex justify-content-end">
-        <button class="btn btn-sm btn-outline-secondary" type="button"
-          data-bs-toggle="collapse" data-bs-target="#filterCollapse"
-          aria-expanded="false" aria-controls="filterCollapse">
-          <i class="fas fa-filter"></i> Filter
-        </button>
+      <div class="card-header d-flex justify-content-between">
+        <h5>List Students</h5>
+        <div class="d-flex gap-3">
+          <a href="{{ route('courses.editStudent',[$course->slug] ) }}" class="btn btn-sm btn-warning">
+            Edit Participant
+          </a>
+          <button class="btn btn-sm btn-outline-secondary" type="button"
+            data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+            aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-filter"></i> Filter
+          </button>
+        </div>
       </div>
 
       <div class="collapse" id="filterCollapse">

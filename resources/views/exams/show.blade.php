@@ -27,7 +27,7 @@
       </div>
       <div class="row">
         <div class="col-md-4">
-          <p><strong>Date:</strong> {{ $exam->exam_date->format('d-m-Y H:i') }}</p>
+          <p><strong>Date:</strong> {{ $exam->exam_date->format('d-m-Y') }}</p>
         </div>
         <div class="col-md-4">
           <p><strong>Duration:</strong> {{ $exam->duration }} minutes</p>
@@ -117,6 +117,5 @@
       <x-pagination :paginator="$questions" />
     </div>
   </div>
-
 </div>
 @endsection

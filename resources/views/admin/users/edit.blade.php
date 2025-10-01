@@ -34,14 +34,6 @@
               <input type="text" name="nim" class="form-control" value="{{ $user->student->nim }}" required>
             </div>
             <div class="col-md-3">
-              <label>Tahun Ajaran</label>
-              <input type="text" name="tahun_ajaran" class="form-control" value="{{ $user->student->tahun_ajaran }}" required>
-            </div>
-            <div class="col-md-3">
-              <label>Kelas</label>
-              <input type="text" name="kelas" class="form-control" value="{{ $user->student->kelas }}" required>
-            </div>
-            <div class="col-md-3">
               <label>Angkatan</label>
               <x-year-select name="angkatan" :selected="$user->student->angkatan ?? null" />
             </div>
@@ -52,10 +44,6 @@
             <div class="col-md-4">
               <label>NIDN</label>
               <input type="text" name="nidn" class="form-control" value="{{ optional($user->lecturer)->nidn ?? '' }}" required>
-            </div>
-            <div class="col-md-4">
-              <label>Faculty</label>
-              <input type="text" name="faculty" class="form-control" value="{{ optional($user->lecturer)->faculty ?? '' }}" required>
             </div>
             <div class="col-md-4">
               <label for="role" class="form-label">Role</label>

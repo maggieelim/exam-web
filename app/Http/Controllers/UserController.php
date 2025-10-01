@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Imports\UsersImport;
+use App\Models\Course;
 use App\Models\Lecturer;
 use App\Models\Student;
 use App\Models\User;
@@ -149,8 +150,6 @@ class UserController extends Controller
             Student::create([
                 'user_id' => $user->id,
                 'nim'     => $request['nim'],
-                'tahun_ajaran' => $request->tahun_ajaran,
-                'kelas' => $request->kelas,
                 'angkatan' => $request->angkatan,
             ]);
         } elseif ($type === 'lecturer') {
@@ -209,15 +208,12 @@ class UserController extends Controller
         // Validasi tambahan untuk lecturer
         if ($type === 'lecturer') {
             $rules['nidn'] = 'required|string';
-            $rules['faculty'] = 'required|string';
             $rules['role'] = 'required|exists:roles,name'; // Role baru
         }
 
         // Validasi tambahan untuk student
         if ($type === 'student') {
             $rules['nim'] = 'required|string';
-            $rules['tahun_ajaran'] = 'required|string';
-            $rules['kelas'] = 'required|string';
             $rules['angkatan'] = 'required|string';
         }
 
@@ -238,8 +234,6 @@ class UserController extends Controller
         if ($type === 'student') {
             $user->student()->update([
                 'nim' => $request->nim,
-                'tahun_ajaran' => $request->tahun_ajaran,
-                'kelas' => $request->kelas,
                 'angkatan' => $request->angkatan,
             ]);
         }
@@ -249,12 +243,10 @@ class UserController extends Controller
             if ($user->lecturer) {
                 $user->lecturer->update([
                     'nidn' => $request->nidn,
-                    'faculty' => $request->faculty,
                 ]);
             } else {
                 $user->lecturer()->create([
                     'nidn' => $request->nidn,
-                    'faculty' => $request->faculty,
                 ]);
             }
         }
@@ -268,8 +260,27 @@ class UserController extends Controller
     {
         $user = User::with(['student', 'lecturer'])->findOrFail($id);
 
-        return view('admin.users.show', compact('user', 'type'));
+        $course = null;
+
+        if ($type === 'student') {
+            $course = Course::with(['lecturers', 'students'])
+                ->whereHas('students', function ($q) use ($id) {
+                    $q->where('user_id', $id);
+                })
+                ->get();
+        } elseif ($type === 'lecturer') {
+            $course = Course::with(['lecturers', 'students'])
+                ->whereHas('lecturers', function ($q) use ($id) {
+                    $q->where('lecturer_id', $id);
+                })
+                ->get();
+        }
+
+        return view('admin.users.show', compact('user', 'type', 'course'));
     }
+
+
+
 
     public function destroy($type, $id)
     {
