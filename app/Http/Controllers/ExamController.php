@@ -59,39 +59,37 @@ class ExamController extends Controller
         ])
             ->withCount('questions');
 
-        // Role-based course filter
+        // Cek role untuk courses
         if ($user->hasRole('lecturer')) {
-            $query->whereHas('course.lecturers', fn($q) => $q->where('users.id', $user->id));
+            $courses = Course::whereHas('lecturers', fn($q) => $q->where('users.id', $user->id))->get();
         } elseif ($user->hasRole('student')) {
-            $query->whereHas('course.students', fn($q) => $q->where('users.id', $user->id));
+            $courses = Course::whereHas('students', fn($q) => $q->where('users.id', $user->id))->get();
         }
 
-        // Status filter
+        // Status filter dari request/URL
         $this->applyStatusFilter($query, $user, $status);
 
         // Additional filters
         $query->when($request->filled('title'), fn($q) => $q->where('title', 'like', "%{$request->title}%"))
-            ->when($request->filled('course_id'), fn($q) => $q->where('course_id', $request->course_id))
-            ->when(
-                $request->filled('date_from') && $request->filled('date_to'),
-                fn($q) =>
-                $q->whereBetween('exam_date', [
-                    $request->date_from . " 00:00:00",
-                    $request->date_to . " 23:59:59"
-                ])
-            );
+            ->when($request->filled('course_id'), fn($q) => $q->where('course_id', $request->course_id));
 
-        // Sorting
+        // Sorting + pagination
         $exams = $query->orderBy(
             $request->get('sort', 'exam_date'),
             $request->get('dir', 'desc')
         )->paginate(10);
 
-        // Transform each exam
-        $exams->getCollection()->transform(fn($exam) => $this->mapExamAttributes($exam));
+        // Mapping status ended → previous di tiap exam
+        $exams->getCollection()->transform(function ($exam) {
+            if ($exam->status === 'ended') {
+                $exam->status = 'previous';
+            }
+            return $this->mapExamAttributes($exam);
+        });
 
-        // View
+        // Pilih view
         $view = $user->hasRole('student') ? 'students.exams.index' : 'exams.index';
+
         return view($view, compact('exams', 'courses', 'status'))
             ->with(['sort' => $request->get('sort', 'exam_date'), 'dir' => $request->get('dir', 'desc')]);
     }
@@ -124,6 +122,7 @@ class ExamController extends Controller
                         )
                 );
             } else {
+                // fallback: upcoming + ongoing
                 $query->whereIn('status', ['upcoming', 'ongoing'])
                     ->whereDoesntHave(
                         'attempts',
@@ -131,7 +130,6 @@ class ExamController extends Controller
                             ->where('user_id', $user->id)
                             ->where('status', 'completed')
                     );
-                $status = 'active';
             }
         }
     }
@@ -226,7 +224,11 @@ class ExamController extends Controller
 
         // ambil query soal + opsi
         $query = $exam->questions()->with('options');
-
+        if ($exam->status === 'ended') {
+            $status = 'previous';
+        } else {
+            $status = $exam->status; // upcoming / ongoing
+        }
         // 🔍 Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -238,20 +240,19 @@ class ExamController extends Controller
 
         // ambil data hasil query
         $questions = $query->paginate(10)->withQueryString();
-
-        return view('exams.show', compact('exam', 'questions'));
+        return view('exams.show', compact('exam', 'questions', 'status'));
     }
 
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $exam_code)
+    public function edit($status, string $exam_code)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
         $courses = Course::all();
         $exam_type = ExamType::all();
-        return view('exams.edit', compact('exam', 'courses', 'exam_type'));
+        return view('exams.edit', compact('status', 'exam', 'courses', 'exam_type'));
     }
 
     /**

@@ -50,7 +50,7 @@
   </div>
 
   <div class="collapse" id="filterCollapse">
-    <form method="GET" action="{{ route('exams.questions', $exam->exam_code) }}">
+    <form method="GET" action="{{ route('exams.questions.' . $status, $exam->exam_code) }}">
       <div class="mx-3 my-2 py-2">
         <div class="row g-2">
           <div class="col-md-8">
@@ -70,7 +70,7 @@
             </select>
           </div>
           <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-            <a href="{{ route('exams.questions', $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
+            <a href="{{ route('exams.questions.' . $status, $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
           </div>
         </div>

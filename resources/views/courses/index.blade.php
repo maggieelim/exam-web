@@ -114,7 +114,6 @@
                       </li>
                     </ul>
                   </div>
-
                   <a href="{{ route('courses.show', $course->slug) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                     <i class="fas fa-info-circle"></i>

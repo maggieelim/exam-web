@@ -20,13 +20,12 @@
       <form method="GET" action="">
         <div class="mx-3 my-2 py-2">
           <div class="row g-2">
-
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label for="title" class="form-label mb-1">Title</label>
               <input type="text" name="title" class="form-control" placeholder="Cari Judul Ujian"
                 value="{{ request('title') }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label for="blok" class="form-label mb-1">Blok</label>
               <select name="course_id" class="form-control">
                 <option value="">-- Pilih Course --</option>
@@ -37,16 +36,8 @@
                 @endforeach
               </select>
             </div>
-            <div class="col-md-2">
-              <label for="start_date" class="form-label mb-1">Start Date</label>
-              <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
-            </div>
-            <div class="col-md-2">
-              <label for="end_date" class="form-label mb-1">End Date</label>
-              <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
-            </div>
             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-              <a href="{{ route('exams.index') }}" class="btn btn-light btn-sm">Reset</a>
+              <a href="{{ route('student.results.index') }}" class="btn btn-light btn-sm">Reset</a>
               <button type="submit" class="btn btn-primary btn-sm">Apply</button>
             </div>
           </div>
@@ -83,7 +74,7 @@
                   {{ $exam->course->name }} <br>
                 </span>
                 <span class="text-sm">
-                  Exam Date: {{ \Carbon\Carbon::parse($exam->exam_date)->format('j/n/y H.i') }}
+                  Exam Date: {{ \Carbon\Carbon::parse($exam->exam_date)->format('j/n/y') }}
                 </span>
               </td>
               <td class="align-middle ">
@@ -114,7 +105,7 @@
                 @endforeach
               </td>
               <td class="align-middle text-center">
-                <a href="{{ route('exams.show', [$exam->exam_code]) }}"
+                <a href=""
                   class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                   <i class="fas fa-info-circle"></i>
                 </a>

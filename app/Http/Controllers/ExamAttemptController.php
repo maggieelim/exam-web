@@ -18,7 +18,8 @@ class ExamAttemptController extends Controller
 
     public function start(Request $request, $exam_code)
     {
-        $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
+        $exam = Exam::with('questions')->where('exam_code', $exam_code)->firstOrFail();
+        $questionOrder = $exam->questions->pluck('kode_soal')->shuffle()->values();
 
         $request->validate([
             'password' => 'required|string',
@@ -40,6 +41,8 @@ class ExamAttemptController extends Controller
                 'user_id' => $user->id,
                 'exam_id' => $exam->id,
                 'status'  => 'in_progress',
+                'question_order' => $questionOrder->toJson(),
+                'started_at' => now(),
                 'created_at' => now()
             ]);
         }
@@ -60,7 +63,7 @@ class ExamAttemptController extends Controller
             ->firstOrFail();
 
         // Cek jika attempt sudah completed, redirect ke index
-        if ($attempt->status === 'completed') {
+        if ($attempt->status === 'completed||timeout') {
             return redirect()->route('student.studentExams.index')
                 ->with('info', 'Ujian sudah diselesaikan.');
         }
@@ -71,13 +74,16 @@ class ExamAttemptController extends Controller
             \Log::warning('Time already expired for attempt: ' . $attempt->id);
             $attempt->update([
                 'finished_at' => now(),
-                'status' => 'completed'
+                'status' => 'timeout'
             ]);
             return redirect()->route('student.studentExams.index')
                 ->with('error', 'Waktu ujian telah habis.');
         }
+        $questionOrder = collect(json_decode($attempt->question_order, true));
 
-        $questions = $exam->questions->sortBy('id');
+        $questions = $exam->questions->sortBy(function ($q) use ($questionOrder) {
+            return $questionOrder->search($q->kode_soal);
+        })->values();
 
         // Pilih soal saat ini
         if ($kode_soal) {
@@ -128,7 +134,8 @@ class ExamAttemptController extends Controller
             'allAnswered',
             'userAnswers',
             'totalQuestions',
-            'answeredCount'
+            'answeredCount',
+            'questions'
         ));
     }
 
@@ -154,6 +161,14 @@ class ExamAttemptController extends Controller
                     'score' => $score
                 ]
             );
+            $attempt = ExamAttempt::where('exam_id', $exam->id)
+                ->where('user_id', auth()->id())
+                ->where('status', 'in_progress') // Pastikan hanya update jika masih in_progress
+                ->first();
+
+            if ($attempt) {
+                $attempt->touch(); // Update updated_at untuk menandakan aktivitas terakhir
+            };
 
             return response()->json([
                 'success' => true,
@@ -180,9 +195,15 @@ class ExamAttemptController extends Controller
             ->first();
 
         if ($attempt) {
+            $totalQuestions = $exam->questions()->count();
+            $answeredCount = ExamAnswer::where('exam_id', $exam->id)
+                ->where('user_id', Auth::id())
+                ->count();
+
+            $iscomplete = ($totalQuestions >= $answeredCount);
             $attempt->update([
                 'finished_at' => now(),
-                'status' => 'completed'
+                'status' => $iscomplete ? 'completed' : 'time_out'
             ]);
         }
 

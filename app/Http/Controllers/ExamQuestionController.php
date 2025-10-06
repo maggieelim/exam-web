@@ -24,6 +24,11 @@ class ExamQuestionController extends Controller
         $categories = ExamQuestionCategory::where('exam_id', $exam->id)->get();
         $query = $exam->questions()->with('options');
 
+        if ($exam->status === 'ended') {
+            $status = 'previous';
+        } else {
+            $status = $exam->status; // upcoming / ongoing
+        }
         // 🔍 Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -42,7 +47,7 @@ class ExamQuestionController extends Controller
         // default urut berdasarkan id ASC
         $questions = $query->orderBy('id', 'asc')->paginate(10);
 
-        return view('exams.questions', compact('exam', 'questions', 'categories'));
+        return view('exams.questions', compact('exam', 'questions', 'categories', 'status'));
     }
 
     /**

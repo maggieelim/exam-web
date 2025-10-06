@@ -4,7 +4,7 @@
 <div class="row">
   <div class="col-12">
     <div class="card mb-4">
-      <div class="card-header d-flex flex-row justify-content-between">
+      <div class="card-header d-flex flex-row justify-content-between mb-0 pb-0">
         <div>
           <h5 class="mb-0">Exams List</h5>
         </div>
@@ -23,15 +23,15 @@
       <!-- Collapse Form -->
       <div class="collapse" id="filterCollapse">
         <form method="GET" action="{{ route('exams.index', $status) }}">
-          <div class="mx-3 my-2 py-2">
+          <div class="mx-3 mb-2 pb-2">
             <div class="row g-2">
               <input type="hidden" name="status" value="{{ $status }}">
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label for="title" class="form-label mb-1">Title</label>
                 <input type="text" name="title" class="form-control" placeholder="Cari Judul Ujian"
                   value="{{ request('title') }}">
               </div>
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label for="blok" class="form-label mb-1">Blok</label>
                 <select name="course_id" class="form-control">
                   <option value="">-- Pilih Course --</option>
@@ -41,14 +41,6 @@
                   </option>
                   @endforeach
                 </select>
-              </div>
-              <div class="col-md-2">
-                <label for="start_date" class="form-label mb-1">Start Date</label>
-                <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
-              </div>
-              <div class="col-md-2">
-                <label for="end_date" class="form-label mb-1">End Date</label>
-                <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
               </div>
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
                 <a href="{{ route('exams.index') }}" class="btn btn-light btn-sm">Reset</a>
@@ -66,7 +58,7 @@
             <thead>
               <tr>
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  <a href="{{ route('exams.index') }}?{{ http_build_query(array_merge(request()->except('page'), [
+                  <a href="{{ route('exams.index', $status) }}?{{ http_build_query(array_merge(request()->except('page'), [
             'sort' => 'title',
             'dir'  => ($sort === 'title' && $dir === 'asc') ? 'desc' : 'asc'
         ])) }}"
@@ -84,12 +76,6 @@
                   Duration
                 </th>
                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  Created By
-                </th>
-                <!-- <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                  Updated By
-                </th> -->
-                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                   Action
                 </th>
               </tr>
@@ -104,7 +90,7 @@
                     {{ $exam->course->name }} <br>
                   </span>
                   <span class="text-sm">
-                    Date Modified: {{ \Carbon\Carbon::parse($exam->updated_at)->format('j/n/y H.i') }}
+                    Modified at: {{ \Carbon\Carbon::parse($exam->updated_at)->format('j/n/y H.i') }} by {{ $exam->updater->name }}
                   </span>
                 </td>
                 <td class="align-middle text-center">
@@ -118,11 +104,6 @@
                   </span>
                 </td>
                 <td class="align-middle text-center">
-                  <span class="text-sm font-weight-bold">
-                    {{ $exam->creator?->name ?? '-' }}
-                  </span>
-                </td>
-                <td class="align-middle text-center">
                   @if($exam->status === 'upcoming')
                   <button type="button"
                     class="btn bg-gradient-success m-1 p-2 px-3 start-exam-btn"
@@ -131,6 +112,13 @@
                     data-action-url="{{ route('exams.start', $exam->id) }}">
                     Start
                   </button>
+                  <a href="{{ route('exams.edit', [$status, $exam->exam_code]) }}"
+                    class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
+                    <i class="fas fa-edit "></i> </a>
+                  <a href="{{ route('exams.show.upcoming', [$exam->exam_code]) }}"
+                    class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
+                    <i class="fas fa-info-circle"></i>
+                  </a>
                   @elseif($exam->status === 'ongoing')
                   <button type="button"
                     class="btn bg-gradient-danger m-1 p-2 px-3 end-exam-btn"
@@ -139,31 +127,20 @@
                     data-action-url="{{ route('exams.end', $exam->id) }}">
                     End
                   </button>
-                  @else
-                  <span class="badge bg-secondary">Ended</span>
-                  @endif
-                  <div class="btn-group">
-                    <button type="button" class="btn bg-gradient-primary m-1 p-2 px-3 dropdown-toggle"
-                      data-bs-toggle="dropdown" aria-expanded="false" title="Kelola">
-                      <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a class="dropdown-item" href="{{ route('exams.edit', [$exam->exam_code]) }}">
-                          Manage Exam
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="{{ route('exams.questions', $exam->exam_code) }}">
-                          Manage Exam Questions
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <a href="{{ route('exams.show', [$exam->exam_code]) }}"
+                  <a href="{{ route('exams.ongoing', [$exam->exam_code]) }}"
+                    class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
+                    <i class="fas fa-users me-1"></i> </a>
+                  <a href="{{ route('exams.show.ongoing', [$exam->exam_code]) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                     <i class="fas fa-info-circle"></i>
                   </a>
+                  @else
+                  <span class="badge bg-secondary">Ended</span>
+                  <a href="{{ route('exams.show.previous', [$exam->exam_code]) }}"
+                    class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
+                    <i class="fas fa-info-circle"></i>
+                  </a>
+                  @endif
                 </td>
               </tr>
               @endforeach

@@ -7,13 +7,17 @@
       <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-3">{{ $exam->title }}</h5>
         <div>
+          @if($exam->is_published)
+          <button type="button" class="btn btn-sm btn-success" disabled>Published</button>
+          @else
           <form action="{{ route('lecturer.results.publish', $exam->exam_code) }}" method="POST" class="d-inline">
             @csrf
             @method('PUT')
-            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Yakin ingin publish exam ini?')">
+            <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Yakin ingin publish exam ini?')">
               Publish Exam
             </button>
           </form>
+          @endif
           <form action="" method="POST" onsubmit="return confirm('Yakin ingin menghapus course ini?')" class="d-inline">
             <button type="submit" class="btn btn-sm btn-warning">Print/Download</button>
           </form>
@@ -43,7 +47,7 @@
 
     <!-- Card Daftar Mahasiswa -->
     <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between">
+      <div class="card-header d-flex justify-content-between mb-0 pb-0">
         <h5>List Students</h5>
         <button class="btn btn-sm btn-outline-secondary" type="button"
           data-bs-toggle="collapse" data-bs-target="#filterCollapse"
@@ -53,24 +57,21 @@
       </div>
 
       <div class="collapse" id="filterCollapse">
-        <form method="GET" action="{{ route('lecturer.results.grade', $exam->exam_code) }}">
-          <div class="mx-3 my-2 py-2">
+        <form method="GET"
+          action="{{ route('lecturer.grade.' . $status, $exam->exam_code) }}">
+          <input type="hidden" name="status" value="{{ $status }}">
+          <div class="mx-3">
             <div class="row g-2">
               <!-- Input Blok -->
-              <div class="col-md-6">
-                <label for="blok" class="form-label mb-1">NIM</label>
-                <input type="text" name="nim" class="form-control form-control-sm me-2" placeholder="Filter NIM" value="{{ request('nim') }}">
+              <div class="col-md-12">
+                <label for="blok" class="form-label mb-1">NIM/Name</label>
+                <input type="text" name="search" class="form-control"
+                  placeholder="Search Name or NIM"
+                  value="{{ request('search') }}">
               </div>
-
-              <!-- Input Dosen -->
-              <div class="col-md-6">
-                <label for="dosen" class="form-label mb-1">Nama</label>
-                <input type="text" name="name" class="form-control form-control-sm me-2" placeholder="Filter Nama" value="{{ request('name') }}">
-              </div>
-
               <!-- Buttons -->
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                <a href="{{ route('lecturer.results.grade', $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
+                <a href="{{ route('lecturer.grade.' . $status, $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
               </div>
             </div>
@@ -128,7 +129,7 @@
                   </div>
                 </td>
                 <td class="align-middle text-center">
-                  <a href="{{ route('lecturer.feedback', ['exam_code' => $exam->exam_code, 'nim' => $result->student->student->nim]) }}"
+                  <a href="{{ route('lecturer.feedback.'.$status, ['exam_code' => $exam->exam_code, 'nim' => $result->student->student->nim]) }}"
                     class="btn bg-gradient-secondary m-1 p-2 px-3" title="Feedback">
                     <i class="fas fa-info-circle"></i>
                   </a>

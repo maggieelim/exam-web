@@ -10,6 +10,7 @@ use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\ExamResultsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
+use App\Http\Controllers\OngoingExamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
@@ -29,87 +30,76 @@ use App\Http\Controllers\SoalController;
 */
 
 
-Route::group(['middleware' => 'auth'], function () {
-
+// ==================== AUTH & DASHBOARD ====================
+Route::middleware('auth')->group(function () {
 	Route::get('/', [HomeController::class, 'home']);
-	Route::get('dashboard', function () {
-		return view('dashboard');
-	})->name('dashboard');
+	Route::view('dashboard', 'dashboard')->name('dashboard');
 
-	Route::get('billing', function () {
-		return view('billing');
-	})->name('billing');
+	Route::view('billing', 'billing')->name('billing');
+	Route::view('rtl', 'rtl')->name('rtl');
+	Route::view('tables', 'tables')->name('tables');
+	Route::view('virtual-reality', 'virtual-reality')->name('virtual-reality');
+	Route::view('user-management', 'laravel-examples/user-management')->name('user-management');
 
+	Route::get('static-sign-in', fn() => view('static-sign-in'))->name('sign-in');
+	Route::get('static-sign-up', fn() => view('static-sign-up'))->name('sign-up');
 
-	Route::get('rtl', function () {
-		return view('rtl');
-	})->name('rtl');
-
-	Route::get('user-management', function () {
-		return view('laravel-examples/user-management');
-	})->name('user-management');
-
-	Route::get('tables', function () {
-		return view('tables');
-	})->name('tables');
-
-	Route::get('virtual-reality', function () {
-		return view('virtual-reality');
-	})->name('virtual-reality');
-
-	Route::get('static-sign-in', function () {
-		return view('static-sign-in');
-	})->name('sign-in');
-
-	Route::get('static-sign-up', function () {
-		return view('static-sign-up');
-	})->name('sign-up');
-
-	Route::get('/logout', [SessionsController::class, 'destroy']);
-	Route::get('/user-profile', [InfoUserController::class, 'create']);
-	Route::post('/user-profile', [InfoUserController::class, 'store']);
-	Route::get('/login', function () {
-		return view('dashboard');
-	})->name('sign-up');
+	Route::get('logout', [SessionsController::class, 'destroy']);
+	Route::get('user-profile', [InfoUserController::class, 'create']);
+	Route::post('user-profile', [InfoUserController::class, 'store']);
 });
 
 
 Route::get('profile', [ProfileController::class, 'index'])->name('profile');
 
-Route::group(['middleware' => 'guest'], function () {
-	Route::get('/register', [RegisterController::class, 'create']);
-	Route::post('/register', [RegisterController::class, 'store']);
-	Route::get('/login', [SessionsController::class, 'create']);
-	Route::post('/session', [SessionsController::class, 'store']);
-	Route::get('/login/forgot-password', [ResetController::class, 'create']);
-	Route::post('/forgot-password', [ResetController::class, 'sendEmail']);
-	Route::get('/reset-password/{token}', [ResetController::class, 'resetPass'])->name('password.reset');
-	Route::post('/reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
+Route::middleware('guest')->group(function () {
+	Route::controller(RegisterController::class)->group(function () {
+		Route::get('register', 'create');
+		Route::post('register', 'store');
+	});
+
+	Route::controller(SessionsController::class)->group(function () {
+		Route::get('login', 'create');
+		Route::post('session', 'store');
+	});
+
+	Route::controller(ResetController::class)->group(function () {
+		Route::get('login/forgot-password', 'create');
+		Route::post('forgot-password', 'sendEmail');
+		Route::get('reset-password/{token}', 'resetPass')->name('password.reset');
+	});
+
+	Route::post('reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
 });
 
 // ================= ADMIN ONLY =================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-	// users khusus admin
-	Route::get('/users/{type?}', [UserController::class, 'indexAdmin'])->name('users.index');
-	Route::get('/users/{type}/create', [UserController::class, 'create'])->name('users.create');
-	Route::post('/users/{type}/store', [UserController::class, 'store'])->name('users.store');
-	Route::post('/users/{type}/import', [UserController::class, 'import'])->name('users.import');
-	Route::get('/users/{type}/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
-	Route::post('/users/{type}/update/{id}', [UserController::class, 'update'])->name('users.update');
-	Route::get('/users/{type}/{id}', [UserController::class, 'show'])->name('users.show');
-	Route::delete('/users/{type}/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+	Route::prefix('users/{type}')->name('users.')->group(function () {
+		Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
+		Route::get('create', [UserController::class, 'create'])->name('create');
+		Route::post('store', [UserController::class, 'store'])->name('store');
+		Route::post('import', [UserController::class, 'import'])->name('import');
+		Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
+		Route::post('update/{id}', [UserController::class, 'update'])->name('update');
+		Route::get('{id}', [UserController::class, 'show'])->name('show');
+		Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
+	});
 
-	Route::view('/reports', 'admin.reports.index')->name('reports');
+	Route::view('reports', 'admin.reports.index')->name('reports');
 });
 
 Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
-	Route::get('/results/{status?}', [ExamResultsController::class, 'indexLecturer'])->where('status', '(ungraded|graded|published)')->name('results.index');
-	Route::get('/results/{exam_code}', [ExamResultsController::class, 'grade'])->name('results.grade');
-	Route::get('/results/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show');
-	Route::put('/results/{exam_code}/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
-	Route::get('/results/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback');
-	Route::put('/results/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
+	Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])->where('status', '(ungraded|graded|published)')->name('results.index');
+	Route::get('/published/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.published');
+	Route::get('/ungraded/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.ungraded');
+	Route::get('/published/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.published');
+	Route::get('/ungraded/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.ungraded');
+	Route::put('/{exam_code}/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
+	Route::get('/publishded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
+	Route::get('/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
+	Route::put('/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
 });
+
 // ================= SHARED ADMIN & LECTURER =================
 Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	// courses
@@ -122,28 +112,37 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 	Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
-	Route::get('/course/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
-	Route::get('/course/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
-	Route::post('/course/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
-	Route::delete('/course/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])
+	Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
+	Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
+	Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
+	Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])
 		->name('courses.student.destroy');
 
 
 	// exams
 	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')
 		->name('exams.index');
-	Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
+	Route::get('/exams/upcoming/create', [ExamController::class, 'create'])->name('exams.create');
 	Route::post('/exams/store', [ExamController::class, 'import'])->name('exams.import');
-	Route::get('/exams/edit/{exam_code}', [ExamController::class, 'edit'])->name('exams.edit');
-	Route::get('/exams/{exam_code}', [ExamController::class, 'show'])->name('exams.show');
+	Route::get('/exams/{exam_code}', [ExamController::class, 'show'])->name('exams.details');
+	Route::get('/exams/upcoming/{exam_code}', [ExamController::class, 'show'])->name('exams.show.upcoming');
+	Route::get('/exams/ongoing/{exam_code}', [ExamController::class, 'show'])->name('exams.show.ongoing');
+	Route::get('/exams/previous/{exam_code}', [ExamController::class, 'show'])->name('exams.show.previous');
+	Route::get('/exams/{status}/edit/{exam_code}', [ExamController::class, 'edit'])->name('exams.edit');
 	Route::put('/exams/update/{exam_code}', [ExamController::class, 'update'])->name('exams.update');
 	Route::delete('/exams/{exam_code}', [ExamController::class, 'destroy'])->name('exams.destroy');
 
 	Route::put('/exams/{exam}/start', [ExamController::class, 'start'])->name('exams.start');
 	Route::put('/exams/{exam}/end', [ExamController::class, 'end'])->name('exams.end');
 
+	Route::get('/exams/ongoing/participants/{exam_code}', [OngoingExamController::class, 'ongoing'])->name('exams.ongoing');
+	Route::get('/exams/ongoing/{exam_code}/retake/{user_id}', [OngoingExamController::class, 'resetAttempt'])->name('exams.retake');
+
+
 	// exam questions
-	Route::get('exams/{exam_code}/questions', [ExamQuestionController::class, 'index'])->name('exams.questions');
+	Route::get('exams/upcoming/questions/{exam_code}', [ExamQuestionController::class, 'index'])->name('exams.questions.upcoming');
+	Route::get('exams/ongoing/questions/{exam_code}', [ExamQuestionController::class, 'index'])->name('exams.questions.ongoing');
+	Route::get('exams/previous/questions/{exam_code}', [ExamQuestionController::class, 'index'])->name('exams.questions.previous');
 	Route::put('exams/{exam_code}/questions/{question}', [ExamQuestionController::class, 'update'])->name('exams.questions.update');
 	Route::post('exams/{exam_code}/questions/update-excel', [ExamQuestionController::class, 'updateByExcel'])->name('exams.questions.updateByExcel');
 	Route::delete('/exams/{examCode}/questions/{question}', [ExamQuestionController::class, 'destroy'])
@@ -164,6 +163,4 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
 	Route::view('/history', 'student.history.index')->name('history');
 });
 
-Route::get('/login', function () {
-	return view('session/login-session');
-})->name('login');
+Route::view('login', 'session/login-session')->name('login');

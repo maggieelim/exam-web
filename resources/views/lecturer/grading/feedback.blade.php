@@ -7,7 +7,7 @@
   </div>
   <div class="row">
     <div class="col-md-4">
-      <p><strong>Name:</strong> {{ $student->name }}</p>
+      <p><strong>Name:</strong> {{ $student->user->name }}</p>
     </div>
     <div class="col-md-4">
       <p><strong>NIM:</strong> {{ $student->nim }}</p>

@@ -37,8 +37,11 @@ class CourseStudentController extends Controller
         $now = Carbon::now();
 
         // --- Case 1: Input manual banyak NIM (copy dari Excel)
+        // --- Case 1: Input manual banyak NIM (copy dari Excel)
         if ($request->filled('nim')) {
             $nims = preg_split('/\r\n|\r|\n/', trim($request->nim));
+
+            $notFound = []; // simpan NIM yang tidak ada
 
             foreach ($nims as $nim) {
                 $nim = trim($nim);
@@ -53,11 +56,22 @@ class CourseStudentController extends Controller
                             'updated_at' => $now,
                         ]);
                     }
+                } else {
+                    $notFound[] = $nim;
                 }
             }
 
-            return back()->with('success', 'Mahasiswa berhasil ditambahkan.');
+            $messages = [];
+            if (!empty($added)) {
+                $messages['success'] = 'Mahasiswa berhasil ditambahkan: ' . implode(', ', $added);
+            }
+            if (!empty($notFound)) {
+                $messages['error'] = 'Mahasiswa tidak ada: ' . implode(', ', $notFound);
+            }
+
+            return back()->with($messages);
         }
+
 
         // --- Case 2: Import Excel (NIM saja)
         if ($request->hasFile('excel')) {

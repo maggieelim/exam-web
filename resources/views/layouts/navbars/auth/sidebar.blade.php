@@ -67,25 +67,25 @@
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exams</h6>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('exams/upcoming') ? 'active' : '' }}" href="{{ url('exams/upcoming') }}">
+        <a class="nav-link {{ request()->is('exams/upcoming*') ? 'active' : '' }}" href="{{ url('exams/upcoming') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-calendar-alt {{ request()->is('exams/upcoming') ? 'text-white' : 'text-dark' }}"></i>
+            <i class="fas fa-calendar-alt {{ request()->is('exams/upcoming*') ? 'text-white' : 'text-dark' }}"></i>
           </div>
           <span class="nav-link-text ms-1">Upcoming Exam</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('exams/ongoing') ? 'active' : '' }}" href="{{ url('exams/ongoing') }}">
+        <a class="nav-link {{ request()->is('exams/ongoing*') ? 'active' : '' }}" href="{{ url('exams/ongoing') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-clipboard-list {{ request()->is('exams') ? 'text-white' : 'text-dark' }}"></i>
+            <i class="fas fa-clipboard-list {{ request()->is('exams/ongoing*') ? 'text-white' : 'text-dark' }}"></i>
           </div>
           <span class="nav-link-text ms-1">Ongoing Exams</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('exams/previous') ? 'active' : '' }}" href="{{ url('exams/previous') }}">
+        <a class="nav-link {{ request()->is('exams/previous*') ? 'active' : '' }}" href="{{ url('exams/previous') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-history {{ request()->is('exams/previous') ? 'text-white' : 'text-dark' }}"></i>
+            <i class="fas fa-history {{ request()->is('exams/previous*') ? 'text-white' : 'text-dark' }}"></i>
           </div>
           <span class="nav-link-text ms-1">Previous Exam</span>
         </a>
@@ -97,29 +97,29 @@
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Report</h6>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('lecturer/results/ungraded') ? 'active' : '' }}" href="{{ url('lecturer/results/ungraded') }}">
+        <a class="nav-link {{ request()->is('lecturer/ungraded*') ? 'active' : '' }}" href="{{ url('lecturer/ungraded') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-clipboard-list {{ request()->is('lecturer/results/ungraded') ? 'text-white' : 'text-dark' }}"></i>
+            <i class="fas fa-clipboard-list {{ request()->is('lecturer/ungraded*') ? 'text-white' : 'text-dark' }}"></i>
           </div>
           <span class="nav-link-text ms-1">Ungraded</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('lecturer/results/published') ? 'active' : '' }}" href="{{ url('lecturer/results/published') }}">
+        <a class="nav-link {{ request()->is('lecturer/published*') ? 'active' : '' }}" href="{{ url('lecturer/published') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-clipboard-list {{ request()->is('lecturer/results/published') ? 'text-white' : 'text-dark' }}"></i>
+            <i class="fas fa-clipboard-list {{ request()->is('lecturer/published*') ? 'text-white' : 'text-dark' }}"></i>
           </div>
           <span class="nav-link-text ms-1">Published</span>
         </a>
       </li>
-      <li class="nav-item">
+      <!-- <li class="nav-item">
         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }}" href="{{ url('user-profile') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fas fa-chart-bar {{ (Request::is('user-profile') ? 'text-white' : 'text-dark') }}"></i>
           </div>
           <span class="nav-link-text ms-1">Graded</span>
         </a>
-      </li>
+      </li> -->
       @endrole
 
       @role('student')
@@ -135,9 +135,9 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ request()->is('student/exams/previous') ? 'active' : '' }}" href="{{ url('student/exams/previous') }}">
+        <a class="nav-link {{ request()->is('student/exams/previous*') ? 'active' : '' }}" href="{{ url('student/exams/previous') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-history {{ request()->is('student/exams/previous') ? 'text-white' : 'text-dark' }}"></i>
+            <i class="fas fa-history {{ request()->is('student/exams/previous*') ? 'text-white' : 'text-dark' }}"></i>
           </div>
           <span class="nav-link-text ms-1">Previous Exam</span>
         </a>

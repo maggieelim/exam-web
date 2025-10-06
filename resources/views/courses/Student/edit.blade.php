@@ -37,7 +37,7 @@
 
               <!-- Buttons -->
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                <a href="{{ route('courses.index') }}" class="btn btn-light btn-sm">Reset</a>
+                <a href="{{ route('courses.editStudent',[$course->slug] ) }}" class="btn btn-light btn-sm">Reset</a>
                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
               </div>
             </div>

@@ -8,11 +8,13 @@
       <div class="d-flex justify-content-between align-items-center">
         <h5>{{ $exam->title }}</h5>
         <!-- Form Delete Exam (terpisah) -->
+        @if($exam->status === 'upcoming')
         <form action="{{ route('exams.destroy', $exam->exam_code) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus exam ini?')" class="d-inline">
           @csrf
           @method('DELETE')
           <button type="submit" class="btn btn-sm btn-danger">Delete Exam</button>
         </form>
+        @endif
       </div>
       <div class="row">
         <div class="col-md-4">
@@ -39,7 +41,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Daftar Soal</h4>
       <div class="d-flex gap-3">
-        <a href="{{ route('exams.questions', $exam->exam_code) }}" class="btn btn-sm btn-warning">
+        <a href="{{ route('exams.questions.' . $status, $exam->exam_code) }}" class="btn btn-sm btn-warning">
           Edit Questions
         </a>
         <button class="btn btn-outline-secondary btn-sm " type="button"
@@ -51,7 +53,7 @@
     </div>
 
     <div class="collapse" id="filterCollapse">
-      <form method="GET" action="{{ route('exams.show', $exam->exam_code) }}">
+      <form method="GET" action="{{ route('exams.details', $exam->exam_code) }}">
         <div class="mx-3 my-2 py-2">
           <div class="row g-2">
             <div class="col-md-12">
@@ -61,7 +63,7 @@
             </div>
 
             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-              <a href="{{ route('exams.show', $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
+              <a href="{{ route('exams.details', $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
               <button type="submit" class="btn btn-primary btn-sm">Apply</button>
             </div>
           </div>

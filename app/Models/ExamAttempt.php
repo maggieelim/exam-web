@@ -13,6 +13,9 @@ class ExamAttempt extends Model
         'user_id',
         'exam_id',
         'status',
+        'finished_at',
+        'started_at',
+        'question_order',
     ];
     protected $casts = [
         'start_time' => 'datetime',

@@ -203,9 +203,7 @@ class CourseController extends Controller
         // Sync lecturers
         $course->lecturers()->sync($request->lecturers ?? []);
 
-        return redirect()
-            ->route('courses.edit', $course->slug)
-            ->with('success', 'Course berhasil diperbarui!');
+        return  redirect()->route('courses.index')->with('success', 'Course berhasil diperbarui!');
     }
 
 

@@ -9,7 +9,6 @@
   <div class="row">
     <div class="col-md-9">
       <div class="card p-3">
-        <h5>SOAL NO. {{ $questionNumber }}</h5>
         <div class="mt-2">
           <p><strong>{{ $currentQuestion->badan_soal }}</strong></p>
           <p>{{ $currentQuestion->kalimat_tanya }}</p>
@@ -27,7 +26,7 @@
         <form id="answerForm">
           @csrf
           <input type="hidden" name="question_id" value="{{ $currentQuestion->id }}">
-          @foreach($currentQuestion->options as $option)
+          @foreach($currentQuestion->options->shuffle() as $option)
           <div class="form-check mt-3">
             <input class="form-check-input"
               type="radio"
@@ -78,7 +77,7 @@
         </div>
         <hr>
         <div class="grid-container" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
-          @foreach($exam->questions->sortBy('id') as $index => $q)
+          @foreach($questions as $index => $q)
           <button type="button"
             class="btn btn-xs d-flex align-items-center justify-content-center question-nav
             @if($q->id == $currentQuestion->id) border border-2 border-primary
