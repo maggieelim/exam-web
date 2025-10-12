@@ -1,10 +1,10 @@
 <!-- Charts Section -->
 <div class="row mb-4">
   <!-- Distribusi Skor -->
-  <div class="col-md-4 mb-4">
+  <div class="col-md-4 mb-">
     <div class="card h-100">
       <div class="card-header">
-        <h6 class="card-title mb-0">Distribusi Skor</h6>
+        <h6 class="card-title mb-0">Score Distribution</h6>
       </div>
       <div class="card-body">
         <canvas id="scoreDistributionChart" height="250"></canvas>
@@ -13,10 +13,10 @@
   </div>
 
   <!-- Tingkat Kesulitan Soal -->
-  <div class="col-md-4 mb-4">
+  <div class="col-md-4 mb-">
     <div class="card h-100">
       <div class="card-header">
-        <h6 class="card-title mb-0">Tingkat Kesulitan Soal</h6>
+        <h6 class="card-title mb-0">Question Difficulty Level</h6>
       </div>
       <div class="card-body">
         <canvas id="difficultyChart" height="250"></canvas>
@@ -25,10 +25,10 @@
   </div>
 
   <!-- Daya Pembeda -->
-  <div class="col-md-4 mb-4">
+  <div class="col-md-4 mb-">
     <div class="card h-100">
       <div class="card-header">
-        <h6 class="card-title mb-0">Indeks Daya Pembeda</h6>
+        <h6 class="card-title mb-0">Discrimination Index</h6>
       </div>
       <div class="card-body">
         <canvas id="discriminationChart" height="250"></canvas>
@@ -38,36 +38,94 @@
 </div>
 
 <!-- Analisis Per Soal -->
-<div class="card my-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center mb-0">
     <h5 class="card-title mb-0">
-      Analisis Detail Per Soal
-    </h5>
-    <span class="badge bg-primary">{{ count($questionAnalysis) }} Soal</span>
+      Detailed Question Analysis </h5>
+    <div class="d-flex justify-content-center align-items-center gap-3 my-0">
+      <span class="badge bg-primary">{{ count($questionAnalysisPaginator) }} Questions</span>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+        <i class="fas fa-filter"></i> Filter
+      </button>
+    </div>
   </div>
+  <div class="collapse" id="filterCollapse">
+    <form method="GET" action="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}">
+      <div class="mx-3 mb-2 pb-2">
+        <div class="row g-2">
+          <input type="hidden" name="status" value="{{ $status }}">
+          <input type="hidden" name="tab" value="analytics">
+          <div class="col-md-12">
+            <label for="difficulty_level" class="form-label mb-1">Question Difficulty</label>
+            <select name="difficulty_level" id="difficulty_level" class="form-control">
+              <option value="">-- All Levels --</option>
+              @foreach($difficultyLevel as $level)
+              <option value="{{ $level }}" {{ request('difficulty_level') == $level ? 'selected' : '' }}>
+                {{ $level }}
+              </option>
+              @endforeach
+            </select>
+          </div>
+
+
+          <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+            <a href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}?tab=analytics"
+              class="btn btn-light btn-sm">
+              Reset
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm">
+              Apply
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
   <div class="card-body px-0 pt-0 pb-2">
     <div class="table-responsive p-0">
       <table class="table align-items-center mb-0">
         <thead>
           <tr>
-            <th width="5%">No</th>
-            <th width="35%">Soal</th>
-            <th width="10%" class="text-center">% Benar</th>
-            <th width="15%" class="text-center">Tingkat Kesulitan</th>
-            <th width="15%" class="text-center">Daya Pembeda</th>
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">No</th>
+            <th class="text-uppercase text-dark text-sm font-weight-bolder">Question</th>
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'correct_percentage', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
+                Correct
+                @if(request('sort') === 'correct_percentage')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'difficulty_level', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
+                Difficulty
+                @if(request('sort') === 'difficulty_level')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'discrimination_index', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
+                Discrimination Index
+                @if(request('sort') === 'discrimination_index')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
           </tr>
         </thead>
         <tbody>
-          @forelse($questionAnalysis as $index => $analysis)
+          @forelse($questionAnalysisPaginator as $index => $analysis)
           <tr>
-            <td class="text-center">{{ $index + 1 }}</td>
+            <td class=" text-center">{{ $index + 1 }}</td>
             <td>
               <div class="question-preview">
-                {!! Str::limit(strip_tags($analysis['question_text']), 100) !!}
+                {!! Str::limit(strip_tags($analysis['question_text']), 50) !!}
               </div>
             </td>
             <td class="text-center">
-              <small class="text-muted">
+              <small class="text-muted small d-block">
                 {{ $analysis['correct_count'] }}/{{ $analysis['total_students'] }}
               </small>
               <span class="badge 
@@ -79,9 +137,9 @@
             </td>
             <td class="text-center">
               <span class="badge 
-                                            {{ $analysis['difficulty_level'] == 'Mudah' ? 'bg-gradient-success' : 
-                                               ($analysis['difficulty_level'] == 'Sedang' ? 'bg-gradient-info' : 
-                                               ($analysis['difficulty_level'] == 'Cukup Sulit' ? 'bg-gradient-warning' : 'bg-gradient-danger')) }}">
+                                            {{ $analysis['difficulty_level'] == 'Easy' ? 'bg-gradient-success' : 
+                                               ($analysis['difficulty_level'] == 'Medium' ? 'bg-gradient-info' : 
+                                               ($analysis['difficulty_level'] == 'Fair' ? 'bg-gradient-warning' : 'bg-gradient-danger')) }}">
                 {{ $analysis['difficulty_level'] }}
               </span>
             </td>
@@ -94,9 +152,7 @@
                 {{ $analysis['discrimination_index'] }}
               </span>
             </td>
-
           </tr>
-
           @empty
           <tr>
             <td colspan="6" class="text-center text-muted py-4">
@@ -106,6 +162,9 @@
           @endforelse
         </tbody>
       </table>
+      <div class="d-flex justify-content-center mt-3">
+        <x-pagination :paginator="$questionAnalysisPaginator" />
+      </div>
     </div>
   </div>
 </div>
@@ -125,7 +184,7 @@
         data: {
           labels: Object.keys(chartData.scores),
           datasets: [{
-            label: 'Jumlah Siswa',
+            label: 'Number of Students',
             data: Object.values(chartData.scores),
             backgroundColor: [
               '#dc3545', '#fd7e14', '#ffc107', '#20c997', '#198754'
@@ -141,7 +200,7 @@
             },
             title: {
               display: true,
-              text: 'Distribusi Skor Siswa'
+              text: 'Score Distribution'
             }
           },
           scales: {
@@ -149,13 +208,13 @@
               beginAtZero: true,
               title: {
                 display: true,
-                text: 'Jumlah Siswa'
+                text: 'Number of Students'
               }
             },
             x: {
               title: {
                 display: true,
-                text: 'Rentang Skor (%)'
+                text: 'Score Range (%)'
               }
             }
           }
@@ -186,7 +245,7 @@
             },
             title: {
               display: true,
-              text: 'Distribusi Tingkat Kesulitan'
+              text: 'Difficulty Level Distribution'
             }
           }
         }
@@ -216,7 +275,7 @@
             },
             title: {
               display: true,
-              text: 'Kualitas Daya Pembeda'
+              text: 'Discrimination Index Quality'
             }
           }
         }

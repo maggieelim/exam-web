@@ -1,21 +1,82 @@
 <div class="card mt-4">
-  <div class="card-header mb-0 pb-0">
+  <div class="card-header d-flex flex-row justify-content-between mb-0 pb-0">
     <h5>Student Ranking & Results</h5>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+        <i class="fas fa-filter"></i> Filter
+      </button>
+    </div>
   </div>
+  <div class="collapse" id="filterCollapse">
+    <form method="GET" action="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}">
+      <div class="mx-3 mb-2 pb-2">
+        <div class="row g-2">
+          <input type="hidden" name="status" value="{{ $status }}">
+          <div class="col-md-12">
+            <label for="name" class="form-label mb-1">Name/NIM</label>
+            <input type="text" name="name" class="form-control" placeholder="Student name / NIM"
+              value="{{ request('name') }}">
+          </div>
+          <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+            <a href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
+            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+  </div>
+
   <div class="card-body px-0 pt-0 pb-2">
     <div class="table-responsive p-0">
       <table class="table align-items-center mb-0">
         <thead>
           <tr>
-            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Rank</th>
-            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">NIM</th>
-            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Nama</th>
-            <!-- <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Score</th> -->
-            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Progress</th>
-            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Status</th>
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'rank', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'results']) }}"
+                class="text-dark text-decoration-none">
+                Rank
+                @if(request('sort') === 'rank')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
+
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'nim', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'results']) }}"
+                class="text-dark text-decoration-none">
+                NIM
+                @if(request('sort') === 'nim')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
+
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'name', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'results']) }}"
+                class="text-dark text-decoration-none">
+                Nama
+                @if(request('sort') === 'name')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
+
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <a href="{{ request()->fullUrlWithQuery(['sort' => 'score', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'results']) }}"
+                class="text-dark text-decoration-none">
+                Score
+                @if(request('sort') === 'score')
+                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                @endif
+              </a>
+            </th>
+
+            <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Competency Level</th>
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Action</th>
           </tr>
         </thead>
+
         <tbody>
           @forelse($rankingPaginator as $result)
           <tr>
@@ -54,7 +115,7 @@
             </td>
 
             <!-- Score -->
-            <!-- <td class="align-middle text-center">
+            <td class="align-middle text-center">
               <div class="d-flex flex-column align-items-center">
                 <span class="text-lg font-weight-bold 
                                     @if($result['score_percentage'] >= 80) text-success
@@ -68,7 +129,7 @@
                   {{ $result['correct_answers'] }}/{{ $result['total_questions'] }}
                 </small>
               </div>
-            </td> -->
+            </td>
 
             <!-- Progress per Kategori -->
             <td class="align-middle">
@@ -99,25 +160,6 @@
                 </div>
                 @endforeach
               </div>
-            </td>
-
-            <!-- Status -->
-            <td class="align-middle text-center">
-              <span class="badge 
-                                @if($result['attempt_status'] == 'completed') bg-gradient-success
-                                @elseif($result['attempt_status'] == 'in_progress') bg-gradient-warning
-                                @elseif($result['attempt_status'] == 'idle') bg-gradient-secondary
-                                @elseif($result['attempt_status'] == 'timedout') bg-gradient-danger
-                                @else bg-info
-                                @endif">
-                {{ ucfirst($result['attempt_status']) }}
-              </span>
-              @if($result['completed_at'])
-              <br>
-              <small class="text-muted">
-                {{ $result['completed_at']->format('M j, H:i') }}
-              </small>
-              @endif
             </td>
 
             <!-- Action -->

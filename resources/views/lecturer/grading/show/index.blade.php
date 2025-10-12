@@ -9,12 +9,17 @@
         <h5 class="card-title mb-0">
           <i class="fas fa-chart-bar me-2"></i>General Exam Statistics ({{ $exam->title  }})
         </h5>
-        <div>
-          @if(!$exam->is_published)
-          <span class="badge bg-danger">Unpublished</span>
-          @else
-          <span class="badge bg-success">Published</span>
-          @endif
+        <div class="d-flex gap-3">
+          <div>
+            @if(!$exam->is_published)
+            <span class="badge bg-danger">Unpublished</span>
+            @else
+            <span class="badge bg-success">Published</span>
+            @endif
+          </div>
+          <a href="{{ route('lecturer.results.index', $status) }}" class="btn btn-sm btn-outline-secondary">
+            Back
+          </a>
         </div>
       </div>
       <div class="card-body">
@@ -22,25 +27,25 @@
           <div class="col-md-3 col-6">
             <div class="text-center">
               <h3 class="text-primary">{{ $analytics['total_students'] ?? 0 }}</h3>
-              <p class="text-muted mb-0">Total Peserta</p>
+              <p class="text-muted mb-0">Total Participant</p>
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="text-center">
               <h3 class="text-success">{{ number_format($analytics['average_score'] ?? 0, 1) }}%</h3>
-              <p class="text-muted mb-0">Rata-rata Nilai</p>
+              <p class="text-muted mb-0">Average Score</p>
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="text-center">
               <h3 class="text-info">{{ number_format($analytics['highest_score'] ?? 0, 1) }}%</h3>
-              <p class="text-muted mb-0">Nilai Tertinggi</p>
+              <p class="text-muted mb-0">Highest Score</p>
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="text-center">
-              <h3 class="text-warning">{{ number_format($analytics['completion_rate'] ?? 0, 1) }}%</h3>
-              <p class="text-muted mb-0">Tingkat Penyelesaian</p>
+              <h3 class="text-warning">{{ $analytics['total_question'] }}</h3>
+              <p class="text-muted mb-0">Total Questions</p>
             </div>
           </div>
         </div>
@@ -53,25 +58,24 @@
   <ul class="nav nav-pills nav-fill p-1" id="examTabs" role="tablist">
     <li class="nav-item" role="presentation">
       <a class="nav-link {{ $activeTab === 'results' ? 'active' : '' }}"
-        href="{{ request()->fullUrlWithQuery(['tab' => 'results']) }}">
+        href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}?tab=results">
         Exam Results
       </a>
     </li>
     <li class="nav-item" role="presentation">
       <a class="nav-link {{ $activeTab === 'analytics' ? 'active' : '' }}"
-        href="{{ request()->fullUrlWithQuery(['tab' => 'analytics']) }}">
+        href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}?tab=analytics">
         Question Analytics
       </a>
     </li>
     <li class="nav-item" role="presentation">
       <a class="nav-link {{ $activeTab === 'answers' ? 'active' : '' }}"
-        href="{{ request()->fullUrlWithQuery(['tab' => 'answers']) }}">
+        href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}?tab=answers">
         Answer Distribution
       </a>
     </li>
   </ul>
 </div>
-
 <!-- Tab Content -->
 <div class="tab-content" id="examTabsContent">
   <!-- RESULTS TAB -->

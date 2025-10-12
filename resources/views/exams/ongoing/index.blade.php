@@ -7,8 +7,12 @@
     <h5 class="card-title mb-0">
       <i class="fas fa-chart-bar me-2"></i>{{ $exam['title'] ?? 'Exam Title' }} - Ongoing Participants
     </h5>
-    <a href="{{ route('exams.index', $status='ongoing') }}" class="btn btn-sm btn-secondary">Back</a>
-
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-primary" onclick="location.reload()">
+        <i class="fas fa-sync-alt me-1"></i> Refresh
+      </button>
+      <a href="{{ route('exams.index', $status='ongoing') }}" class="btn btn-sm btn-secondary">Back</a>
+    </div>
   </div>
   <div class="card-body">
     <div class="row">
@@ -62,7 +66,7 @@
           </select>
         </div>
         <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-          <a href="{{ route('exams.index') }}" class="btn btn-light btn-sm">Reset</a>
+          <a href="{{ route('exams.ongoing', $exam->exam_code)  }}" class="btn btn-light btn-sm">Reset</a>
           <button type="submit" class="btn btn-primary btn-sm">Apply</button>
         </div>
       </div>
@@ -98,7 +102,7 @@
               </a>
             </th>
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-              Answer
+              Answered
             </th>
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
               Status
@@ -124,7 +128,7 @@
             </td>
             <td class="align-middle text-center">
               <span class="text-sm font-weight-bold">
-                {{ $attempt['total_questions']}}/{{ $attempt['answered_count']}}
+                {{ $attempt['answered_count']}}/ {{ $attempt['total_questions']}}
               </span>
             </td>
 

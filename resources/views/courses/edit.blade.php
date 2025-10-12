@@ -35,17 +35,18 @@
 
           <div class="row mb-3">
             <div class="col-md-6">
-              <label>Dosen Pengajar</label>
-              <select id="lecturers" name="lecturers[]" multiple class="btn-primary">
+              <label for="lecturers" class="form-label">Dosen Pengajar</label>
+              <select id="lecturers" name="lecturers[]" multiple class="form-select">
                 @foreach($lecturers as $lecturer)
-                <option value="{{ $lecturer->id }}"
-                  @if(in_array($lecturer->id, $course->lecturers->pluck('id')->toArray())) selected @endif>
-                  {{ $lecturer->name }}
+                <option value="{{ $lecturer->lecturer->id }}"
+                  @if(isset($selectedLecturers) && in_array($lecturer->lecturer->id, $selectedLecturers->pluck('lecturer_id')->toArray())) selected @endif>
+                  {{ $lecturer->lecturer->user->name }}
                 </option>
                 @endforeach
               </select>
             </div>
           </div>
+
 
           <div class="row">
             <div class="col-md-2">

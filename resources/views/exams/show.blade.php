@@ -21,13 +21,8 @@
           <p><strong>Course:</strong> {{ $exam->course->name }}</p>
         </div>
         <div class="col-md-4">
-          <p><strong>Exam Type:</strong> {{ $exam->examType->name }}</p>
-        </div>
-        <div class="col-md-4">
           <p><strong>Password:</strong> {{ $exam->password }}</p>
         </div>
-      </div>
-      <div class="row">
         <div class="col-md-4">
           <p><strong>Date:</strong> {{ $exam->exam_date->format('d-m-Y') }}</p>
         </div>

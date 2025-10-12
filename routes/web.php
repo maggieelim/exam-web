@@ -18,6 +18,8 @@ use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SoalController;
+use App\Http\Controllers\StudentExamResultsController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -34,11 +36,6 @@ use App\Http\Controllers\SoalController;
 Route::middleware('auth')->group(function () {
 	Route::get('/', [HomeController::class, 'home']);
 	Route::view('dashboard', 'dashboard')->name('dashboard');
-
-	Route::view('billing', 'billing')->name('billing');
-	Route::view('rtl', 'rtl')->name('rtl');
-	Route::view('tables', 'tables')->name('tables');
-	Route::view('virtual-reality', 'virtual-reality')->name('virtual-reality');
 	Route::view('user-management', 'laravel-examples/user-management')->name('user-management');
 
 	Route::get('static-sign-in', fn() => view('static-sign-in'))->name('sign-in');
@@ -77,6 +74,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 	Route::prefix('users/{type}')->name('users.')->group(function () {
 		Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
 		Route::get('create', [UserController::class, 'create'])->name('create');
+		Route::get('download-template', [UserController::class, 'downloadTemplate'])->name('download-template');
+		Route::get('export', [UserController::class, 'export'])->name('export');
 		Route::post('store', [UserController::class, 'store'])->name('store');
 		Route::post('import', [UserController::class, 'import'])->name('import');
 		Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
@@ -95,7 +94,7 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
 	Route::get('/published/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.published');
 	Route::get('/ungraded/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.ungraded');
 	Route::put('/{exam_code}/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
-	Route::get('/publishded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
+	Route::get('/published/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
 	Route::get('/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
 	Route::put('/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
 });
@@ -104,6 +103,7 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
 Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	// courses
 	Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+	Route::get('/courses/{course}/download', [CourseController::class, 'download'])->name('courses.download');
 	Route::get('/courses/create', [CourseController::class, 'create'])->name('courses.create');
 	Route::post('/courses/store', [CourseController::class, 'store'])->name('courses.store');
 	Route::post('/courses/import', [CourseController::class, 'import'])->name('courses.import');
@@ -129,7 +129,7 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	Route::get('/exams/ongoing/{exam_code}', [ExamController::class, 'show'])->name('exams.show.ongoing');
 	Route::get('/exams/previous/{exam_code}', [ExamController::class, 'show'])->name('exams.show.previous');
 	Route::get('/exams/{status}/edit/{exam_code}', [ExamController::class, 'edit'])->name('exams.edit');
-	Route::put('/exams/update/{exam_code}', [ExamController::class, 'update'])->name('exams.update');
+	Route::put('/exams/{status}/update/{exam_code}', [ExamController::class, 'update'])->name('exams.update');
 	Route::delete('/exams/{exam_code}', [ExamController::class, 'destroy'])->name('exams.destroy');
 
 	Route::put('/exams/{exam}/start', [ExamController::class, 'start'])->name('exams.start');
@@ -151,15 +151,15 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 
 // ================= STUDENT =================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
-	Route::get('/courses', [CourseStudentController::class, 'index'])->name('student.courses');
 	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')
 		->name('studentExams.index');
+	Route::get('/exams/previous/results/{exam_code}', [StudentExamResultsController::class, 'show'])->name('results.show');
 	Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
 	Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');
 	Route::post('/exams/{exam_code}/{kode_soal}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
 	Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
 
-	Route::get('/results', [ExamResultsController::class, 'studentIndex'])->name('results.index');
+	Route::get('/results', [StudentExamResultsController::class, 'index'])->name('results.index');
 	Route::view('/history', 'student.history.index')->name('history');
 });
 

@@ -10,9 +10,4 @@ class ExamType extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'description'];
-
-    public function exams()
-    {
-        return $this->hasMany(Exam::class, 'exam_type_id');
-    }
 }

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\DifficultyLevel;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
 use App\Models\Student;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -17,79 +17,18 @@ class ExamResultsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function studentIndex(Request $request)
+
+    private function examQueryForLecturer($user, $status = null)
     {
-        $user = auth()->user();
-        $courses = Course::whereHas('students', function ($q) use ($user) {
-            $q->where('users.id', $user->id);
-        })->get();
-        $exams = Exam::with([
-            'course',
-            'creator',
-            'updater',
-            'answers' => fn($q) => $q->where('user_id', $user->id),
-        ])
+        $query = Exam::with(['course', 'attempts'])
             ->withCount('questions')
-            ->whereHas(
-                'attempts',
-                fn($q) =>
-                $q->where('user_id', $user->id)
-                    ->where('status', 'completed')
-            )
-            ->when(
-                $request->title,
-                fn($q) =>
-                $q->where('title', 'like', "%{$request->title}%")
-            )
-            ->when(
-                $request->course_id,
-                fn($q) =>
-                $q->where('course_id', $request->course_id)
-            )
-            ->when(
-                $request->date_from && $request->date_to,
-                fn($q) =>
-                $q->whereBetween('exam_date', [
-                    "{$request->date_from} 00:00:00",
-                    "{$request->date_to} 23:59:59"
-                ])
-            )->where('is_published', true)
-            ->orderBy($request->get('sort', 'id'), $request->get('dir', 'desc'))
-            ->paginate(10);
+            ->whereHas('course.lecturers', fn($q) => $q->where('users.id', $user->id))
+            ->where('status', 'ended');
 
-        // mapping hasil skor dari relasi
-        $exams->getCollection()->each(function ($exam) {
-            // Kelompokkan jawaban berdasarkan category_id
-            $groupedAnswers = $exam->answers->groupBy(function ($ans) {
-                return $ans->question->category_id ?? 'all'; // kalau null jadi 'all'
-            });
+        if ($status === 'published') $query->where('is_published', true);
+        if ($status === 'ungraded') $query->where('is_published', false);
 
-            $exam->categories_result = $groupedAnswers->map(function ($answers, $categoryId) use ($exam) {
-                $totalCorrect  = $answers->where('is_correct', 1)->count();
-                $totalWrong    = $answers->where('is_correct', 0)->count();
-                $totalScore    = $answers->sum('score');
-                $totalQuestion = $answers->count();
-
-                return [
-                    'category_id'    => $categoryId === 'all' ? null : $categoryId,
-                    'category_name'  => $categoryId === 'all'
-                        ? 'Keseluruhan'
-                        : optional($answers->first()->question->category)->name,
-                    'total_correct'  => $totalCorrect,
-                    'total_wrong'    => $totalWrong,
-                    'total_score'    => $totalScore,
-                    'total_question' => $totalQuestion,
-                    'percentage'     => $totalQuestion > 0
-                        ? round(($totalCorrect / $totalQuestion) * 100, 2)
-                        : 0,
-                ];
-            })->values();
-        });
-
-        $sort = $request->get('sort', 'exam_date');
-        $dir  = $request->get('dir', 'desc');
-
-        return view('students.results.index', compact('exams', 'courses', 'sort', 'dir'));
+        return $query;
     }
 
     public function indexLecturer(Request $request, $status = 'ungraded')
@@ -99,12 +38,7 @@ class ExamResultsController extends Controller
             $q->where('users.id', $user->id);
         })->get();
 
-        $query = Exam::with(['course', 'attempts'])
-            ->withCount('questions')
-            ->whereHas('course.lecturers', function ($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })
-            ->where('status', 'ended');
+        $query = $this->examQueryForLecturer($user, $status);
 
         if ($status === 'published') {
             $query->where('is_published', true);
@@ -121,6 +55,7 @@ class ExamResultsController extends Controller
             fn($q) =>
             $q->where('course_id', $request->course_id)
         );
+
         $sort = $request->get('sort', 'exam_date');
         $dir  = $request->get('dir', 'desc');
 
@@ -144,63 +79,49 @@ class ExamResultsController extends Controller
         $attemptsQuery = ExamAttempt::with(['user.student', 'answers.question.category'])
             ->where('exam_id', $exam->id);
 
-        // 🔎 Filter by name or nim
         if ($request->filled('search')) {
             $search = $request->search;
-            $attemptsQuery->whereHas('user.student', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('nim', 'like', "%{$search}%");
+
+            $attemptsQuery->where(function ($query) use ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('user.student', function ($q) use ($search) {
+                        $q->where('nim', 'like', "%{$search}%");
+                    });
             });
         }
-
         /** @var \Illuminate\Pagination\LengthAwarePaginator $attempts */
+        // 🔄 Sorting untuk attempts
+        $sort = $request->get('sort', 'finished_at');
+        $dir = $request->get('dir', 'desc');
+
+        $allowedSorts = ['finished_at', 'grading_status'];
+        $sort = in_array($sort, $allowedSorts) ? $sort : 'finished_at';
+        $dir = in_array(strtolower($dir), ['asc', 'desc']) ? $dir : 'desc';
+
+        $attemptsQuery->orderBy($sort, $dir);
         $attempts = $attemptsQuery->paginate(10);
 
-        $results = $attempts->map(function ($attempt) use ($exam) {
-            $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
+        $results = $this->buildRankingResults($exam, $request);
+        $sort = $request->get('sort', 'rank');
+        $dir  = $request->get('dir', 'asc');
 
-            $groupedAnswers = $userAnswers->groupBy(function ($ans) {
-                return $ans->question->category_id ?? 'all';
-            });
+        // Lakukan sorting berdasarkan pilihan user
+        if ($results->isNotEmpty()) {
+            $results = match ($sort) {
+                'nim' => $results->sortBy(fn($q) => $q['student_data']->nim ?? '', SORT_NATURAL, $dir === 'desc'),
+                'name' => $results->sortBy(fn($q) => $q['student']->name ?? '', SORT_NATURAL, $dir === 'desc'),
+                'feedback' => $results->sortBy(fn($q) => $q['feedback'] ?? 0, SORT_NUMERIC, $dir === 'desc'),
+                default => $results->sortBy(fn($q) => $q['rank'] ?? 0, SORT_NUMERIC, $dir === 'desc'),
+            };
+        };
 
-            $categoriesResult = $groupedAnswers->map(function ($answers, $categoryId) {
-                $totalCorrect  = $answers->where('is_correct', 1)->count();
-                $totalWrong    = $answers->where('is_correct', 0)->count();
-                $totalScore    = $answers->sum('score');
-                $totalQuestion = $answers->count();
 
-                return [
-                    'category_id'    => $categoryId === 'all' ? null : $categoryId,
-                    'category_name'  => $categoryId === 'all'
-                        ? 'Keseluruhan'
-                        : optional($answers->first()->question->category)->name,
-                    'total_correct'  => $totalCorrect,
-                    'total_wrong'    => $totalWrong,
-                    'total_score'    => $totalScore,
-                    'total_question' => $totalQuestion,
-                    'percentage'     => $totalQuestion > 0
-                        ? round(($totalCorrect / $totalQuestion) * 100, 2)
-                        : 0,
-                ];
-            })->values();
+        $status = $this->determineStatus($exam);
 
-            return (object)[
-                'student'           => $attempt->user,
-                'attempt_status'    => $attempt->status,
-                'categories_result' => $categoriesResult,
-                'answers'           => $userAnswers,
-                'total_answered'    => $userAnswers->count(),
-                'total_score'       => $userAnswers->sum('score'),
-            ];
-        });
-
-        $status = $exam->status === 'ended'
-            ? ($exam->is_published ? 'published' : 'ungraded')
-            : $exam->status;
-
-        return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status'));
+        return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
     }
-
 
     /**
      * Show the form for editing the specified resource.
@@ -209,77 +130,110 @@ class ExamResultsController extends Controller
     {
         $exam = Exam::with([
             'questions.category',
-            'attempts.user.student',   // ikut load student
+            'questions.options',
+            'attempts.user.student',
         ])
             ->where('exam_code', $examCode)
             ->firstOrFail();
 
-        // Cari student berdasarkan NIM
         $student = Student::where('nim', $nim)->firstOrFail();
         $user = $student->user;
 
-        // Ambil attempt mahasiswa
         $attempt = ExamAttempt::where('exam_id', $exam->id)
             ->where('user_id', $user->id)
-            ->first();
+            ->firstOrFail();
 
-        if (!$attempt) {
-            return redirect()->back()->with('error', 'Mahasiswa belum mengikuti ujian ini.');
-        }
-        // Ambil jawaban mahasiswa
-        $userAnswers = ExamAnswer::with(['question'])
+        // Ambil semua jawaban mahasiswa
+        $allUserAnswers = ExamAnswer::with(['question'])
             ->where('exam_id', $exam->id)
             ->where('user_id', $user->id)
             ->get();
 
+        // Filter questions berdasarkan status jawaban
+        $filteredQuestions = $exam->questions->filter(function ($question) use ($allUserAnswers) {
+            $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
+            $isAnswered = !is_null($userAnswer);
+            $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
 
-        $totalQuestions = $exam->questions->count();
-        $totalCorrect   = $userAnswers->where('is_correct', 1)->count();
-        $totalScore     = $userAnswers->sum('score');
-        $percentage     = $totalQuestions > 0
-            ? round(($totalCorrect / $totalQuestions) * 100, 2)
-            : 0;
+            $answerStatus = request('answer_status');
 
-        // Hitung per kategori
-        $groupedAnswers = $userAnswers->groupBy(function ($ans) {
-            return $ans->question->category_id ?? 'all';
+            if (!$answerStatus) {
+                return true; // Tampilkan semua jika tidak ada filter
+            }
+
+            switch ($answerStatus) {
+                case 'correct':
+                    return $isAnswered && $isCorrect;
+                case 'incorrect':
+                    return $isAnswered && !$isCorrect;
+                case 'not_answered':
+                    return !$isAnswered;
+                default:
+                    return true;
+            }
         });
 
-        $categoriesResult = $groupedAnswers->map(function ($answers, $categoryId) {
-            $totalCorrect  = $answers->where('is_correct', 1)->count();
-            $totalWrong    = $answers->where('is_correct', 0)->count();
-            $totalScore    = $answers->sum('score');
-            $totalQuestion = $answers->count();
+        // Siapkan data untuk view
+        $questionsData = [];
+        foreach ($filteredQuestions as $index => $question) {
+            $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
+            $isAnswered = !is_null($userAnswer);
+            $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
+            $studentAnswerId = $userAnswer ? $userAnswer->answer : null;
 
-            return [
-                'category_id'    => $categoryId === 'all' ? null : $categoryId,
-                'category_name'  => $categoryId === 'all'
-                    ? 'Keseluruhan'
-                    : optional($answers->first()->question->category)->name,
-                'total_correct'  => $totalCorrect,
-                'total_wrong'    => $totalWrong,
-                'total_score'    => $totalScore,
-                'total_question' => $totalQuestion,
-                'percentage'     => $totalQuestion > 0
-                    ? round(($totalCorrect / $totalQuestion) * 100, 2)
-                    : 0,
+            // Siapkan data options
+            $optionsData = [];
+            if ($question->options->count() > 0) {
+                foreach ($question->options as $option) {
+                    $isStudentAnswer = $studentAnswerId == $option->id;
+                    $isCorrectOption = $option->is_correct;
+
+                    $optionsData[] = [
+                        'option' => $option->option,
+                        'text' => $option->text,
+                        'is_correct' => $isCorrectOption,
+                        'is_student_answer' => $isStudentAnswer,
+                    ];
+                }
+            }
+
+            $questionsData[] = [
+                'id' => $question->id,
+                'number' => $index + 1,
+                'body' => $question->badan_soal,
+                'question_text' => $question->kalimat_tanya,
+                'image' => $question->image,
+                'category' => $question->category?->name ?? 'Tidak ada kategori',
+                'is_answered' => $isAnswered,
+                'is_correct' => $isCorrect,
+                'student_feedback' => $userAnswer ? $userAnswer->feedback : '',
+                'options' => $optionsData,
             ];
-        })->values();
+        }
 
-        $status = $exam->status === 'ended'
-            ? ($exam->is_published ? 'published' : 'ungraded')
-            : $exam->status;
+        // Pagination manual
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+        $currentItems = array_slice($questionsData, ($currentPage - 1) * $perPage, $perPage);
+        $paginatedQuestions = new LengthAwarePaginator(
+            $currentItems,
+            count($questionsData),
+            $perPage,
+            $currentPage,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+                'query' => request()->query()
+            ]
+        );
+
+        $status = $this->determineStatus($exam);
 
         return view('lecturer.grading.feedback', compact(
             'exam',
             'attempt',
-            'userAnswers',
-            'totalQuestions',
-            'totalCorrect',
-            'totalScore',
-            'percentage',
-            'categoriesResult',
-            'student', // biar bisa tampilkan nim di view
+            'allUserAnswers',
+            'paginatedQuestions',
+            'student',
             'user',
             'status'
         ));
@@ -321,11 +275,7 @@ class ExamResultsController extends Controller
     public function publish($examCode)
     {
         $exam = Exam::where('exam_code', $examCode)->firstOrFail();
-
-        // Update exam
         $exam->update(['is_published' => true]);
-
-        // Update semua attempts terkait
         $exam->attempts()->update(['grading_status' => 'published']);
 
         return back()->with('success', 'Exam berhasil dipublish!');
@@ -337,204 +287,272 @@ class ExamResultsController extends Controller
             'course.lecturers',
             'questions.category',
             'questions.options',
-            'attempts.user.student', // Tambahkan student relation
+            'attempts.user.student',
             'answers.user.student',
             'answers.question.category',
             'answers.question.options'
-        ])->where('exam_code', $examCode)->withCount('questions')->withCount('attempts')
+        ])
+            ->where('exam_code', $examCode)
+            ->withCount('questions')
+            ->withCount('attempts')
             ->firstOrFail();
 
+        $difficultyLevel = DifficultyLevel::pluck('name');
         $activeTab = $request->get('tab', 'results');
 
-        // GABUNGKAN RESULTS DAN RANKING
-        $rankingResults = collect();
+        $rankingPaginator = $this->buildRankingResults($exam, $request);
 
-        if ($exam->attempts_count > 0) {
-            // Buat data ranking yang sudah termasuk results
-            $rankingResults = $exam->attempts->map(function ($attempt) use ($exam) {
-                $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
-                $totalQuestions = $exam->questions_count;
-                $correctAnswers = $userAnswers->where('is_correct', true)->count();
-                $scorePercentage = $totalQuestions > 0
-                    ? round(($correctAnswers / $totalQuestions) * 100, 2)
-                    : 0;
+        // Dapatkan semua data question analysis
+        $allQuestionAnalysis = $this->analyzeQuestions($exam);
 
-                // Hitung results per kategori
-                $groupedAnswers = $userAnswers->groupBy(function ($ans) {
-                    return $ans->question->category_id ?? 'all';
-                });
-
-                $categoriesResult = $groupedAnswers->map(function ($answers, $categoryId) {
-                    $totalCorrect  = $answers->where('is_correct', 1)->count();
-                    $totalWrong    = $answers->where('is_correct', 0)->count();
-                    $totalScore    = $answers->sum('score');
-                    $totalQuestion = $answers->count();
-
-                    return [
-                        'category_id'    => $categoryId === 'all' ? null : $categoryId,
-                        'category_name'  => $categoryId === 'all'
-                            ? 'Keseluruhan'
-                            : optional($answers->first()->question->category)->name,
-                        'total_correct'  => $totalCorrect,
-                        'total_wrong'    => $totalWrong,
-                        'total_score'    => $totalScore,
-                        'total_question' => $totalQuestion,
-                        'percentage'     => $totalQuestion > 0
-                            ? round(($totalCorrect / $totalQuestion) * 100, 2)
-                            : 0,
-                    ];
-                })->values();
-
-                return [
-                    'rank' => 0, // Akan diisi setelah sorting
-                    'student' => $attempt->user,
-                    'student_data' => $attempt->user->student,
-                    'attempt' => $attempt,
-                    'attempt_status' => $attempt->status,
-                    'categories_result' => $categoriesResult,
-                    'answers' => $userAnswers,
-                    'total_answered' => $userAnswers->count(),
-                    'total_questions' => $totalQuestions,
-                    'correct_answers' => $correctAnswers,
-                    'total_score' => $userAnswers->sum('score'),
-                    'score_percentage' => $scorePercentage,
-                    'completed_at' => $attempt->completed_at
-                ];
-            })->sortByDesc('score_percentage')->values()->map(function ($item, $index) {
-                $item['rank'] = $index + 1;
-                return $item;
-            });
-
-            // Buat paginator untuk ranking results
-            $page = request('page', 1);
-            $perPage = 10;
-            $pagedData = $rankingResults->slice(($page - 1) * $perPage, $perPage)->values();
-            $rankingPaginator = new LengthAwarePaginator(
-                $pagedData,
-                $rankingResults->count(),
-                $perPage,
-                $page,
-                ['path' => request()->url(), 'query' => request()->query()]
-            );
-        } else {
-            $rankingPaginator = new LengthAwarePaginator(collect(), 0, 10, 1);
+        // Filter berdasarkan difficulty level jika ada
+        if ($request->filled('difficulty_level')) {
+            $allQuestionAnalysis = $allQuestionAnalysis->filter(function ($q) use ($request) {
+                return $q['difficulty_level'] === $request->difficulty_level;
+            })->values();
         }
 
-        // ANALYTICS DATA (tetap seperti sebelumnya)
-        $analytics = [];
-        $questionAnalysis = [];
-        $optionsAnalysis = [];
-        $chartData = [];
+        $sort = $request->get('sort', 'question_id');
+        $dir = $request->get('dir', 'asc');
 
-        if ($exam->attempts_count > 0) {
-            // 1. Analisis per soal 
-            $questionAnalysis = $exam->questions->map(function ($question) use ($exam, &$optionsAnalysis) {
-                $totalStudents = $exam->attempts->count();
-                $answersForQuestion = $exam->answers->where('exam_question_id', $question->id);
-                $correctAnswers = $answersForQuestion->where('is_correct', true)->count();
-
-                $correctPercentage = $totalStudents > 0
-                    ? round(($correctAnswers / $totalStudents) * 100, 2)
-                    : 0;
-
-                // Analisis pilihan jawaban
-                $detailedOptionAnalysis = [];
-                if ($question->options) {
-                    foreach ($question->options as $option) {
-                        $optionAnswers = $answersForQuestion->where('answer', $option->id)->count();
-                        $optionPercentage = $totalStudents > 0
-                            ? round(($optionAnswers / $totalStudents) * 100, 2)
-                            : 0;
-
-                        $detailedOptionAnalysis[] = [
-                            'option_id' => $option->id,
-                            'option_text' => $option->text,
-                            'is_correct' => $option->is_correct,
-                            'count' => $optionAnswers,
-                            'percentage' => $optionPercentage
-                        ];
-                    }
-                }
-                $optionsAnalysis[$question->id] = $detailedOptionAnalysis;
-
-                $discriminationIndex = $this->calculateDiscriminationIndex($exam, $question);
-                $difficultyLevel = $this->getDifficultyLevel($correctAnswers, $totalStudents);
-
-                return [
-                    'question_id' => $question->id,
-                    'question_text' => $question->badan_soal,
-                    'correct_percentage' => $correctPercentage,
-                    'correct_count' => $correctAnswers,
-                    'total_students' => $totalStudents,
-                    'option_analysis' => $detailedOptionAnalysis,
-                    'discrimination_index' => $discriminationIndex,
-                    'difficulty_level' => $difficultyLevel
-                ];
-            });
-
-            // 2. Statistik umum
-            $analytics = [
-                'total_students' => $exam->attempts_count,
-                'average_score' => $rankingResults->avg('score_percentage') ?? 0,
-                'highest_score' => $rankingResults->max('score_percentage') ?? 0,
-                'lowest_score' => $rankingResults->min('score_percentage') ?? 0,
-                'completion_rate' => $exam->attempts_count > 0
-                    ? round(($exam->attempts->where('status', 'completed')->count() / $exam->attempts_count) * 100, 2)
-                    : 0
-            ];
-
-            // 3. Data untuk chart
-            $chartData = $this->prepareChartData($questionAnalysis, $exam);
+        // Lakukan sorting
+        if ($sort && $allQuestionAnalysis->isNotEmpty()) {
+            $allQuestionAnalysis = $allQuestionAnalysis->sortBy(function ($q) use ($sort) {
+                return $q[$sort] ?? null;
+            }, SORT_REGULAR, $dir === 'desc')->values();
         }
 
-        $status = $exam->status === 'ended'
-            ? ($exam->is_published ? 'published' : 'ungraded')
-            : $exam->status;
+        // Buat pagination manual untuk question analysis
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+        $currentItems = $allQuestionAnalysis->slice(($currentPage - 1) * $perPage, $perPage);
+
+        $questionAnalysisPaginator = new LengthAwarePaginator(
+            $currentItems,
+            $allQuestionAnalysis->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+                'query' => $request->query()
+            ]
+        );
+
+        // Pastikan $optionsAnalysis selalu berupa collection, bahkan jika kosong
+        $optionsAnalysis = $currentItems->pluck('options', 'question_id') ?? collect();
+
+        $analytics = $this->buildAnalytics($exam, $rankingPaginator);
+        $chartData = $this->prepareChartData($allQuestionAnalysis, $exam); // Gunakan semua data untuk chart
+        $status = $this->determineStatus($exam);
         return view('lecturer.grading.show.index', compact(
             'activeTab',
             'exam',
-            'rankingPaginator', // Ganti results dengan rankingPaginator
+            'rankingPaginator',
             'analytics',
-            'questionAnalysis',
-            'chartData',
+            'questionAnalysisPaginator',
             'optionsAnalysis',
-            'status'
+            'chartData',
+            'status',
+            'sort',
+            'dir',
+            'difficultyLevel'
         ));
     }
+    private function determineStatus($exam)
+    {
+        return $exam->status === 'ended'
+            ? ($exam->is_published ? 'published' : 'ungraded')
+            : $exam->status;
+    }
+
+
+    private function buildRankingResults($exam, Request $request = null)
+    {
+        if ($exam->attempts->isEmpty()) {
+            return new LengthAwarePaginator(collect(), 0, 10, 1);
+        }
+
+        $nameFilter = $request?->get('name');
+        $sortField = $request?->get('sort', 'rank');
+        $sortDir = $request?->get('dir', 'asc');
+
+        $ranking = $exam->attempts->map(function ($attempt) use ($exam) {
+            $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
+            $totalQuestions = $exam->questions_count;
+            $correctAnswers = $userAnswers->where('is_correct', true)->count();
+            $feedback = $userAnswers->whereNotNull('feedback')->count();
+            $scorePercentage = $totalQuestions ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
+
+            $groupedAnswers = $userAnswers->groupBy(fn($a) => $a->question->category_id ?? 'uncategorized');
+            $categories = $exam->questions->pluck('category')->unique('id')->values();
+
+            $categoriesResult = $categories->map(function ($cat) use ($groupedAnswers, $exam) {
+                $answers = $groupedAnswers->get($cat?->id, collect());
+                $totalCorrect  = $answers->where('is_correct', 1)->count();
+                $totalQuestion = $exam->questions->where('category_id', $cat?->id)->count();
+
+                return [
+                    'category_id'    => $cat?->id,
+                    'category_name'  => $cat?->name ?? 'Uncategorized',
+                    'total_correct'  => $totalCorrect,
+                    'total_wrong'    => max($totalQuestion - $totalCorrect, 0),
+                    'total_score'    => $answers->sum('score'),
+                    'total_question' => $totalQuestion,
+                    'percentage'     => $totalQuestion ? round(($totalCorrect / $totalQuestion) * 100, 2) : 0,
+                ];
+            })->values();
+
+
+            return [
+                'rank' => 0,
+                'student' => $attempt->user,
+                'student_data' => $attempt->user->student,
+                'attempt' => $attempt,
+                'answers' => $userAnswers,
+                'categories_result' => $categoriesResult,
+                'total_answered' => $userAnswers->count(),
+                'total_questions' => $totalQuestions,
+                'correct_answers' => $correctAnswers,
+                'total_score' => $userAnswers->sum('score'),
+                'score_percentage' => $scorePercentage,
+                'completed_at' => $attempt->completed_at,
+                'feedback' => $feedback,
+                'grading_status' => $attempt->grading_status,
+            ];
+        });
+
+        if ($nameFilter) {
+            $nameFilterLower = strtolower($nameFilter);
+            $ranking = $ranking->filter(function ($item) use ($nameFilterLower) {
+                $nameMatch = strtolower($item['student']->name ?? '');
+                $nimMatch = strtolower($item['student_data']->nim ?? '');
+                return str_contains($nameMatch, $nameFilterLower) ||
+                    str_contains($nimMatch, $nameFilterLower);
+            })->values();
+        }
+
+        // 1️⃣ Rank default berdasarkan score tertinggi
+        $ranking = $ranking->sortByDesc('score_percentage')->values();
+
+        // 2️⃣ Isi rank sesuai urutan skor
+        $ranking = $ranking->map(function ($item, $index) {
+            $item['rank'] = $index + 1;
+            return $item;
+        });
+
+        $ranking = match ($sortField) {
+            'rank' => $sortDir === 'asc'
+                ? $ranking->sortBy('rank')
+                : $ranking->sortByDesc('rank'),
+            'score' => $sortDir === 'asc'
+                ? $ranking->sortBy('score_percentage')
+                : $ranking->sortByDesc('score_percentage'),
+            'nim'  => $sortDir === 'asc'
+                ? $ranking->sortBy(fn($r) => $r['student_data']->nim ?? '')
+                : $ranking->sortByDesc(fn($r) => $r['student_data']->nim ?? ''),
+            'name' => $sortDir === 'asc'
+                ? $ranking->sortBy(fn($r) => $r['student']->name ?? '')
+                : $ranking->sortByDesc(fn($r) => $r['student']->name ?? ''),
+            default => $ranking->sortBy('rank'),
+        };
+
+        $ranking = $ranking->values();
+
+
+        $page = request('page', 1);
+        $perPage = 10;
+        $paged = $ranking->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $paged,
+            $ranking->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+    }
+
+    private function analyzeQuestions($exam)
+    {
+        $totalStudents = $exam->attempts->count();
+
+        return $exam->questions->map(function ($question) use ($exam, $totalStudents) {
+            $answers = $exam->answers->where('exam_question_id', $question->id);
+            $correct = $answers->where('is_correct', true)->count();
+            $correctPercentage = $totalStudents ? round(($correct / $totalStudents) * 100, 2) : 0;
+
+            $options = $question->options->map(function ($opt) use ($answers, $totalStudents) {
+                $count = $answers->where('answer', $opt->id)->count();
+                return [
+                    'option_id' => $opt->id,
+                    'option_text' => $opt->text,
+                    'is_correct' => $opt->is_correct,
+                    'count' => $count,
+                    'percentage' => $totalStudents ? round(($count / $totalStudents) * 100, 2) : 0
+                ];
+            })->values();
+
+            return [
+                'question_id' => $question->id,
+                'question_text' => $question->badan_soal,
+                'image'  => $question->image,
+                'question' => $question->kalimat_tanya,
+                'correct_percentage' => $correctPercentage,
+                'correct_count' => $correct,
+                'total_students' => $totalStudents,
+                'options' => $options,
+                'discrimination_index' => $this->calculateDiscriminationIndex($exam, $question),
+                'difficulty_level' => $this->getDifficultyLevel($correct, $totalStudents)
+            ];
+        });
+    }
+
+    private function buildAnalytics($exam, $rankingPaginator)
+    {
+        $collection = $rankingPaginator->getCollection();
+        return [
+            'total_students' => $exam->attempts_count,
+            'total_question' => $exam->questions_count,
+            'average_score' => $collection->avg('score_percentage') ?? 0,
+            'highest_score' => $collection->max('score_percentage') ?? 0,
+            'lowest_score' => $collection->min('score_percentage') ?? 0,
+            'completion_rate' => $exam->attempts_count > 0
+                ? round(($exam->attempts->where('status', 'completed')->count() / $exam->attempts_count) * 100, 2)
+                : 0
+        ];
+    }
+
     private function calculateDiscriminationIndex($exam, $question)
     {
         $totalStudents = $exam->attempts->count();
         if ($totalStudents < 10) return 0; // Need minimum students for accurate calculation
 
         // Sort students by total score
-        $sortedAttempts = $exam->attempts->sortByDesc(function ($attempt) use ($exam) {
+        $studentScores = [];
+        foreach ($exam->attempts as $attempt) {
             $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
-            return $userAnswers->where('is_correct', true)->count();
-        });
+            $score = $userAnswers->where('is_correct', true)->count();
+            $studentScores[$attempt->user_id] = $score;
+        }
+        arsort($studentScores);
+        $userIds = array_keys($studentScores);
 
         // Get top 27% and bottom 27%
-        $groupSize = (int)($totalStudents * 0.27);
-        if ($groupSize < 1) $groupSize = 1;
+        $groupSize = max(1, round($totalStudents * 0.27));
 
-        $topGroup = $sortedAttempts->take($groupSize);
-        $bottomGroup = $sortedAttempts->take(-$groupSize);
+        $topUserIds = array_slice($userIds, 0, $groupSize);
+        $bottomUserIds = array_slice($userIds, -$groupSize);
 
-        // Calculate correct answers in each group for this specific question
-        $topCorrect = $topGroup->filter(function ($attempt) use ($exam, $question) {
-            $answer = $exam->answers
-                ->where('user_id', $attempt->user_id)
-                ->where('exam_question_id', $question->id)
-                ->first();
-            return $answer && $answer->is_correct;
-        })->count();
-
-        $bottomCorrect = $bottomGroup->filter(function ($attempt) use ($exam, $question) {
-            $answer = $exam->answers
-                ->where('user_id', $attempt->user_id)
-                ->where('exam_question_id', $question->id)
-                ->first();
-            return $answer && $answer->is_correct;
-        })->count();
+        $topCorrect = $exam->answers
+            ->whereIn('user_id', $topUserIds)
+            ->where('exam_question_id', $question->id)
+            ->where('is_correct', true)
+            ->count();
+        $bottomCorrect = $exam->answers
+            ->whereIn('user_id', $bottomUserIds)
+            ->where('exam_question_id', $question->id)
+            ->where('is_correct', true)
+            ->count();
 
         // Discrimination Index = (Upper Group % Correct) - (Lower Group % Correct)
         $discriminationIndex = ($topCorrect / $groupSize) - ($bottomCorrect / $groupSize);
@@ -544,79 +562,68 @@ class ExamResultsController extends Controller
 
     private function getDifficultyLevel($correctAnswers, $totalStudents)
     {
-        if ($totalStudents === 0) return 'Tidak ada data';
-
-        $percentage = ($correctAnswers / $totalStudents) * 100;
-
-        if ($percentage >= 80) return 'Mudah';
-        if ($percentage >= 60) return 'Sedang';
-        if ($percentage >= 40) return 'Cukup Sulit';
-        return 'Sulit';
+        if ($totalStudents === 0) return 'N/A';
+        $ratio = $correctAnswers / $totalStudents;
+        return DifficultyLevel::forRatio($ratio)->value('name') ?? 'N/A';
     }
+
 
     private function prepareChartData($questionAnalysis, $exam)
     {
-        // Data untuk grafik kesulitan soal
-        $difficultyData = [
-            'Mudah' => 0,
-            'Sedang' => 0,
-            'Cukup Sulit' => 0,
-            'Sulit' => 0
-        ];
+        // 🔹 Grafik kesulitan soal
+        $difficultyData = collect(['Easy', 'Medium', 'Fair', 'Hard'])
+            ->mapWithKeys(fn($level) => [$level => $questionAnalysis->where('difficulty_level', $level)->count()])
+            ->toArray();
 
-        foreach ($questionAnalysis as $analysis) {
-            $difficultyData[$analysis['difficulty_level']]++;
-        }
-
-        // Data untuk grafik discrimination index
-        $discriminationRanges = [
+        // 🔹 Grafik discrimination index
+        $discriminationData = [
             'Excellent (>0.4)' => 0,
-            'Good (0.3-0.39)' => 0,
-            'Fair (0.2-0.29)' => 0,
-            'Poor (0.1-0.19)' => 0,
-            'Very Poor (<0.1)' => 0
+            'Good (0.3-0.39)'  => 0,
+            'Fair (0.2-0.29)'  => 0,
+            'Poor (0.1-0.19)'  => 0,
+            'Very Poor (<0.1)' => 0,
         ];
 
-        foreach ($questionAnalysis as $analysis) {
-            $di = $analysis['discrimination_index'];
-            if ($di > 0.4) $discriminationRanges['Excellent (>0.4)']++;
-            elseif ($di >= 0.3) $discriminationRanges['Good (0.3-0.39)']++;
-            elseif ($di >= 0.2) $discriminationRanges['Fair (0.2-0.29)']++;
-            elseif ($di >= 0.1) $discriminationRanges['Poor (0.1-0.19)']++;
-            else $discriminationRanges['Very Poor (<0.1)']++;
-        }
+        $questionAnalysis->each(function ($q) use (&$discriminationData) {
+            $di = $q['discrimination_index'];
+            match (true) {
+                $di > 0.4   => $discriminationData['Excellent (>0.4)']++,
+                $di >= 0.3  => $discriminationData['Good (0.3-0.39)']++,
+                $di >= 0.2  => $discriminationData['Fair (0.2-0.29)']++,
+                $di >= 0.1  => $discriminationData['Poor (0.1-0.19)']++,
+                default     => $discriminationData['Very Poor (<0.1)']++,
+            };
+        });
 
-        // Data untuk grafik score distribution
+        // 🔹 Grafik distribusi skor
         $scoreRanges = [
-            '0-20' => 0,
-            '21-40' => 0,
-            '41-60' => 0,
-            '61-80' => 0,
-            '81-100' => 0
+            '0-20'   => 0,
+            '21-40'  => 0,
+            '41-60'  => 0,
+            '61-80'  => 0,
+            '81-100' => 0,
         ];
 
-        foreach ($exam->attempts as $attempt) {
-            $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
+        $exam->attempts->each(function ($attempt) use (&$scoreRanges, $exam) {
             $totalQuestions = $exam->questions_count;
-            $percentage = $totalQuestions > 0
-                ? round(($userAnswers->where('is_correct', true)->count() / $totalQuestions) * 100, 2)
-                : 0;
+            $correct = $exam->answers->where('user_id', $attempt->user_id)->where('is_correct', true)->count();
+            $percentage = $totalQuestions ? round(($correct / $totalQuestions) * 100, 2) : 0;
 
-            if ($percentage <= 20) $scoreRanges['0-20']++;
-            elseif ($percentage <= 40) $scoreRanges['21-40']++;
-            elseif ($percentage <= 60) $scoreRanges['41-60']++;
-            elseif ($percentage <= 80) $scoreRanges['61-80']++;
-            else $scoreRanges['81-100']++;
-        }
+            $range = match (true) {
+                $percentage <= 20 => '0-20',
+                $percentage <= 40 => '21-40',
+                $percentage <= 60 => '41-60',
+                $percentage <= 80 => '61-80',
+                default           => '81-100',
+            };
+
+            $scoreRanges[$range]++;
+        });
 
         return [
-            'difficulty' => $difficultyData,
-            'discrimination' => $discriminationRanges,
-            'scores' => $scoreRanges
+            'difficulty'    => $difficultyData,
+            'discrimination' => $discriminationData,
+            'scores'        => $scoreRanges,
         ];
-    }
-    public function destroy(string $id)
-    {
-        //
     }
 }

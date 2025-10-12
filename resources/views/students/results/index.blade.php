@@ -3,7 +3,7 @@
 @section('content')
 <div class="row">
   <div class="col-12 card mb-4 p-3">
-    <div class="card-header d-flex flex-row justify-content-between">
+    <div class="card-header d-flex flex-row justify-content-between p-0 m-0">
       <div>
         <h5 class="mb-0">Exams List</h5>
       </div>
@@ -45,22 +45,15 @@
       </form>
     </div>
 
-    <div class="card-body px-0 pt-0 pb-2">
-      <div class="table-responsive pb-5">
+    <div class="card-body px-0 pt-0">
+      <div class="table-responsive">
         <table class="table align-items-center mb-0">
           <thead>
             <tr>
-              <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+              <th class="text-uppercase text-dark text-sm font-weight-bolder">
                 <a class="text-dark text-decoration-none">
                   Exam
                 </a>
-              </th>
-
-              <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                Score
-              </th>
-              <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                Action
               </th>
             </tr>
           </thead>
@@ -77,37 +70,10 @@
                   Exam Date: {{ \Carbon\Carbon::parse($exam->exam_date)->format('j/n/y') }}
                 </span>
               </td>
-              <td class="align-middle ">
-                @foreach($exam->categories_result as $cat)
-                <div class="d-flex align-items-center mb-2">
-                  <span class="badge bg-light text-dark me-2" style="min-width: 120px; max-height:30px; font-size: 0.75rem;">
-                    {{ Str::limit($cat['category_name'], 20) }}
-                  </span>
-                  <div class="progress flex-grow-1 align-items-center" style="height: 10px;">
-                    <div class="progress-bar m-0
-                        @if($cat['percentage'] == 0) bg-secondary opacity-50
-                        @elseif($cat['percentage'] >= 80) bg-success
-                        @elseif($cat['percentage'] >= 60) bg-info
-                        @elseif($cat['percentage'] >= 40) bg-warning
-                        @else bg-danger
-                        @endif"
-                      role="progressbar"
-                      style="width: {{ max($cat['percentage'], 1) }}%"
-                      data-bs-toggle="tooltip"
-                      data-bs-placement="top"
-                      title="@if($cat['percentage'] == 0)Tidak ada jawaban benar@else{{ $cat['percentage'] }}%@endif">
-                    </div>
-                  </div>
-                  <small class="ms-2 text-muted" style="min-width: 40px;">
-                    {{ $cat['percentage'] }}%
-                  </small>
-                </div>
-                @endforeach
-              </td>
-              <td class="align-middle text-center">
-                <a href=""
-                  class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                  <i class="fas fa-info-circle"></i>
+              <td class="text-end">
+                <a href="{{ route('student.results.show', $exam->exam_code) }}"
+                  class="btn bg-gradient-success m-1 p-2 px-3" title="Results">
+                  <i class="fas fa-chart-bar me-2"></i> Results
                 </a>
               </td>
             </tr>

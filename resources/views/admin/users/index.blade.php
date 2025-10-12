@@ -13,7 +13,10 @@
           <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filter
           </button>
-
+          <a href="{{ route('admin.users.export', array_merge(['type' => $type], request()->query())) }}"
+            class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel"></i> Export
+          </a>
           <a href="{{ route('admin.users.create', $type ) }}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
             + New {{ ucfirst($type ?? 'User') }}
           </a>
@@ -27,28 +30,28 @@
             <div class="row g-2 align-items-end">
 
               @if($type === 'student')
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label for="nim" class="form-label mb-1">NIM</label>
                 <input type="text" class="form-control form-control-sm" name="nim" value="{{ request('nim') }}">
               </div>
               @elseif($type === 'lecturer')
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label for="nidn" class="form-label mb-1">NIDN</label>
                 <input type="text" class="form-control form-control-sm" name="nidn" value="{{ request('nidn') }}">
               </div>
               @endif
 
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label for="name" class="form-label mb-1">Nama</label>
                 <input type="text" class="form-control form-control-sm" name="name" value="{{ request('name') }}">
               </div>
 
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label for="email" class="form-label mb-1">Email</label>
                 <input type="text" class="form-control form-control-sm" name="email" value="{{ request('email') }}">
               </div>
 
-              <div class="col-md-3 d-flex justify-content-end gap-2">
+              <div class="col-12 d-flex justify-content-end gap-2 mt-2">
                 <a href="{{ route('admin.users.index', $type) }}" class="btn btn-light btn-sm">Reset</a>
                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
               </div>

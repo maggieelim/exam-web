@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CourseParticipantsExport;
+use App\Exports\CourseStudentsExport;
 use App\Imports\CoursesImport;
+use App\Models\AcademicYear;
 use App\Models\Course;
+use App\Models\CourseLecturer;
+use App\Models\CourseStudent;
+use App\Models\Semester;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -16,17 +23,56 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      */
+
     public function index(Request $request)
     {
-        $query = Course::with('lecturers');
+        $query = Course::with(['lecturers', 'courseStudents']);
         $user = auth()->user();
-        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
+        $semesterId = $request->get('semester_id'); // ID dari tabel semester
+        $today = Carbon::today();
 
+        // 🔹 Cari Semester aktif berdasarkan tanggal sekarang
+        $activeSemester = Semester::where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+
+        // Jika tidak ada filter semester_id, gunakan semester aktif
+        if (!$semesterId && $activeSemester) {
+            $semesterId = $activeSemester->id;
+        }
+
+        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+
+        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         if ($user->hasRole('lecturer')) {
             $query->whereHas('lecturers', function ($q) use ($user) {
                 $q->where('users.id', $user->id);
             });
         }
+
+        // Filter course berdasarkan semester_name dari semester yang dipilih
+        if ($semesterId) {
+            $selectedSemester = Semester::find($semesterId);
+            if ($selectedSemester) {
+                $semesterName = strtolower($selectedSemester->semester_name);
+                if ($semesterName === 'ganjil') {
+                    $query->where(function ($q) {
+                        $q->where('semester', 'Ganjil')
+                            ->orWhereNull('semester');
+                    });
+                } elseif ($semesterName === 'genap') {
+                    $query->where('semester', 'Genap');
+                }
+            }
+        }
+
+        // Subquery untuk menghitung student berdasarkan semester_id
+        $query->withCount(['courseStudents as student_count' => function ($q) use ($semesterId) {
+            if ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            }
+            // Jika tidak ada filter semester_id, hitung semua student tanpa kondisi
+        }]);
 
         // Filter berdasarkan kode blok / nama blok
         if ($request->filled('name')) {
@@ -55,7 +101,14 @@ class CourseController extends Controller
 
         $courses = $query->paginate(15)->appends($request->all());
 
-        return view('courses.index', compact('courses', 'sort', 'dir'));
+        return view('courses.index', compact(
+            'courses',
+            'sort',
+            'dir',
+            'semesters',
+            'semesterId',
+            'activeSemester'
+        ));
     }
 
     /**
@@ -135,35 +188,53 @@ class CourseController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Course $course, Request $request)
+    public function show($slug, Request $request)
     {
-        $sort = $request->get('sort', 'nim'); // default sort berdasarkan nim
-        $direction = $request->get('direction', 'asc'); // default ascending
+        $course = Course::where('slug', $slug)->firstOrFail();
+        $semesterId = $request->query('semester_id');
 
-        // Ambil mahasiswa dengan relasi student, lalu urutkan
-        $students = $course->students()->with('student')
-            ->get()
-            ->sortBy(function ($item) use ($sort) {
-                return $sort === 'nim' ? $item->student->nim : $item->student->name;
-            }, SORT_REGULAR, $direction === 'desc');
+        $lecturers = CourseLecturer::with(['lecturer.user'])
+            ->where('course_id', $course->id)
+            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
+            ->get();
 
-        // Simpan direction dan sort agar bisa digunakan di view
-        $currentSort = $sort;
-        $currentDirection = $direction;
+        $students = CourseStudent::with(['student.user'])
+            ->where('course_id', $course->id)
+            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
+            ->get();
 
-        return view('courses.show', compact('course', 'students', 'sort', 'direction'));
+        return view('courses.show', compact('course', 'lecturers', 'students', 'semesterId'));
     }
 
+    public function download(Request $request, $slug)
+    {
+        $course = Course::where('slug', $slug)->firstOrFail();
+        $semesterId = $request->query('semester_id');
+        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+
+        $semesterName = str_replace(['/', '\\'], '-', $semester->semester_name);
+        $yearName = str_replace(['/', '\\'], '-', $semester->academicYear->year_name);
+
+        $fileName = "Peserta-{$slug}-{$semesterName}-{$yearName}.xlsx";
+
+
+        return Excel::download(new CourseParticipantsExport($course, $semesterId), $fileName);
+    }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Course $course)
+    public function edit($slug, Request $request)
     {
-        $course->load(['lecturers', 'students.student']);
-        $lecturers = User::role('lecturer')->get();
+        $course = Course::where('slug', $slug)->firstOrFail();
+        $semesterId = $request->query('semester_id');
 
-        return view('courses.edit', compact('course', 'lecturers'));
+        $lecturers = User::role('lecturer')->get();
+        $selectedLecturers = CourseLecturer::where('course_id', $course->id)
+            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
+            ->get();
+
+        return view('courses.edit', compact('course', 'lecturers', 'selectedLecturers'));
     }
 
     /**

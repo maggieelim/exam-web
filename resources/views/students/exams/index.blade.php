@@ -71,10 +71,16 @@
             <!-- Button Section berdasarkan status exam -->
             <div class="mt-auto">
               @if($exam->has_completed)
-              <a class="btn btn-sm btn-success w-100 disabled">
-                Completed
+              @if($exam->is_published)
+              <a href="{{ route('student.results.show', $exam->exam_code) }}"
+                class="btn bg-gradient-success w-100" title="Results">
+                <i class="fas fa-clipboard-check me-2"></i> See Results
               </a>
-
+              @else
+              <div class="btn bg-gradient-secondary opacity-75 w-100 d-flex align-items-center justify-content-center" disabled>
+                <i class="fas fa-hourglass-half me-2"></i> Waiting for Grading
+              </div>
+              @endif
               @elseif($exam->has_ongoing)
               <div class="text-center">
                 <span class="badge bg-warning mb-2">Ongoing</span>

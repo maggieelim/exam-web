@@ -61,7 +61,7 @@
           <div class="col-md-4">
             <label for="category" class="form-label mb-1">Category</label>
             <select name="category" class="form-control">
-              <option value="">-- Choose Category --</option>
+              <option value="">-- All Category --</option>
               @foreach($categories as $category)
               <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
                 {{ $category->name }}
@@ -77,11 +77,16 @@
       </div>
     </form>
   </div>
+  @php
+  $currentPage = $questions->currentPage();
+  $perPage = $questions->perPage();
+  $startNumber = ($currentPage - 1) * $perPage + 1;
+  @endphp
 
   @foreach($questions as $index => $question)
   <div class="card mb-4">
     <div class="card-header pb-0 px-3 d-flex justify-content-between align-items-center">
-      <h6 class="mb-0">Soal {{ $index + 1 }}</h6>
+      <h6 class="mb-0">Soal {{ $startNumber + $index }}</h6>
       <div class="d-flex gap-3">
         <div class="d-flex flex-column text-end">
           <small class="text-muted">Exam: {{ $exam->title }}</small>

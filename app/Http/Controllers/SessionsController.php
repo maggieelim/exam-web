@@ -13,29 +13,47 @@ class SessionsController extends Controller
         return view('session.login-session');
     }
 
+    private function redirectToRoleHome($user)
+    {
+        if ($user->hasRole('student')) {
+            return redirect()->route('student.studentExams.index', ['status' => 'upcoming']);
+        }
+
+        if ($user->hasRole('lecturer')) {
+            return redirect()->route('courses.index');
+        }
+
+        if ($user->hasRole('admin')) {
+            return redirect()->route('admin.users.index', ['type' => 'student']);
+        }
+
+        // fallback
+        return redirect('/');
+    }
+
     public function store()
     {
         $attributes = request()->validate([
-            'email'=>'required|email',
-            'password'=>'required' 
+            'email' => 'required|email',
+            'password' => 'required'
         ]);
 
-        if(Auth::attempt($attributes))
-        {
+        if (Auth::attempt($attributes)) {
             session()->regenerate();
-            return redirect('dashboard')->with(['success'=>'You are logged in.']);
-        }
-        else{
+            $user = Auth::user();
 
-            return back()->withErrors(['email'=>'Email or password invalid.']);
+            return $this->redirectToRoleHome($user)->with(['success' => 'Welcome back!']);
+        } else {
+
+            return back()->withErrors(['email' => 'Email or password invalid.']);
         }
     }
-    
+
     public function destroy()
     {
 
         Auth::logout();
 
-        return redirect('/login')->with(['success'=>'You\'ve been logged out.']);
+        return redirect('/login')->with(['success' => 'You\'ve been logged out.']);
     }
 }

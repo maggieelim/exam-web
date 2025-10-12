@@ -207,7 +207,7 @@ class ExamAttemptController extends Controller
             ]);
         }
 
-        return redirect()->route('student.studentExams.index', ['status' => 'upcoming'])
+        return redirect()->route('student.studentExams.index', ['status' => 'previous'])
             ->with('success', 'Ujian selesai!');
     }
 

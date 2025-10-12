@@ -20,8 +20,8 @@ class UsersImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
-        if (empty($row['name'])) {
-            throw new \Exception("Kolom 'name' tidak boleh kosong.");
+        if (empty($row['nama'])) {
+            throw new \Exception("Kolom 'nama' tidak boleh kosong.");
         }
 
         if (empty($row['email'])) {
@@ -38,27 +38,48 @@ class UsersImport implements ToModel, WithHeadingRow
 
         // Simpan user dulu
         $user = User::create([
-            'name' => $row['name'],
+            'name' => $row['nama'],
             'email' => $row['email'],
-            'password' => Hash::make($row['password'] ?? '123456'),
+            'password' => Hash::make('12345678'), // Password default
         ]);
 
         // Jika student
         if ($this->type === 'student') {
             $user->assignRole('student');
+
+            if (empty($row['nim'])) {
+                throw new \Exception("Kolom 'nim' wajib diisi untuk student {$row['nama']}.");
+            }
+
+            $nim = $row['nim'];
+            $angkatan = null;
+
+            if (preg_match('/^.{3}(\d{2})/', $nim, $matches)) {
+                $tahun = intval($matches[1]);
+                $angkatan = 2000 + $tahun;
+            }
+
             Student::create([
-                'user_id'      => $user->id,
-                'nim'          => $row['nim'],
-                'angkatan'     => $row['angkatan'],
+                'user_id'  => $user->id,
+                'nim'      => $nim,
+                'angkatan' => $angkatan,
+                'gender'   => $row['gender']
             ]);
         }
 
         // Jika lecturer
         elseif ($this->type === 'lecturer') {
             $user->assignRole('lecturer');
+
             Lecturer::create([
-                'user_id' => $user->id,
-                'nidn'    => $row['nidn'],
+                'user_id'    => $user->id,
+                'nidn'       => $row['nidn'] ?? null,
+                'gender'    => $row['gender'] ?? null,
+                'strata'     => $row['strata'] ?? null,
+                'gelar'      => $row['gelar'] ?? null,
+                'tipe_dosen' => $row['tipe_dosen'] ?? null,
+                'min_sks'    => $row['min_sks'] ?? null,
+                'max_sks'    => $row['max_sks'] ?? null,
             ]);
         }
 

@@ -14,7 +14,6 @@ class Exam extends Model
         'exam_code',
         'title',
         'course_id',
-        'exam_type_id',
         'exam_date',
         'room',
         'password',
@@ -62,10 +61,6 @@ class Exam extends Model
         return $this->belongsTo(Course::class, 'course_id');
     }
 
-    public function examType()
-    {
-        return $this->belongsTo(ExamType::class, 'exam_type_id');
-    }
     public function questions()
     {
         return $this->hasMany(ExamQuestion::class, 'exam_id');

@@ -11,51 +11,41 @@
           <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
             Delete
           </button>
-
         </div>
       </div>
 
       <div class="card-body px-4 pt-3 pb-3">
         <div class="row">
-          <div class="col-md-6 mb-3">
-            <strong>Nama:</strong>
-            <p>{{ $user->name }}</p>
+          <!-- Data Umum User -->
+          <div class="col-md-4 mb-3">
+            <p><strong>Nama:</strong> {{ $user->name }}</p>
+          </div>
+          <div class="col-md-4 mb-3">
+            <p><strong>Email:</strong> {{ $user->email }}</p>
+          </div>
+          <div class="col-md-4 mb-3">
+            <p><strong>Gender:</strong> {{ $type == 'student' ? $user->student->gender : $user->lecturer->gender }}</p>
           </div>
 
-          <div class="col-md-6 mb-3">
-            <strong>Email:</strong>
-            <p>{{ $user->email }}</p>
-          </div>
-
+          <!-- Data Spesifik Student -->
           @if ($type === 'student' && $user->student)
-          <div class="col-md-6 mb-3">
-            <strong>NIM:</strong>
-            <p>{{ $user->student->nim }}</p>
-          </div>
-          <div class="col-md-6 mb-3">
-            <strong>Angkatan:</strong>
-            <p>{{ $user->student->angkatan }}</p>
-          </div>
-          <div class="col-md-6 mb-3">
-            <strong>Kelas:</strong>
-            @foreach($course as $course)
-            <p>- {{ $course->name }}</p>
-            @endforeach
-          </div>
-          @elseif ($type === 'lecturer' && $user->lecturer)
-          <div class="col-md-6 mb-3">
-            <strong>NIDN:</strong>
-            <p>{{ $user->lecturer->nidn }}</p>
-          </div>
-          <div class="col-md-6 mb-3">
-            <strong>Faculty:</strong>
-            <p>{{ $user->lecturer->faculty }}</p>
-          </div>
-          <div class="col-md-6 mb-3">
-            <strong>Kelas:</strong>
-            @foreach($course as $course)
-            <p>- {{ $course->name }}</p>
-            @endforeach
+          @include('admin.users.partials.student-details', ['student' => $user->student])
+          @endif
+
+          <!-- Data Spesifik Lecturer -->
+          @if ($type === 'lecturer' && $user->lecturer)
+          @include('admin.users.partials.lecturer-details', ['lecturer' => $user->lecturer])
+          @endif
+
+          <!-- Tabel Courses (Common untuk kedua tipe) -->
+          @if(count($courses) > 0)
+          @include('admin.users.partials.courses-table', [
+          'courses' => $courses,
+          'type' => $type
+          ])
+          @else
+          <div class="col-12">
+            <p class="text-muted text-center">Tidak ada data courses</p>
           </div>
           @endif
         </div>
@@ -65,26 +55,8 @@
 </div>
 
 <!-- Modal Delete -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">Hapus User</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Apakah Anda yakin ingin menghapus user <strong>{{ $user->name }}</strong>?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-        <form method="POST" action="{{ route('admin.users.destroy', [$type, $user->id]) }}">
-          @csrf
-          @method('DELETE')
-          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
+@include('partials.modals.delete-user', [
+'user' => $user,
+'type' => $type
+])
 @endsection

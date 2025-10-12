@@ -5,21 +5,32 @@
 <div class="card mb-4 p-3">
   <div class="d-flex justify-content-between align-items-center">
     <h5 class="mb-3">{{ $course->name }}</h5>
-    <form action="{{ route('courses.destroy', $course->slug) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus course ini?')" class="d-inline">
-      @csrf
-      @method('DELETE')
-      <button type="submit" class="btn btn-sm btn-danger">Delete Course</button>
-    </form>
+    <div class="d-flex gap-2">
+      {{-- Tombol Download --}}
+      <a href="{{ route('courses.download', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+        class="btn btn-sm btn-success">
+        Download
+      </a>
+
+      {{-- Tombol Delete --}}
+      <!-- <form action="{{ route('courses.destroy', $course->slug) }}" method="POST"
+        onsubmit="return confirm('Yakin ingin menghapus course ini?')" class="d-inline">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-sm btn-danger">
+          Delete Course
+        </button>
+      </form> -->
+    </div>
   </div>
   <div class="row">
     <div class="col-md-6">
       <p><strong>Kode Blok:</strong> {{ $course->kode_blok }}</p>
     </div>
     <div class="col-md-6 d-flex">
-      <strong class="me-3">Dosen:</strong>
       <ul class="mb-0 ps-3">
-        @foreach($course->lecturers as $lecturer)
-        <li>{{ $lecturer->name }}</li>
+        @foreach($lecturers as $lecturer)
+        <li>{{ $lecturer->lecturer->user->name }}</li>
         @endforeach
       </ul>
     </div>
@@ -44,6 +55,7 @@
 
   <div class="collapse" id="filterCollapse">
     <form method="GET" action="{{ route('courses.show', $course->slug) }}">
+      <input type="hidden" name="semester_id" value="{{ $semesterId }}">
       <div class="mx-3 ">
         <div class="row g-2">
           <!-- Input Blok -->
@@ -60,7 +72,8 @@
 
           <!-- Buttons -->
           <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-            <a href="{{ route('courses.show', $course->slug) }}" class="btn btn-light btn-sm">Reset</a>
+            <a href="{{ route('courses.show', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+              class="btn btn-light btn-sm">Reset</a>
             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
           </div>
         </div>
@@ -81,12 +94,12 @@
           </tr>
         </thead>
         <tbody>
-          @foreach($course->students as $student)
+          @foreach($students as $student)
           @if( (!request('nim') || str_contains($student->student->nim, request('nim'))) &&
-          (!request('name') || str_contains(strtolower($student->name), strtolower(request('name')))) )
+          (!request('name') || str_contains(strtolower($student->student->user->name), strtolower(request('name')))) )
           <tr>
             <td class="align-middle text-center">{{ $student->student->nim }}</td>
-            <td class="align-middle text-center">{{ $student->name }}</td>
+            <td class="align-middle text-center">{{ $student->student->user->name }}</td>
             <td class="align-middle text-center">
               <a href="{{ route('courses.edit', $course->slug) }}"
                 class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">

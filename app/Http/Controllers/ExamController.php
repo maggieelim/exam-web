@@ -7,7 +7,6 @@ use App\Models\Course;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
-use App\Models\ExamType;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -51,7 +50,6 @@ class ExamController extends Controller
 
         // Base query
         $query = Exam::with([
-            'examType',
             'course',
             'creator',
             'updater',
@@ -172,8 +170,7 @@ class ExamController extends Controller
         } else {
             $courses = Course::all();
         }
-        $exam_type = ExamType::all();
-        return view('exams.create', compact('courses', 'exam_type'));
+        return view('exams.create', compact('courses'));
     }
 
     public function import(Request $request)
@@ -194,7 +191,6 @@ class ExamController extends Controller
         $exam = Exam::create([
             'title' => $request->title,
             'course_id' => $request->course_id,
-            'exam_type_id' => 1, // default sementara
             'exam_date' => $request->exam_date,
             'room' => $request->room,
             'duration' => $request->duration,
@@ -218,7 +214,7 @@ class ExamController extends Controller
      */
     public function show(Request $request, string $exam_code)
     {
-        $exam = Exam::with(['course', 'examType', 'creator', 'updater'])
+        $exam = Exam::with(['course', 'creator', 'updater'])
             ->where('exam_code', $exam_code)
             ->firstOrFail();
 
@@ -251,14 +247,13 @@ class ExamController extends Controller
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
         $courses = Course::all();
-        $exam_type = ExamType::all();
-        return view('exams.edit', compact('status', 'exam', 'courses', 'exam_type'));
+        return view('exams.edit', compact('status', 'exam', 'courses'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $exam_code)
+    public function update(Request $request, $status, $exam_code)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
         $request->validate([
@@ -281,7 +276,7 @@ class ExamController extends Controller
             'password'    => $request->password,
         ]);
 
-        return redirect()->route('exams.edit', $exam_code)->with('success', 'Exam berhasil diperbarui');
+        return redirect()->route('exams.edit', [$status, $exam_code])->with('success', 'Exam berhasil diperbarui');
     }
 
     /**

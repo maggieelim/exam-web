@@ -20,7 +20,6 @@ class OngoingExamController extends Controller
         $user = auth()->user();
 
         $exam = Exam::with([
-            'examType',
             'course',
             'creator',
             'updater',

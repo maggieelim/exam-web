@@ -14,6 +14,12 @@ class Lecturer extends Model
         'user_id',
         'nidn',
         'faculty',
+        'gender',
+        'strata',
+        'gelar',
+        'tipe_dosen',
+        'min_sks',
+        'max_sks'
     ];
 
     protected static function boot()

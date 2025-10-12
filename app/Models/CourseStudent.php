@@ -12,4 +12,19 @@ class CourseStudent extends Model
     protected $guarded = [
         'id',
     ];
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class, 'user_id', 'user_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
 }
