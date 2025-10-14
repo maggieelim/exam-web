@@ -9,7 +9,7 @@
       {{-- Tombol Download --}}
       <a href="{{ route('courses.download', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
         class="btn btn-sm btn-success">
-        Download
+        Export
       </a>
 
       {{-- Tombol Delete --}}
@@ -27,7 +27,8 @@
     <div class="col-md-6">
       <p><strong>Kode Blok:</strong> {{ $course->kode_blok }}</p>
     </div>
-    <div class="col-md-6 d-flex">
+    <div class="col-md-6 d-flex gap-2">
+      <p><strong>Kode Blok:</strong></p>
       <ul class="mb-0 ps-3">
         @foreach($lecturers as $lecturer)
         <li>{{ $lecturer->lecturer->user->name }}</li>
@@ -42,7 +43,7 @@
   <div class="card-header d-flex justify-content-between pb-0 mb-0">
     <h5>List Students</h5>
     <div class="d-flex gap-3">
-      <a href="{{ route('courses.editStudent',[$course->slug] ) }}" class="btn btn-sm btn-warning">
+      <a href="{{ route('courses.editStudent',[$course->slug, 'semester_id' => $semesterId] ) }}" class="btn btn-sm btn-warning">
         Edit Participant
       </a>
       <button class="btn btn-sm btn-outline-secondary" type="button"

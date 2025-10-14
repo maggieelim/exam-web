@@ -12,7 +12,7 @@
         <form method="POST" action="{{ route('courses.update', $course->slug) }}" enctype="multipart/form-data">
           @csrf
           @method('PUT')
-
+          <input hidden type="text" name="semester_id" class="form-control" value="{{ $semesterId }}" required>
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label>Kode Blok</label>
@@ -23,18 +23,17 @@
               <input type="text" name="name" class="form-control" value="{{ $course->name }}" required>
             </div>
             <div class="col-md-4">
-              <label>Cover Blok</label>
-              <input type="file" name="cover" class="form-control" accept="image/*">
-              @if($course->cover)
-              <img src="{{ asset('storage/' . $course->cover) }}"
-                alt="Cover"
-                style="max-width: 200px; height: auto; border-radius: 5px; position:absolute; margin:10px">
-              @endif
+              <label>Semester</label>
+              <select id="semester" name="semester" class="form-select form-select">
+                <option value="Ganjil/Genap" {{ $course->semester === ''?'selected':'' }}>Ganjil/Genap</option>
+                <option value="Ganjil" {{ $course->semester === 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
+                <option value="Genap" {{ $course->semester === 'Genap' ? 'selected' : '' }}>Genap</option>
+              </select>
             </div>
           </div>
 
           <div class="row mb-3">
-            <div class="col-md-6">
+            <div class="col-md-12">
               <label for="lecturers" class="form-label">Dosen Pengajar</label>
               <select id="lecturers" name="lecturers[]" multiple class="form-select">
                 @foreach($lecturers as $lecturer)

@@ -32,23 +32,38 @@
               @if($type === 'student')
               <div class="col-md-4">
                 <label for="nim" class="form-label mb-1">NIM</label>
-                <input type="text" class="form-control form-control-sm" name="nim" value="{{ request('nim') }}">
+                <input type="text" class="form-control " name="nim" value="{{ request('nim') }}">
+              </div>
+              <div class="col-md-4">
+                <label for="semester_id" class="form-label mb-1">Semester</label>
+                <select name="semester_id" id="semester_id" class="form-select">
+                  <option value="">-- Semua Mahasiswa --</option>
+                  @foreach($semesters as $semester)
+                  <option value="{{ $semester->id }}" {{ $semesterId == $semester->id ? 'selected' : '' }}>
+                    {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
+                    @if($activeSemester && $semester->id == $activeSemester->id)
+                    (Aktif)
+                    @endif
+                  </option>
+                  @endforeach
+                </select>
+
               </div>
               @elseif($type === 'lecturer')
               <div class="col-md-4">
                 <label for="nidn" class="form-label mb-1">NIDN</label>
-                <input type="text" class="form-control form-control-sm" name="nidn" value="{{ request('nidn') }}">
+                <input type="text" class="form-control " name="nidn" value="{{ request('nidn') }}">
               </div>
               @endif
 
               <div class="col-md-4">
                 <label for="name" class="form-label mb-1">Nama</label>
-                <input type="text" class="form-control form-control-sm" name="name" value="{{ request('name') }}">
+                <input type="text" class="form-control " name="name" value="{{ request('name') }}">
               </div>
 
               <div class="col-md-4">
                 <label for="email" class="form-label mb-1">Email</label>
-                <input type="text" class="form-control form-control-sm" name="email" value="{{ request('email') }}">
+                <input type="text" class="form-control " name="email" value="{{ request('email') }}">
               </div>
 
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">

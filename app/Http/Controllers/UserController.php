@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Exports\UsersExport;
 use App\Imports\UsersImport;
-use App\Models\Course;
+use App\Models\CourseLecturer;
+use App\Models\CourseStudent;
 use App\Models\Lecturer;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
@@ -19,64 +21,40 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class UserController extends Controller
 {
 
-    public function index(Request $request)
-    {
-        $query = User::with('roles');
-
-
-        if ($request->filled('name')) {
-            $query->where('name', 'like', "%{$request->name}%");
-        }
-        if ($request->filled('email')) {
-            $query->where('email', 'like', "%{$request->email}%");
-        }
-        if ($request->filled('nim')) {
-            $query->whereHas('student', function ($q) use ($request) {
-                $q->where('nim', 'like', "%{$request->nim}%");
-            });
-        }
-        if ($request->filled('nidn')) {
-            $query->whereHas('lecturer', function ($q) use ($request) {
-                $q->where('nidn', 'like', "%{$request->nidn}%");
-            });
-        }
-
-        // SORTING
-        $sort = $request->get('sort', 'name'); // default name
-        $dir  = $request->get('dir', 'asc');   // default asc
-
-        if ($sort === 'nim') {
-            $query->whereHas('student')
-                ->join('students', 'users.id', '=', 'students.user_id')
-                ->orderBy('students.nim', $dir)
-                ->select('users.*');
-        } elseif ($sort === 'nidn') {
-            $query->whereHas('lecturer')
-                ->join('lecturers', 'users.id', '=', 'lecturers.user_id')
-                ->orderBy('lecturers.nidn', $dir)
-                ->select('users.*');
-        } else {
-            $query->orderBy($sort, $dir);
-        }
-
-        $users = $query->paginate(15)->appends($request->all());
-
-        return view('admin.users.index', compact('users', 'type', 'sort', 'dir'));
-    }
-
-
     public function indexAdmin(Request $request, $type = null)
     {
+        if ($request->all()) {
+            session(['user_filter' => $request->all()]);
+        } elseif (session('user_filter')) {
+            $request->merge(session('user_filter'));
+        }
+
         $query = User::with('roles');
+        $today = Carbon::today();
+        $semesterId = $request->get('semester_id');
+
+        $activeSemester = Semester::where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+
+        $semesters = Semester::with('academicYear')
+            ->orderBy('start_date', 'desc')
+            ->get();
 
         if ($type === 'student') {
-            $query->role('student')->with('student');
+            $query->role('student')->with('student.courseStudents.semester');
         } elseif ($type === 'lecturer') {
             $query->role('lecturer')->with('lecturer');
         } elseif ($type === 'admin') {
             $query->role('admin');
         }
 
+        if ($semesterId) {
+            $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            });
+        }
+
         if ($request->filled('name')) {
             $query->where('name', 'like', "%{$request->name}%");
         }
@@ -114,10 +92,17 @@ class UserController extends Controller
             $query->orderBy($sort, $dir);
         }
 
-
         $users = $query->paginate(15)->appends($request->all());
 
-        return view('admin.users.index', compact('users', 'type', 'sort', 'dir'));
+        return view('admin.users.index', compact(
+            'users',
+            'type',
+            'sort',
+            'dir',
+            'semesters',
+            'semesterId',
+            'activeSemester'
+        ));
     }
 
     public function create($type)
@@ -229,7 +214,17 @@ class UserController extends Controller
             'admin'    => 'Admin',
             default    => 'User',
         };
-        $fileName = "{$label}-{$date}.xlsx";
+
+        $semesterPart = '';
+        if ($type === 'student' && $request->filled('semester_id')) {
+            $semester = Semester::with('academicYear')->find($request->semester_id);
+            if ($semester) {
+                $semesterName = strtolower($semester->semester_name ?? '');
+                $yearName = str_replace('/', '_', $semester->academicYear->year_name);
+                $semesterPart = "_{$semesterName}_{$yearName}";
+            }
+        }
+        $fileName = "{$label}{$semesterPart}_{$date}.xlsx";
         return Excel::download(new UsersExport($type, $request->all()), $fileName);
     }
 
@@ -327,27 +322,22 @@ class UserController extends Controller
         $courses = collect(); // gunakan plural untuk lebih jelas
 
         if ($type === 'student') {
-            // Ambil student_id berdasarkan user_id
             $student = $user->student;
-
             if ($student) {
-                $courses = Course::with(['lecturers', 'students', 'courseStudents.semester'])
-                    ->whereHas('students', function ($q) use ($student) {
-                        $q->where('student_id', $student->id);
-                    })
-                    ->get();
+                $courses = CourseStudent::with(['student', 'semester'])
+                    ->where('student_id', $student->id)
+                    ->orderByDesc('semester_id')
+                    ->paginate(15);
             }
         } elseif ($type === 'lecturer') {
             $lecturer = $user->lecturer;
             if ($lecturer) {
-                $courses = Course::with(['lecturers', 'students', 'courseLecturer.semester'])
-                    ->whereHas('lecturers', function ($q) use ($lecturer) {
-                        $q->where('lecturer_id', $lecturer->user_id);
-                    })
-                    ->get();
+                $courses = CourseLecturer::with(['lecturer', 'semester'])
+                    ->where('lecturer_id', $lecturer->id)
+                    ->orderByDesc('semester_id')
+                    ->paginate(15);
             }
         }
-
         return view('admin.users.show', compact('user', 'type', 'courses'));
     }
 

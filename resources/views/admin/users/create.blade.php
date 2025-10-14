@@ -17,12 +17,12 @@
               <input type="file" name="file" class="form-control" required accept=".xlsx,.xls,.csv">
             </div>
             <div class="col-md-2 mb-3">
-              <button type="submit" class="btn btn-sm bg-gradient-success w-100">Import Data</button>
-            </div>
-            <div class="col-md-2 mb-3">
               <a href="{{ route('admin.users.download-template', $type) }}" class="btn btn-sm bg-gradient-info w-100">
                 <i class="fas fa-download"></i> Template
               </a>
+            </div>
+            <div class="col-md-2 mb-3">
+              <button type="submit" class="btn btn-sm bg-gradient-success w-100">Import Data</button>
             </div>
           </div>
         </form>
@@ -44,7 +44,7 @@
 
           <div class="row mt-4">
             <div class="col-md-2">
-              <button type="submit" class="btn bg-gradient-primary w-100">Save</button>
+              <button type="submit" class="btn btn-sm bg-gradient-primary w-100">Save</button>
             </div>
           </div>
         </form>

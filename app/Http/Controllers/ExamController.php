@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Imports\ExamQuestionTemplateImport;
 use App\Models\Course;
+use App\Models\CourseLecturer;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
-use App\Models\ExamQuestionAnswer;
+use App\Models\Lecturer;
+use App\Models\Semester;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -46,26 +48,54 @@ class ExamController extends Controller
     {
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $user = auth()->user();
-        $courses = Course::all();
+        $courses = collect();
+        $lecturer = Lecturer::where('user_id', $user->id)->first();
+        $today = Carbon::today();
+        $semesterId = $request->get('semester_id');
 
+        $activeSemester = Semester::where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+
+        if (!$semesterId && $activeSemester) {
+            $semesterId = $activeSemester->id;
+        }
+
+        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
         // Base query
         $query = Exam::with([
             'course',
             'creator',
             'updater',
-            'attempts' => fn($q) => $q->where('user_id', $user->id)
-        ])
-            ->withCount('questions');
+            'attempts' => fn($q) => $q->where('user_id', $user->id),
+            'semester'
+        ])->withCount('questions');
 
-        // Cek role untuk courses
         if ($user->hasRole('lecturer')) {
-            $courses = Course::whereHas('lecturers', fn($q) => $q->where('users.id', $user->id))->get();
+            $courses = CourseLecturer::where('lecturer_id', $lecturer->id)
+                ->with('course')
+                ->get()
+                ->pluck('course');
+
+            $query->whereHas('course.courseLecturer', function ($q) use ($lecturer) {
+                $q->where('lecturer_id', $lecturer->id);
+            });
         } elseif ($user->hasRole('student')) {
-            $courses = Course::whereHas('students', fn($q) => $q->where('users.id', $user->id))->get();
+            $courses = Course::whereHas('exams.attempts', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->get();
+            $query->whereHas('attempts', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        } else {
+            $courses = Course::whereHas('exams')->get();
         }
 
         // Status filter dari request/URL
         $this->applyStatusFilter($query, $user, $status);
+        if ($semesterId) {
+            $query->where('semester_id', $semesterId);
+        }
 
         // Additional filters
         $query->when($request->filled('title'), fn($q) => $q->where('title', 'like', "%{$request->title}%"))
@@ -75,7 +105,8 @@ class ExamController extends Controller
         $exams = $query->orderBy(
             $request->get('sort', 'exam_date'),
             $request->get('dir', 'desc')
-        )->paginate(10);
+        )->paginate(10)
+            ->appends($request->query());
 
         // Mapping status ended → previous di tiap exam
         $exams->getCollection()->transform(function ($exam) {
@@ -88,7 +119,14 @@ class ExamController extends Controller
         // Pilih view
         $view = $user->hasRole('student') ? 'students.exams.index' : 'exams.index';
 
-        return view($view, compact('exams', 'courses', 'status'))
+        return view($view, compact(
+            'exams',
+            'courses',
+            'status',
+            'semesters',
+            'semesterId',
+            'activeSemester'
+        ))
             ->with(['sort' => $request->get('sort', 'exam_date'), 'dir' => $request->get('dir', 'desc')]);
     }
 
@@ -160,18 +198,35 @@ class ExamController extends Controller
      */
     public function create()
     {
-        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
-
+        /** @var \App\Models\User $user */
         $user = auth()->user();
-        if ($user->hasRole('lecturer')) {
-            $courses = Course::whereHas('lecturers', function ($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })->get();
-        } else {
-            $courses = Course::all();
+        $today = now();
+
+        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+        $activeSemester = Semester::where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+
+        if (!$activeSemester) {
+            return back()->with('error', 'Tidak ada semester aktif saat ini.');
         }
-        return view('exams.create', compact('courses'));
+
+        $lecturer = Lecturer::where('user_id', $user->id)->first();
+        if ($user->hasRole('lecturer') && $lecturer) {
+            $courses = CourseLecturer::with('course')
+                ->where('lecturer_id', $lecturer->id)
+                ->where('semester_id', $activeSemester->id)
+                ->get()
+                ->map(fn($cl) => $cl->course); // ambil model Course dari pivot
+        } else {
+            $courses = Course::where('semester', $activeSemester->semester_name)
+                ->orWhere('semester', 'Ganjil/Genap')
+                ->get();
+        }
+
+        return view('exams.create', compact('courses', 'semesters', 'activeSemester'));
     }
+
 
     public function import(Request $request)
     {
@@ -181,6 +236,7 @@ class ExamController extends Controller
             'title' => 'required|string|max:255',
             'exam_date' => 'required|date',
             'duration' => 'required|integer',
+            'semester_id' => 'required|integer',
             'room' => 'nullable|string|max:100',
             'course_id' => 'required|exists:courses,id',
             'password' => 'nullable|string|max:255',
@@ -192,6 +248,7 @@ class ExamController extends Controller
             'title' => $request->title,
             'course_id' => $request->course_id,
             'exam_date' => $request->exam_date,
+            'semester_id' => $request->semester_id,
             'room' => $request->room,
             'duration' => $request->duration,
             'password'    => $request->password,

@@ -8,6 +8,7 @@
         <h5 class="mb-0">Detail {{ ucfirst($type) }}</h5>
         <div class="d-flex gap-2">
           <a href="{{ route('admin.users.index', $type) }}" class="btn btn-sm btn-secondary">Back</a>
+
           <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
             Delete
           </button>

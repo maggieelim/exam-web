@@ -6,7 +6,7 @@
     <div class="card mb-4">
       <div class="card-header pb-0 d-flex flex-row justify-content-between align-items-center">
         <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
-          <h5 class="mb-0">Courses List</h5>
+          <h5 class="mb-0">List Blok</h5>
 
           {{-- Tampilkan semester aktif/terfilter di samping judul --}}
           @if($semesterId)
@@ -14,7 +14,7 @@
           $selectedSemester = $semesters->firstWhere('id', $semesterId);
           @endphp
           @if($selectedSemester)
-          <span class="badge bg-info text-white">
+          <span class="badge bg-success text-white">
             {{ $selectedSemester->semester_name }} - {{ $selectedSemester->academicYear->year_name }}
             @if($activeSemester && $selectedSemester->id == $activeSemester->id)
             (Aktif)
@@ -30,10 +30,14 @@
             aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filter
           </button>
-
+          <a href="{{ route('courses.export', request()->all()) }}" class="btn btn-success btn-sm" style="white-space: nowrap;">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </a>
+          @role('admin')
           <a href="{{ route('courses.create') }}" class="btn btn-primary btn-sm" style="white-space: nowrap;">
             +&nbsp; New Course
           </a>
+          @endrole
         </div>
       </div>
 
@@ -45,8 +49,7 @@
               <!-- Filter Semester (dari tabel semester) -->
               <div class="col-md-4">
                 <label for="semester_id" class="form-label mb-1">Semester</label>
-                <select name="semester_id" id="semester_id" class="form-select form-select-sm">
-                  <option value="">-- Semua Semester --</option>
+                <select name="semester_id" id="semester_id" class="form-select">
                   @foreach($semesters as $semester)
                   <option value="{{ $semester->id }}"
                     {{ ($semesterId == $semester->id) ? 'selected' : '' }}>
@@ -62,13 +65,13 @@
               <!-- Input Blok -->
               <div class="col-md-4">
                 <label for="blok" class="form-label mb-1">Blok</label>
-                <input type="text" class="form-control form-control-sm" name="name" value="{{ request('name') }}" placeholder="Kode atau nama blok">
+                <input type="text" class="form-control form-control" name="name" value="{{ request('name') }}" placeholder="Kode atau nama blok">
               </div>
 
               <!-- Input Dosen -->
               <div class="col-md-4">
                 <label for="dosen" class="form-label mb-1">Dosen</label>
-                <input type="text" class="form-control form-control-sm" name="lecturer" value="{{ request('lecturer') }}" placeholder="Nama dosen">
+                <input type="text" class="form-control form-control" name="lecturer" value="{{ request('lecturer') }}" placeholder="Nama dosen">
               </div>
 
               <!-- Buttons -->
@@ -108,7 +111,9 @@
                     @endif
                   </a>
                 </th>
-                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Total Students</th>
+                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Semester</th>
+                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Total Dosen</th>
+                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Total Mahasiswa</th>
                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Action</th>
               </tr>
             </thead>
@@ -121,6 +126,12 @@
                 </td>
                 <td class="">
                   <span class="text-sm font-weight-bold">{{ $course->name }}</span>
+                </td>
+                <td class="align-middle text-center">
+                  <span class="text-sm font-weight-bold">{{ $course->semester}}</span>
+                </td>
+                <td class="align-middle text-center">
+                  <span class="text-sm font-weight-bold">{{ $course->lecturer_count ?? 0 }}</span>
                 </td>
                 <td class="align-middle text-center">
                   <span class="text-sm font-weight-bold">{{ $course->student_count ?? 0 }}</span>

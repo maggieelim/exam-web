@@ -12,17 +12,19 @@
         @foreach($courses as $course)
         @php
         $relation = $type === 'student' ? 'courseStudents' : 'courseLecturer';
-        $latestSemester = $course->{$relation}->sortByDesc('semester.start_date')->first();
         @endphp
         <tr>
-          <td class="align-middle text-center">{{ $course->name }}</td>
+          <td class="align-middle text-center">{{ $course->course->name }}</td>
           <td class="align-middle text-center">
-            {{ $latestSemester?->semester?->semester_name ?? '-' }}
-            {{ $latestSemester?->semester?->academicYear?->year_name ?? '' }}
+            {{ $course?->semester?->semester_name ?? '-' }}
+            {{ $course?->semester?->academicYear?->year_name ?? '' }}
           </td>
         </tr>
         @endforeach
       </tbody>
     </table>
+    <div class="d-flex justify-content-center mt-3">
+      <x-pagination :paginator="$courses" />
+    </div>
   </div>
 </div>

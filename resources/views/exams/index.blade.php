@@ -26,12 +26,26 @@
           <div class="mx-3 mb-2 pb-2">
             <div class="row g-2">
               <input type="hidden" name="status" value="{{ $status }}">
-              <div class="col-md-6">
+              <div class="col-md-4">
+                <label for="semester_id" class="form-label mb-1">Semester</label>
+                <select name="semester_id" id="semester_id" class="form-select">
+                  @foreach($semesters as $semester)
+                  <option value="{{ $semester->id }}"
+                    {{ ($semesterId == $semester->id) ? 'selected' : '' }}>
+                    {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
+                    @if($activeSemester && $semester->id == $activeSemester->id)
+                    (Aktif)
+                    @endif
+                  </option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="col-md-4">
                 <label for="title" class="form-label mb-1">Title</label>
                 <input type="text" name="title" class="form-control" placeholder="Cari Judul Ujian"
                   value="{{ request('title') }}">
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="blok" class="form-label mb-1">Blok</label>
                 <select name="course_id" class="form-control">
                   <option value="">-- Pilih Course --</option>

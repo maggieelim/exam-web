@@ -31,6 +31,13 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
       if (!empty($this->filters['nim'])) {
         $query->whereHas('student', fn($q) => $q->where('nim', 'like', '%' . $this->filters['nim'] . '%'));
       }
+
+      if (!empty($this->filters['semester_id'])) {
+        $semesterId = $this->filters['semester_id'];
+        $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
+          $q->where('semester_id', $semesterId);
+        });
+      }
     }
 
     if ($this->type === 'lecturer') {

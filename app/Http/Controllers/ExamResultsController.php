@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ExamResultsExport;
 use App\Models\Course;
+use App\Models\CourseLecturer;
 use App\Models\DifficultyLevel;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
+use App\Models\Lecturer;
+use App\Models\Semester;
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExamResultsController extends Controller
 {
@@ -20,9 +27,9 @@ class ExamResultsController extends Controller
 
     private function examQueryForLecturer($user, $status = null)
     {
-        $query = Exam::with(['course', 'attempts'])
+        $query = Exam::with(['course', 'attempts', 'semester'])
             ->withCount('questions')
-            ->whereHas('course.lecturers', fn($q) => $q->where('users.id', $user->id))
+            ->whereHas('course.lecturers', fn($q) => $q->where('lecturer_id', $user->id))
             ->where('status', 'ended');
 
         if ($status === 'published') $query->where('is_published', true);
@@ -34,16 +41,40 @@ class ExamResultsController extends Controller
     public function indexLecturer(Request $request, $status = 'ungraded')
     {
         $user = auth()->user(); // dosen yang login
-        $courses = Course::whereHas('lecturers', function ($q) use ($user) {
-            $q->where('users.id', $user->id);
-        })->get();
+        $lecturer = Lecturer::where('user_id', $user->id)->first();
+        $today = Carbon::today();
+        $semesterId = $request->get('semester_id');
 
-        $query = $this->examQueryForLecturer($user, $status);
+        $activeSemester = Semester::where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+
+        if (!$semesterId && $activeSemester) {
+            $semesterId = $activeSemester->id;
+        }
+
+        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+
+        if (!$lecturer) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+        $courses = CourseLecturer::where('lecturer_id', $lecturer->id)
+            ->with('course')
+            ->get()
+            ->pluck('course')
+            ->unique('id')
+            ->values();
+
+        $query = $this->examQueryForLecturer($lecturer, $status);
 
         if ($status === 'published') {
             $query->where('is_published', true);
         } elseif ($status === 'ungraded') {
             $query->where('is_published', false);
+        }
+
+        if ($semesterId) {
+            $query->where('semester_id', $semesterId);
         }
 
         $query->when(
@@ -59,9 +90,34 @@ class ExamResultsController extends Controller
         $sort = $request->get('sort', 'exam_date');
         $dir  = $request->get('dir', 'desc');
 
-        $exams = $query->orderBy('exam_date', 'desc')->paginate(10);
+        $exams = $query->orderBy('exam_date', 'desc')->paginate(10)->appends($request->query());
 
-        return view('lecturer.grading.index', compact('exams', 'status', 'courses', 'sort', 'dir'));
+        return view('lecturer.grading.index', compact(
+            'exams',
+            'status',
+            'courses',
+            'sort',
+            'dir',
+            'semesters',
+            'semesterId',
+            'activeSemester'
+        ));
+    }
+
+    public function download($examCode)
+    {
+        $exam = Exam::with([
+            'course',
+            'attempts.user.student',
+            'answers.user.student',
+            'answers.question'
+        ])
+            ->where('exam_code', $examCode)
+            ->firstOrFail();
+
+        $fileName = 'Hasil_' . str_replace(' ', '_', $exam->title) . '_Blok_' .  $exam->course->slug . '.xlsx';
+
+        return Excel::download(new ExamResultsExport($exam), $fileName);
     }
 
     public function grade($examCode, Request $request)
@@ -358,6 +414,7 @@ class ExamResultsController extends Controller
             'difficultyLevel'
         ));
     }
+
     private function determineStatus($exam)
     {
         return $exam->status === 'ended'
@@ -365,8 +422,7 @@ class ExamResultsController extends Controller
             : $exam->status;
     }
 
-
-    private function buildRankingResults($exam, Request $request = null)
+    public function buildRankingResults($exam, Request $request = null)
     {
         if ($exam->attempts->isEmpty()) {
             return new LengthAwarePaginator(collect(), 0, 10, 1);

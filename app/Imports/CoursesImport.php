@@ -14,7 +14,8 @@ class CoursesImport implements ToModel, WithHeadingRow
   public function model(array $row)
   {
     $kodeBlok = $row['kode_blok'] ?? null;
-    $nama = $row['name'] ?? null;
+    $nama = $row['nama_blok'] ?? null;
+    $semester = $row['semester'] ?? null;
 
     // Lewati jika kode_blok kosong atau sudah pernah diproses
     if (empty($kodeBlok) || in_array($kodeBlok, $this->processed)) {
@@ -29,13 +30,11 @@ class CoursesImport implements ToModel, WithHeadingRow
       return null;
     }
 
-    $coverPath = $row['cover'] ?? 'covers/default.png';
-
     return new Course([
       'kode_blok' => $kodeBlok,
       'name'      => $nama,
       'slug'      => Str::slug($nama),
-      'cover'     => $coverPath,
+      'semester'      => $semester,
     ]);
   }
 }

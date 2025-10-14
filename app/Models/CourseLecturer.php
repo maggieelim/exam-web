@@ -8,10 +8,6 @@ class CourseLecturer extends Model
 {
     protected $table = 'course_lecturer'; // atau 'course_lecturer' sesuai database
 
-    protected $guarded = [
-        'id',
-    ];
-
     protected $fillable = ["lecturer_id", "course_id", "created_at", "updated_at"];
 
     public function semester()
@@ -21,6 +17,10 @@ class CourseLecturer extends Model
 
     public function lecturer()
     {
-        return $this->belongsTo(Lecturer::class, 'lecturer_id', 'id');
+        return $this->belongsTo(Lecturer::class, 'lecturer_id');
+    }
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id');
     }
 }

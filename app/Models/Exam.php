@@ -17,6 +17,7 @@ class Exam extends Model
         'exam_date',
         'room',
         'password',
+        'semester_id',
         'duration',
         'created_by',
         'updated_by',
@@ -59,6 +60,10 @@ class Exam extends Model
     public function course()
     {
         return $this->belongsTo(Course::class, 'course_id');
+    }
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'semester_id');
     }
 
     public function questions()

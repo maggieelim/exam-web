@@ -37,4 +37,9 @@ class Lecturer extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function courseLecturers()
+    {
+        return $this->hasMany(CourseLecturer::class, 'lecturer_id');
+    }
 }

@@ -44,7 +44,14 @@
 
                 <!-- Pilih Course -->
                 <div class="row">
-                    <div class=" col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
+                        <label for="semester_id" class="form-label">Semester</label>
+                        <input type="text" class="form-control"
+                            value="{{ $activeSemester->semester_name }} {{ $activeSemester->academicYear->year_name }}"
+                            readonly>
+                        <input type="hidden" name="semester_id" value="{{ $activeSemester->id }}">
+                    </div>
+                    <div class=" col-md-4 mb-3">
                         <label for="course_id" class="form-label">Pilih Course</label>
                         <select name="course_id" id="course_id" class="form-select" required>
                             <option value="">-- Pilih Course --</option>
@@ -53,7 +60,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="password">Password</label>
                         <input type="text" name="password" class="form-control" required>
                     </div>
@@ -63,8 +70,12 @@
                     <label for="file">Upload Soal</label>
                     <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv">
                 </div>
-
-                <button type="submit" class="btn bg-gradient-dark">Simpan Ujian</button>
+                <a href="{{ asset('templates/template_soal.xlsx') }}"
+                    class="btn bg-gradient-info btn-sm"
+                    download>
+                    <i class="fas fa-download me-1"></i>Template Soal
+                </a>
+                <button type="submit" class="btn btn-sm bg-gradient-success">Simpan Ujian</button>
             </form>
         </div>
     </div>

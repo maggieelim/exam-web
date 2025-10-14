@@ -18,13 +18,13 @@
             </button>
           </form>
           @endif
-          <form action="" method="POST" onsubmit="return confirm('Yakin ingin menghapus course ini?')" class="d-inline">
-            <button type="submit" class="btn btn-sm btn-warning">Print/Download</button>
-          </form>
+          <a href="{{ route('lecturer.results.download', $exam->exam_code) }}"
+            class="btn btn-sm btn-warning"><i class="fas fa-download"></i>
+            Download
+          </a>
         </div>
       </div>
       <div class="row">
-
         <div class="col-md-6">
           <p><strong>Blok:</strong> {{ $exam->course->name }}</p>
         </div>
@@ -35,7 +35,7 @@
           <strong class="me-3">Dosen:</strong>
           <ul class="mb-0 ps-3">
             @foreach($exam->course->lecturers as $lecturer)
-            <li>{{ $lecturer->name }}</li>
+            <li>{{ $lecturer->user->name }}</li>
             @endforeach
           </ul>
         </div>

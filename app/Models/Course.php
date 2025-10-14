@@ -15,7 +15,7 @@ class Course extends Model
     protected $guarded = [
         'id',
     ];
-    protected $fillable = ['kode_blok', 'name', 'slug', 'cover'];
+    protected $fillable = ['kode_blok', 'name', 'slug', 'semester'];
     protected static function boot()
     {
         parent::boot();
@@ -44,7 +44,7 @@ class Course extends Model
 
     public function lecturers()
     {
-        return $this->belongsToMany(User::class, 'course_lecturer', 'course_id', 'lecturer_id');
+        return $this->belongsToMany(Lecturer::class, 'course_lecturer', 'course_id', 'lecturer_id');
     }
 
     public function exams()
@@ -57,6 +57,6 @@ class Course extends Model
     }
     public function courseLecturer()
     {
-        return $this->hasMany(CourseLecturer::class);
+        return $this->hasMany(CourseLecturer::class, 'course_id');
     }
 }

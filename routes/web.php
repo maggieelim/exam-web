@@ -97,6 +97,7 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
 	Route::get('/published/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
 	Route::get('/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
 	Route::put('/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
+	Route::get('/results/{exam_code}/download', [ExamResultsController::class, 'download'])->name('results.download');
 });
 
 // ================= SHARED ADMIN & LECTURER =================
@@ -104,6 +105,7 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	// courses
 	Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 	Route::get('/courses/{course}/download', [CourseController::class, 'download'])->name('courses.download');
+	Route::get('/courses/export', [CourseController::class, 'export'])->name('courses.export');
 	Route::get('/courses/create', [CourseController::class, 'create'])->name('courses.create');
 	Route::post('/courses/store', [CourseController::class, 'store'])->name('courses.store');
 	Route::post('/courses/import', [CourseController::class, 'import'])->name('courses.import');
@@ -115,13 +117,10 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
 	Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
 	Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
-	Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])
-		->name('courses.student.destroy');
-
+	Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
 
 	// exams
-	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')
-		->name('exams.index');
+	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')->name('exams.index');
 	Route::get('/exams/upcoming/create', [ExamController::class, 'create'])->name('exams.create');
 	Route::post('/exams/store', [ExamController::class, 'import'])->name('exams.import');
 	Route::get('/exams/{exam_code}', [ExamController::class, 'show'])->name('exams.details');
