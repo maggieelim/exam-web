@@ -30,7 +30,8 @@
             aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filter
           </button>
-          <a href="{{ route('courses.export', request()->all()) }}" class="btn btn-success btn-sm" style="white-space: nowrap;">
+
+          <a href="{{ route('courses.export', ['semester_id' => $semesterId]) }}" class="btn btn-success btn-sm" style="white-space: nowrap;">
             <i class="fas fa-file-excel"></i> Export Excel
           </a>
           @role('admin')
@@ -47,7 +48,7 @@
           <div class="mx-3 my-2 py-2">
             <div class="row g-2">
               <!-- Filter Semester (dari tabel semester) -->
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label for="semester_id" class="form-label mb-1">Semester</label>
                 <select name="semester_id" id="semester_id" class="form-select">
                   @foreach($semesters as $semester)
@@ -63,17 +64,10 @@
               </div>
 
               <!-- Input Blok -->
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label for="blok" class="form-label mb-1">Blok</label>
                 <input type="text" class="form-control form-control" name="name" value="{{ request('name') }}" placeholder="Kode atau nama blok">
               </div>
-
-              <!-- Input Dosen -->
-              <div class="col-md-4">
-                <label for="dosen" class="form-label mb-1">Dosen</label>
-                <input type="text" class="form-control form-control" name="lecturer" value="{{ request('lecturer') }}" placeholder="Nama dosen">
-              </div>
-
               <!-- Buttons -->
               <div class="col-12 d-flex justify-content-end gap-2 mt-2">
                 <a href="{{ route('courses.index') }}" class="btn btn-light btn-sm">Reset</a>

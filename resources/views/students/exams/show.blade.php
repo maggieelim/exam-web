@@ -19,11 +19,11 @@
       <p><strong class="text-uppercase text-sm">Exam Date:</strong> {{ $exam->exam_date->format('d-m-Y') }}</p>
     </div>
     <div class="col-md-6">
-      <p><strong class="text-uppercase text-sm">Exam Questions:</strong> {{ $totalQuestions }}</p>
+      <p><strong class="text-uppercase text-sm">Total Questions:</strong> {{ $totalQuestions }}</p>
     </div>
     <div class="col-md-12">
       <p><strong class="text-uppercase text-sm">Feedback From Lecturer:</strong>
-        <br>{{ $exam->attempts && $exam->attempts->first() ? $exam->attempts->first()->feedback : '-' }}
+        <br>{{ $attempt->feedback ?: '-' }}
       </p>
     </div>
   </div>
@@ -68,20 +68,73 @@ $count <= 2=> 'col-md-6 col-sm-6',
     @endforeach
   </div>
 
-
-  <div class="d-flex justify-content-end mb-3">
-    <a href="{{ route('student.results.show', $exam->exam_code) }}"
-      class="btn btn-outline-secondary btn-sm me-2 {{ !request('filter') ? 'active' : '' }}">
-      Show All
-    </a>
-
-    <a href="{{ route('student.results.show', ['exam_code' => $exam->exam_code, 'filter' => 'feedback']) }}"
-      class="btn btn-outline-info btn-sm {{ request('filter') == 'feedback' ? 'active' : '' }}">
-      Show Questions with Feedback
-    </a>
+  <!-- Filter Section -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <small class="text-muted">Active Filter:</small>
+      @if(request('answer_status') || request('feedback_status'))
+      @if(request('answer_status') && request('answer_status') != 'all')
+      <span class="badge bg-primary me-1">
+        Answer:
+        @if(request('answer_status') == 'correct') Correct
+        @elseif(request('answer_status') == 'incorrect') Incorrect
+        @elseif(request('answer_status') == 'not_answered') Not Answered
+        @endif
+      </span>
+      @endif
+      @if(request('feedback_status') && request('feedback_status') != 'all')
+      <span class="badge bg-info">
+        Feedback:
+        @if(request('feedback_status') == 'with_feedback') With Feedback
+        @elseif(request('feedback_status') == 'without_feedback') Without Feedback
+        @endif
+      </span>
+      @endif
+      @endif
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" type="button"
+      data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+      aria-expanded="false" aria-controls="filterCollapse">
+      <i class="fas fa-filter me-1"></i> Filter
+    </button>
   </div>
 
+  <div class="collapse" id="filterCollapse">
+    <form method="GET" action="{{ route('student.results.show', $exam->exam_code) }}">
+      <div class="row g-3">
+        <!-- Filter Answer Status -->
+        <div class="col-md-6">
+          <label for="answer_status" class="form-label fw-bold">Answer Status</label>
+          <select name="answer_status" id="answer_status" class="form-select">
+            <option value="all" {{ request('answer_status') == 'all' || !request('answer_status') ? 'selected' : '' }}>All Answers</option>
+            <option value="correct" {{ request('answer_status') == 'correct' ? 'selected' : '' }}>Correct</option>
+            <option value="incorrect" {{ request('answer_status') == 'incorrect' ? 'selected' : '' }}>Incorrect</option>
+            <option value="not_answered" {{ request('answer_status') == 'not_answered' ? 'selected' : '' }}>Not Answered</option>
+          </select>
+        </div>
 
+        <!-- Filter Feedback -->
+        <div class="col-md-6">
+          <label for="feedback_status" class="form-label fw-bold">Feedback Status</label>
+          <select name="feedback_status" id="feedback_status" class="form-select">
+            <option value="all" {{ request('feedback_status') == 'all' || !request('feedback_status') ? 'selected' : '' }}></option>
+            <option value="with_feedback" {{ request('feedback_status') == 'with_feedback' ? 'selected' : '' }}>With Feedback</option>
+            <option value="without_feedback" {{ request('feedback_status') == 'without_feedback' ? 'selected' : '' }}>Without Feedback</option>
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+          <a href="{{ route('student.results.show', $exam->exam_code) }}" class="btn btn-light btn-sm">
+            <i class="fas fa-undo me-1"></i>Reset
+          </a>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fas fa-check me-1"></i>Apply Filter
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
   @forelse($paginatedQuestions as $question)
   <div class="card mb-3 shadow-sm 
     @if(!empty($question['student_feedback'])) border-start border-4 border-info @endif">
@@ -139,15 +192,23 @@ $count <= 2=> 'col-md-6 col-sm-6',
       <div class="mt-3">
         <label class="fw-bold d-block mb-1">Feedback for this question:</label>
         <p class="mb-0 {{ !empty($question['student_feedback']) ? 'text-dark' : 'text-muted' }}">
-          {{ $question['student_feedback'] ?? '-' }}
+          {{ $question['student_feedback'] ?? 'No Feedback' }}
         </p>
       </div>
     </div>
   </div>
   @empty
-  <p class="text-muted">Belum ada soal untuk exam ini.</p>
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <i class="fas fa-search fa-3x text-muted mb-3"></i>
+      <h5 class="text-muted">Tidak ada soal yang sesuai dengan filter</h5>
+      <p class="text-muted">Coba ubah filter atau lihat semua soal</p>
+      <a href="{{ route('student.results.show', $exam->exam_code) }}" class="btn btn-primary">
+        Lihat Semua Soal
+      </a>
+    </div>
+  </div>
   @endforelse
-
 
   <!-- Pagination -->
   @if($paginatedQuestions->hasPages())
@@ -156,4 +217,12 @@ $count <= 2=> 'col-md-6 col-sm-6',
   </div>
   @endif
   @endsection
-  @push('dashboard')
+
+  @push('css')
+  <style>
+    .form-select:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+  </style>
+  @endpush

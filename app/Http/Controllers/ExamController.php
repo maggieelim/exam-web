@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Imports\ExamQuestionTemplateImport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
+use App\Models\CourseStudent;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\Lecturer;
@@ -81,10 +82,11 @@ class ExamController extends Controller
                 $q->where('lecturer_id', $lecturer->id);
             });
         } elseif ($user->hasRole('student')) {
-            $courses = Course::whereHas('exams.attempts', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })->get();
-            $query->whereHas('attempts', function ($q) use ($user) {
+            $courses = CourseStudent::where('user_id', $user->id)
+                ->with('course')
+                ->get()
+                ->pluck('course');
+            $query->whereHas('course.courseStudents', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             });
         } else {
@@ -105,7 +107,7 @@ class ExamController extends Controller
         $exams = $query->orderBy(
             $request->get('sort', 'exam_date'),
             $request->get('dir', 'desc')
-        )->paginate(10)
+        )->paginate(15)
             ->appends($request->query());
 
         // Mapping status ended → previous di tiap exam
@@ -274,7 +276,7 @@ class ExamController extends Controller
         $exam = Exam::with(['course', 'creator', 'updater'])
             ->where('exam_code', $exam_code)
             ->firstOrFail();
-
+        $total_participants = CourseStudent::where('course_id', $exam->course_id)->where('semester_id', $exam->semester_id)->count();
         // ambil query soal + opsi
         $query = $exam->questions()->with('options');
         if ($exam->status === 'ended') {
@@ -292,8 +294,8 @@ class ExamController extends Controller
         }
 
         // ambil data hasil query
-        $questions = $query->paginate(10)->withQueryString();
-        return view('exams.show', compact('exam', 'questions', 'status'));
+        $questions = $query->paginate(15)->withQueryString();
+        return view('exams.show', compact('exam', 'questions', 'status', 'total_participants'));
     }
 
 
@@ -304,6 +306,7 @@ class ExamController extends Controller
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
         $courses = Course::all();
+
         return view('exams.edit', compact('status', 'exam', 'courses'));
     }
 

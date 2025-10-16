@@ -40,11 +40,13 @@
           </div>
           @endforeach
 
-          <div class="mt-4 d-flex justify-content-between align-items-center">
+          <div class="mt-4 d-flex justify-content-center align-items-center">
             @if($prevQuestion)
-            <button type="button" id="prevQuestion" class="btn btn-primary">Soal Sebelumnya</button>
+            <button type="button" id="prevQuestion" class="btn bg-gradient-primary"> <i class="fas fa-chevron-left"> </i>Sebelumnya
+            </button>
             @else
-            <button type="button" class="btn btn-secondary" disabled>Soal Sebelumnya</button>
+            <button type="button" class="btn btn-secondary" disabled> <i class="fas fa-chevron-left"></i>Sebelumnya
+            </button>
             @endif
 
             {{-- Checkbox Ragu-Ragu --}}
@@ -60,9 +62,9 @@
             </div>
 
             @if($nextQuestion)
-            <button type="button" id="nextQuestion" class="btn btn-primary">Soal Selanjutnya</button>
+            <button type="button" id="nextQuestion" class="btn bg-gradient-primary"><i class="fas fa-chevron-right"></i> Selanjutnya</button>
             @else
-            <button disabled type="button" id="nextQuestion" class="btn btn-primary">Soal Selanjutnya</button>
+            <button disabled type="button" id="nextQuestion" class="btn bg-gradient-primary"><i class="fas fa-chevron-right"></i>Selanjutnya</button>
             @endif
           </div>
         </form>

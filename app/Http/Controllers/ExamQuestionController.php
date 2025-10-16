@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ExamQuestionsExport;
 use App\Imports\ExamQuestionTemplateImport;
-use App\Models\Category;
-use App\Models\Course;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use App\Models\ExamQuestionCategory;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -96,7 +94,7 @@ class ExamQuestionController extends Controller
         return view('soal.show_by_kode', compact('soals', 'kode'));
     }
 
-
+    //dipakai atau tidak??
     public function import(Request $request)
     {
         $request->validate([
@@ -105,6 +103,15 @@ class ExamQuestionController extends Controller
         ]);
         Excel::import(new ExamQuestionTemplateImport($request->exam_id), $request->file('file'));
         return redirect()->route('exams.index')->with('success', 'Soal berhasil diimport dari Excel');
+    }
+
+    public function export($exam_code)
+    {
+        $exam = Exam::with('questions.options', 'questions.category')
+            ->where('exam_code', $exam_code)
+            ->firstOrFail();
+        $fileName = "Soal-{$exam->title}.xlsx";
+        return Excel::download(new ExamQuestionsExport($exam), $fileName);
     }
     /**
      * Display the specified resource.
@@ -126,6 +133,8 @@ class ExamQuestionController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    // ExamQuestionController.php - method update
+
     public function update(Request $request, $examCode, $questionId)
     {
         $exam = Exam::where('exam_code', $examCode)->firstOrFail();
@@ -141,7 +150,7 @@ class ExamQuestionController extends Controller
             foreach ($question->answers as $answer) {
                 $answer->update([
                     'is_correct' => 1,
-                    'score'      => 1, // kalau bobot skor = 1
+                    'score'      => 1,
                 ]);
             }
 
@@ -150,7 +159,14 @@ class ExamQuestionController extends Controller
                 'updated_by' => auth()->id(),
             ]);
 
-            return back()->with('success', 'Soal berhasil dianulir!');
+            return response()->json([
+                'success' => true,
+                'message' => 'Soal berhasil dianulir!',
+                'data' => [
+                    'question_id' => $question->id,
+                    'action' => 'anulir'
+                ]
+            ]);
         }
 
         // --- VALIDASI ---
@@ -170,7 +186,6 @@ class ExamQuestionController extends Controller
             }
             $imagePath = null;
         }
-
 
         // --- UPLOAD GAMBAR ---
         if ($request->hasFile('image')) {
@@ -218,7 +233,16 @@ class ExamQuestionController extends Controller
             'updated_by' => auth()->id(),
         ]);
 
-        return redirect()->back()->with('success', 'Soal berhasil diperbarui!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Soal berhasil diperbarui!',
+            'data' => [
+                'question_id' => $question->id,
+                'action' => 'update',
+                'image_url' => $imagePath ? asset('storage/' . $imagePath) : null,
+                'has_image' => !empty($imagePath)
+            ]
+        ]);
     }
 
     public function updateByExcel(Request $request, $examCode)

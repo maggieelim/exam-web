@@ -32,6 +32,7 @@ class CourseStudentsSheet implements FromCollection, WithHeadings, WithTitle, Wi
           'NIM'   => $item->student->nim,
           'Nama'  => $item->student->user->name,
           'Email' => $item->student->user->email,
+          'Gender' => $item->student->gender,
           'Angkatan' => $item->student->angkatan
         ];
       });
@@ -39,7 +40,7 @@ class CourseStudentsSheet implements FromCollection, WithHeadings, WithTitle, Wi
 
   public function headings(): array
   {
-    return ['NIM', 'Nama', 'Email', 'Angkatan'];
+    return ['NIM', 'Nama', 'Email', 'Gender', 'Angkatan'];
   }
 
   public function title(): string

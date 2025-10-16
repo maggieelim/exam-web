@@ -157,6 +157,12 @@
                           <i class="fas fa-edit text-warning me-2"></i> Manage Questions
                         </a>
                       </li>
+                      <li>
+                        <a class="dropdown-item"
+                          href="{{ route('courses.editStudent', ['slug' => $exam->course->slug, 'semester_id' => $semesterId]) }}">
+                          <i class="fas fa-users text-info me-2"></i> Manage Participants
+                        </a>
+                      </li>
                     </ul>
                   </div>
                   <a href="{{ route('exams.show.'.$status, [$exam->exam_code]) }}"

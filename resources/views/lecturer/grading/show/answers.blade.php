@@ -1,45 +1,46 @@
-<div class="d-flex justify-content-end align-items-center p-0 mt-2">
-  <button class="btn btn-sm btn-outline-secondary" type="button"
-    data-bs-toggle="collapse"
-    data-bs-target="#filterCollapse"
-    aria-expanded="false"
-    aria-controls="filterCollapse">
-    <i class="fas fa-filter me-1"></i> Filter
-  </button>
-</div>
+<div class="card mt-4">
+  <div class="card-header d-flex flex-row justify-content-end mb-0 pb-0 gap-2">
+    <a href="{{ route('lecturer.results.downloadQuestions', $exam->exam_code) }}"
+      class="btn btn-sm btn-warning"><i class="fas fa-download"></i>
+      Download
+    </a>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+      <i class="fas fa-filter"></i> Filter
+    </button>
+  </div>
 
-<div class="collapse" id="filterCollapse">
-  <form method="GET" action="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}">
-    <div class="mx-3 mb-2 pb-2">
-      <div class="row g-2">
-        <input type="hidden" name="status" value="{{ $status }}" class="m-0 p-0">
-        <input type="hidden" name="tab" value="answers" class="m-0 p-0">
-        <div class="col-md-12">
-          <label for="difficulty_level" class="form-label mb-1">Question Difficulty</label>
-          <select name="difficulty_level" id="difficulty_level" class="form-control">
-            <option value="">-- All Levels --</option>
-            @foreach($difficultyLevel as $level)
-            <option value="{{ $level }}" {{ request('difficulty_level') == $level ? 'selected' : '' }}>
-              {{ $level }}
-            </option>
-            @endforeach
-          </select>
-        </div>
+  <div class="collapse" id="filterCollapse">
+    <form method="GET" action="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}">
+      <div class="mx-3 mb-2 pb-2">
+        <div class="row g-2">
+          <input type="hidden" name="status" value="{{ $status }}" class="m-0 p-0">
+          <input type="hidden" name="tab" value="answers" class="m-0 p-0">
+          <div class="col-md-12">
+            <label for="difficulty_level" class="form-label mb-1">Question Difficulty</label>
+            <select name="difficulty_level" id="difficulty_level" class="form-control">
+              <option value="">-- All Levels --</option>
+              @foreach($difficultyLevel as $level)
+              <option value="{{ $level }}" {{ request('difficulty_level') == $level ? 'selected' : '' }}>
+                {{ $level }}
+              </option>
+              @endforeach
+            </select>
+          </div>
 
-        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-          <a href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}?tab=answers"
-            class="btn btn-light btn-sm">
-            Reset
-          </a>
-          <button type="submit" class="btn btn-primary btn-sm">
-            Apply
-          </button>
+          <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+            <a href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}?tab=answers"
+              class="btn btn-light btn-sm">
+              Reset
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm">
+              Apply
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>
-
 @forelse($questionAnalysisPaginator as $analysis)
 <div class="card mb-4">
   <div class="card-body">
@@ -80,7 +81,7 @@
       </div>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-0">
       @if(!empty($analysis['question_text']))
       <p class="fw-bold mb-1">{{ $analysis['question_text'] }}</p>
       @endif
@@ -99,21 +100,32 @@
     @endif
 
     @if(!empty($optionsAnalysis[$analysis['question_id']]))
-    <div class="row mt-3">
+    <div class="row mt-2">
       @foreach($optionsAnalysis[$analysis['question_id']] as $optionIndex => $option)
-      <div class="col-12 d-flex align-items-center mb-2">
-        <div class="fw-bold me-2">{{ chr(65 + $optionIndex) }}.</div>
-        <div class="me-2">{{ $option['option_text'] ?? '' }}</div>
-
-        @if(!empty($option['is_correct']))
-        <div class="text-success me-2">✔</div>
-        @endif
-
-        <div class="me-2 badge bg-light text-dark">
-          {{ $option['percentage'] ?? 0 }}%
-        </div>
-        <div class="text-muted">
-          ({{ $option['count'] ?? 0 }} siswa)
+      <div class="col-12">
+        <div class="d-flex align-items-center  p-2 rounded hover-effect">
+          {{-- Kolom Huruf Opsi --}}
+          <div class="fw-bold text-center me-3" style="width: 35px; flex-shrink: 0;">
+            {{ chr(65 + $optionIndex) }}.
+          </div>
+          <div class="flex-fill" style="min-width: min-content;">
+            <div class="text-truncate" title="{{ $option['option_text'] ?? '' }}">
+              {{ $option['option_text'] ?? '' }}
+            </div>
+          </div>
+          <div class="text-center me-3" style="width: 35px; flex-shrink: 0;">
+            @if(!empty($option['is_correct']))
+            <span class="text-success">✔</span>
+            @endif
+          </div>
+          <div class="text-center me-3" style="width: 85px; flex-shrink: 0;">
+            <span class="badge bg-light text-dark px-2 py-1">
+              {{ $option['percentage'] ?? 0 }}%
+            </span>
+          </div>
+          <div class="text-center text-muted" style=" flex-shrink: 0;">
+            ({{ $option['count'] ?? 0 }} siswa)
+          </div>
         </div>
       </div>
       @endforeach
@@ -136,3 +148,10 @@
 <div class="d-flex justify-content-center mt-3">
   <x-pagination :paginator="$questionAnalysisPaginator" />
 </div>
+
+<style>
+  .hover-effect:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+  }
+</style>

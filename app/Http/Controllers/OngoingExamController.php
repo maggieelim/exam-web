@@ -18,6 +18,7 @@ class OngoingExamController extends Controller
     {
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $user = auth()->user();
+        $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
 
         $exam = Exam::with([
             'course',
@@ -29,7 +30,7 @@ class OngoingExamController extends Controller
             ->where('exam_code', $exam_code)
             ->firstOrFail();
 
-        if (!$user->hasRole('admin') && !$exam->course->lecturers->contains($user->id)) {
+        if (!$user->hasRole('admin') && !$lecturer) {
             abort(403, 'Unauthorized access to this exam.');
         }
 
@@ -149,12 +150,12 @@ class OngoingExamController extends Controller
 
     private function canRetakeExam($attempt, $exam)
     {
-        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
         if ($attempt->status !== 'completed') {
             return false;
         }
 
+        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $retakeAllowed = auth()->user()->hasRole('admin') || $exam->course->lecturers->contains(auth()->id());
         return $retakeAllowed;
     }

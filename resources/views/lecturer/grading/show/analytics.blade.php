@@ -43,7 +43,10 @@
     <h5 class="card-title mb-0">
       Detailed Question Analysis </h5>
     <div class="d-flex justify-content-center align-items-center gap-3 my-0">
-      <span class="badge bg-primary">{{ count($questionAnalysisPaginator) }} Questions</span>
+      <a href="{{ route('lecturer.results.downloadQuestions', $exam->exam_code) }}"
+        class="btn btn-sm btn-warning"><i class="fas fa-download"></i>
+        Download
+      </a>
       <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
         <i class="fas fa-filter"></i> Filter
       </button>

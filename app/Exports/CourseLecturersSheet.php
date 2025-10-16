@@ -31,14 +31,18 @@ class CourseLecturersSheet implements FromCollection, WithHeadings, WithTitle, W
         return [
           'NIDN'   => $item->lecturer->nidn,
           'Nama'   => $item->lecturer->user->name,
+          'Strata'   => $item->lecturer->strata,
+          'Gelar'   => $item->lecturer->gelar,
+          'Tipe Dosen'   => $item->lecturer->tipe_dosen,
           'Email'  => $item->lecturer->user->email,
+          'Gender'  => $item->lecturer->gender,
         ];
       });
   }
 
   public function headings(): array
   {
-    return ['NIDN', 'Nama', 'Email'];
+    return ['NIDN', 'Nama', 'Starta', 'Gelar', 'Tipe Dosen', 'Email', 'Gender'];
   }
 
   public function title(): string

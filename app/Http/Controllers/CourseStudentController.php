@@ -218,13 +218,16 @@ class CourseStudentController extends Controller
     public function destroy(Course $course, $studentId)
     {
         // pastikan mahasiswa ada di course
-        $exists = $course->students()->where('user_id', $studentId)->exists();
-
+        $exists = CourseStudent::where('id', $studentId)
+            ->where('course_id', $course->id)
+            ->exists();
         if (!$exists) {
             return back()->with('error', 'Mahasiswa tidak ditemukan di course ini.');
         }
 
-        $course->students()->detach($studentId); // hapus relasi
+        CourseStudent::where('id', $studentId)
+            ->where('course_id', $course->id)
+            ->delete();
         return back()->with('success', 'Mahasiswa berhasil dihapus dari course.');
     }
 }

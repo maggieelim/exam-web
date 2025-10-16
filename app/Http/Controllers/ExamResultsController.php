@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ExamQuestionsAnalysisExport;
+use App\Exports\ExamQuestionsExport;
 use App\Exports\ExamResultsExport;
-use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\DifficultyLevel;
 use App\Models\Exam;
@@ -16,7 +17,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExamResultsController extends Controller
 {
@@ -120,6 +120,26 @@ class ExamResultsController extends Controller
         return Excel::download(new ExamResultsExport($exam), $fileName);
     }
 
+    public function downloadQuestions($examCode)
+    {
+        $exam = Exam::with([
+            'course.lecturers',
+            'questions.category',
+            'questions.options',
+            'attempts.user.student',
+            'answers.user.student',
+            'answers.question.category',
+            'answers.question.options'
+        ])
+            ->where('exam_code', $examCode)
+            ->withCount('questions')
+            ->withCount('attempts')
+            ->firstOrFail();
+
+        $fileName = 'Question_Analysis_' . str_replace(' ', '_', $exam->title) . '_' . $exam->course->slug . '.xlsx';
+        return Excel::download(new ExamQuestionsAnalysisExport($exam), $fileName);
+    }
+
     public function grade($examCode, Request $request)
     {
         $exam = Exam::with([
@@ -179,9 +199,6 @@ class ExamResultsController extends Controller
         return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($examCode, $nim)
     {
         $exam = Exam::with([
@@ -295,9 +312,6 @@ class ExamResultsController extends Controller
         ));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $examCode, $nim)
     {
         $student = Student::where('nim', $nim)->firstOrFail();
@@ -325,6 +339,16 @@ class ExamResultsController extends Controller
             }
         }
 
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Feedback Berhasil Disimpan!',
+                'data' => [
+                    'overall_feedback' => $attempt->feedback,
+                    'updated_at' => now()->format('d-m-Y H:i:s')
+                ]
+            ]);
+        }
         return back()->with('success', 'Feedback Berhasil Disimpan!');
     }
 
@@ -528,7 +552,7 @@ class ExamResultsController extends Controller
         );
     }
 
-    private function analyzeQuestions($exam)
+    public function analyzeQuestions($exam)
     {
         $totalStudents = $exam->attempts->count();
 
@@ -604,6 +628,7 @@ class ExamResultsController extends Controller
             ->where('exam_question_id', $question->id)
             ->where('is_correct', true)
             ->count();
+
         $bottomCorrect = $exam->answers
             ->whereIn('user_id', $bottomUserIds)
             ->where('exam_question_id', $question->id)

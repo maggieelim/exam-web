@@ -3,7 +3,6 @@
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseStudentController;
-use App\Http\Controllers\ExamAnswerController;
 use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamQuestionController;
@@ -14,10 +13,10 @@ use App\Http\Controllers\OngoingExamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
+use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SoalController;
 use App\Http\Controllers\StudentExamResultsController;
 
 /*
@@ -83,7 +82,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 		Route::get('{id}', [UserController::class, 'show'])->name('show');
 		Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
 	});
-
+	Route::resource('semester', SemesterController::class);
 	Route::view('reports', 'admin.reports.index')->name('reports');
 });
 
@@ -98,6 +97,7 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
 	Route::get('/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
 	Route::put('/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
 	Route::get('/results/{exam_code}/download', [ExamResultsController::class, 'download'])->name('results.download');
+	Route::get('/results/{exam_code}/quetions/download', [ExamResultsController::class, 'downloadQuestions'])->name('results.downloadQuestions');
 });
 
 // ================= SHARED ADMIN & LECTURER =================
@@ -123,7 +123,6 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')->name('exams.index');
 	Route::get('/exams/upcoming/create', [ExamController::class, 'create'])->name('exams.create');
 	Route::post('/exams/store', [ExamController::class, 'import'])->name('exams.import');
-	Route::get('/exams/{exam_code}', [ExamController::class, 'show'])->name('exams.details');
 	Route::get('/exams/upcoming/{exam_code}', [ExamController::class, 'show'])->name('exams.show.upcoming');
 	Route::get('/exams/ongoing/{exam_code}', [ExamController::class, 'show'])->name('exams.show.ongoing');
 	Route::get('/exams/previous/{exam_code}', [ExamController::class, 'show'])->name('exams.show.previous');
@@ -144,8 +143,8 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 	Route::get('exams/previous/questions/{exam_code}', [ExamQuestionController::class, 'index'])->name('exams.questions.previous');
 	Route::put('exams/{exam_code}/questions/{question}', [ExamQuestionController::class, 'update'])->name('exams.questions.update');
 	Route::post('exams/{exam_code}/questions/update-excel', [ExamQuestionController::class, 'updateByExcel'])->name('exams.questions.updateByExcel');
-	Route::delete('/exams/{examCode}/questions/{question}', [ExamQuestionController::class, 'destroy'])
-		->name('exams.questions.destroy');
+	Route::delete('/exams/{examCode}/questions/{question}', [ExamQuestionController::class, 'destroy'])->name('exams.questions.destroy');
+	Route::get('/exams/{examCode}/questions/download', [ExamQuestionController::class, 'export'])->name('exams.questions.download');
 });
 
 // ================= STUDENT =================

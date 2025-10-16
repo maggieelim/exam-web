@@ -9,18 +9,20 @@
       {{-- Tombol Download --}}
       <a href="{{ route('courses.download', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
         class="btn btn-sm btn-success">
-        Export
+        <i class="fas fa-download me-2"></i>
+        Export Excel
       </a>
-
+      @role('admin')
       {{-- Tombol Delete --}}
-      <!-- <form action="{{ route('courses.destroy', $course->slug) }}" method="POST"
+      <form action="{{ route('courses.destroy', $course->slug) }}" method="POST"
         onsubmit="return confirm('Yakin ingin menghapus course ini?')" class="d-inline">
         @csrf
         @method('DELETE')
         <button type="submit" class="btn btn-sm btn-danger">
           Delete Course
         </button>
-      </form> -->
+      </form>
+      @endrole
     </div>
   </div>
   <div class="row">
@@ -28,7 +30,7 @@
       <p><strong>Kode Blok:</strong> {{ $course->kode_blok }}</p>
     </div>
     <div class="col-md-6 d-flex gap-2">
-      <p><strong>Kode Blok:</strong></p>
+      <p><strong>Lecturer:</strong></p>
       <ul class="mb-0 ps-3">
         @foreach($lecturers as $lecturer)
         <li>{{ $lecturer->lecturer->user->name }}</li>
@@ -60,15 +62,9 @@
       <div class="mx-3 ">
         <div class="row g-2">
           <!-- Input Blok -->
-          <div class="col-md-6">
-            <label for="blok" class="form-label mb-1">NIM</label>
-            <input type="text" name="nim" class="form-control form-control-sm me-2" placeholder="Filter NIM" value="{{ request('nim') }}">
-          </div>
-
-          <!-- Input Dosen -->
-          <div class="col-md-6">
-            <label for="dosen" class="form-label mb-1">Nama</label>
-            <input type="text" name="name" class="form-control form-control-sm me-2" placeholder="Filter Nama" value="{{ request('name') }}">
+          <div class="col-md-12">
+            <label for="search" class="form-label mb-1">NIM/Nama</label>
+            <input type="text" name="search" class="form-control form-control" placeholder="Filter NIM/Nama" value="{{ request('nim') }}">
           </div>
 
           <!-- Buttons -->
@@ -96,8 +92,9 @@
         </thead>
         <tbody>
           @foreach($students as $student)
-          @if( (!request('nim') || str_contains($student->student->nim, request('nim'))) &&
-          (!request('name') || str_contains(strtolower($student->student->user->name), strtolower(request('name')))) )
+          @if(!request('search')
+          || str_contains(strtolower($student->student->nim), strtolower(request('search')))
+          || str_contains(strtolower($student->student->user->name), strtolower(request('search'))))
           <tr>
             <td class="align-middle text-center">{{ $student->student->nim }}</td>
             <td class="align-middle text-center">{{ $student->student->user->name }}</td>

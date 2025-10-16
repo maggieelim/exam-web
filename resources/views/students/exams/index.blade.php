@@ -11,37 +11,52 @@
         <i class="fas fa-filter"></i> Filter
       </button>
     </div>
-  </div>
 
-  <div class="collapse" id="filterCollapse">
-    <form method="GET" action="{{ route('student.studentExams.index', $status) }}">
-      <div class="mx-3 mb-2 pb-2">
-        <div class="row g-2">
-          <input type="hidden" name="status" value="{{ $status }}">
-          <div class="col-md-6">
-            <label for="title" class="form-label mb-1">Title</label>
-            <input type="text" name="title" class="form-control" placeholder="Cari Judul Ujian"
-              value="{{ request('title') }}">
-          </div>
-          <div class="col-md-6">
-            <label for="blok" class="form-label mb-1">Blok</label>
-            <select name="course_id" class="form-control">
-              <option value="">-- Pilih Course --</option>
-              @foreach($courses as $course)
-              <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
-                {{ $course->name }}
-              </option>
-              @endforeach
-            </select>
-          </div>
-          <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-            <a href="{{ route('student.studentExams.index', $status) }}" class="btn btn-light btn-sm">Reset</a>
-            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+    <div class="collapse" id="filterCollapse">
+      <form method="GET" action="{{ route('student.studentExams.index', $status) }}">
+        <div class="mx-3 mb-2 pb-2">
+          <div class="row g-2">
+            <input type="hidden" name="status" value="{{ $status }}">
+            <div class="col-md-4">
+              <label for="title" class="form-label mb-1">Title</label>
+              <input type="text" name="title" class="form-control" placeholder="Cari Judul Ujian"
+                value="{{ request('title') }}">
+            </div>
+            <div class="col-md-4">
+              <label for="blok" class="form-label mb-1">Blok</label>
+              <select name="course_id" class="form-control">
+                <option value="">-- ALL --</option>
+                @foreach($courses as $course)
+                <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
+                  {{ $course->name }}
+                </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="semester" class="form-label mb-1">Semester</label>
+              <select name="semester_id" class="form-control">
+                @foreach($semesters as $semester)
+                <option value="{{ $semester->id }}"
+                  {{ ($semesterId == $semester->id) ? 'selected' : '' }}>
+                  {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
+                  @if($activeSemester && $semester->id == $activeSemester->id)
+                  (Aktif)
+                  @endif
+                </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+              <a href="{{ route('student.studentExams.index', $status) }}" class="btn btn-light btn-sm">Reset</a>
+              <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
+
   @foreach($exams as $exam)
   <div class="col-lg-4 col-md-6 mb-4">
     <div class="card h-auto">

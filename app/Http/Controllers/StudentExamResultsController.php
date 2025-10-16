@@ -201,36 +201,45 @@ class StudentExamResultsController extends Controller
         }
         $exam->categories_result = $categoriesResult;
 
-        // Filter questions berdasarkan status jawaban
         // Filter questions berdasarkan status jawaban & feedback
         $filteredQuestions = $exam->questions->filter(function ($question) use ($allUserAnswers) {
             $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
             $isAnswered = !is_null($userAnswer);
             $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
+            $hasFeedback = $userAnswer && !empty($userAnswer->feedback);
+
             $answerStatus = request('answer_status');
-            $filterFeedback = request('filter') === 'feedback';
+            $feedbackStatus = request('feedback_status');
 
-            // Jika filter = feedback → tampilkan hanya yang ada feedback
-            if ($filterFeedback) {
-                return $userAnswer && !empty($userAnswer->feedback);
+            // Filter berdasarkan status jawaban
+            if ($answerStatus && $answerStatus !== 'all') {
+                switch ($answerStatus) {
+                    case 'correct':
+                        if (!$isAnswered || !$isCorrect) return false;
+                        break;
+                    case 'incorrect':
+                        if (!$isAnswered || $isCorrect) return false;
+                        break;
+                    case 'not_answered':
+                        if ($isAnswered) return false;
+                        break;
+                }
             }
 
-            if (!$answerStatus) {
-                return true; // tampilkan semua jika tidak ada filter
+            // Filter berdasarkan status feedback
+            if ($feedbackStatus && $feedbackStatus !== 'all') {
+                switch ($feedbackStatus) {
+                    case 'with_feedback':
+                        if (!$hasFeedback) return false;
+                        break;
+                    case 'without_feedback':
+                        if ($hasFeedback) return false;
+                        break;
+                }
             }
 
-            switch ($answerStatus) {
-                case 'correct':
-                    return $isAnswered && $isCorrect;
-                case 'incorrect':
-                    return $isAnswered && !$isCorrect;
-                case 'not_answered':
-                    return !$isAnswered;
-                default:
-                    return true;
-            }
+            return true;
         });
-
 
         // Siapkan data untuk view
         $questionsData = [];
@@ -295,6 +304,7 @@ class StudentExamResultsController extends Controller
             'totalQuestions',
         ));
     }
+
     /**
      * Update the specified resource in storage.
      */

@@ -1,7 +1,7 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-<div class="col-12 card mb-4 p-3">
+<div class="col-12 card mb-4 pb-0 p-3">
   <div class="d-flex justify-content-between align-items-center gap-2">
     <h5>{{ $exam->title }}</h5>
     <a href="{{ route('lecturer.grade.'.$status, [
@@ -21,6 +21,9 @@
       <p><strong>Angkatan:</strong> {{ $student->angkatan }}</p>
     </div>
     <div class="col-md-4">
+      <p><strong>Gender:</strong> {{ $student->gender }}</p>
+    </div>
+    <div class="col-md-4">
       <p><strong>Date:</strong> {{ $exam->exam_date->format('d-m-Y') }}</p>
     </div>
     <div class="col-md-4">
@@ -32,14 +35,16 @@
 <!-- Daftar Soal -->
 <div class="d-flex justify-content-between align-items-center">
   <h4 class="mb-3">Daftar Soal</h4>
-  <button class="btn btn-sm btn-outline-secondary" type="button"
-    data-bs-toggle="collapse"
-    data-bs-target="#filterCollapse">
-    <i class="fas fa-filter me-1"></i> Filter
-  </button>
+  <div class="d-flex gap-2">
+    <button class="btn btn-sm btn-outline-secondary" type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#filterCollapse">
+      <i class="fas fa-filter me-1"></i> Filter
+    </button>
+  </div>
 </div>
 
-<div class="collapse" id="filterCollapse">
+<div class="collapse mb-3" id="filterCollapse">
   <form method="GET" action="{{ route('lecturer.feedback.'.$status, [
     'exam_code' => $exam->exam_code,
     'nim'       => $student->nim
@@ -68,7 +73,8 @@
   </form>
 </div>
 
-<form action="{{ route('lecturer.feedback.update', [
+<!-- Form Utama dengan ID untuk AJAX -->
+<form id="feedbackForm" action="{{ route('lecturer.feedback.update', [
     'exam_code' => $exam->exam_code,
     'nim'       => $student->nim
 ]) }}" method="POST">
@@ -125,9 +131,10 @@
       <!-- Feedback per soal -->
       <div class="mt-3">
         <label class="form-label fw-bold">Feedback untuk soal ini:</label>
-        <input type="text" name="feedback[{{ $question['id'] }}]" class="form-control"
+        <input type="text" name="feedback[{{ $question['id'] }}]" class="form-control feedback-input"
           value="{{ old("feedback.{$question['id']}", $question['student_feedback']) }}"
-          placeholder="Tulis feedback dosen untuk soal ini...">
+          placeholder="Tulis feedback dosen untuk soal ini..."
+          data-question-id="{{ $question['id'] }}">
       </div>
     </div>
   </div>
@@ -143,15 +150,199 @@
   @endif
 
   <!-- Feedback keseluruhan (sticky di bawah) -->
-  <div class="card position-sticky bottom-0 bg-white p-3 border-top shadow-sm mt-4">
-    <div class="d-flex align-items-center gap-2">
-      <input type="text" name="overall_feedback" class="form-control"
-        placeholder="Tulis feedback untuk seluruh ujian..."
-        value="{{ old('feedback', $attempt->feedback) }}">
-      <button type="submit" class="btn btn-sm btn-primary">
-        Simpan
-      </button>
+  <div class="card position-sticky bottom-0 bg-white p-3 border-top shadow-sm mt-4" style="z-index: 100;">
+    <div class="row align-items-center">
+      <!-- Label & Tanggal -->
+      <div class="col-md-12 d-flex justify-content-between align-items-center mb-2">
+        <label class="form-label fw-bold mb-0">Feedback Keseluruhan Ujian:</label>
+        <small class="text-muted" id="lastSaved">
+          @if($attempt->updated_at)
+          Terakhir disimpan: {{ $attempt->updated_at->format('d-m-Y H:i') }}
+          @else
+          Belum disimpan
+          @endif
+        </small>
+      </div>
+
+      <!-- Input & Tombol -->
+      <div class="col-md-12 d-flex justify-content-between align-items-center gap-2">
+        <input type="text"
+          name="overall_feedback"
+          class="form-control overall-feedback"
+          placeholder="Tulis feedback untuk seluruh ujian..."
+          value="{{ old('overall_feedback', $attempt->feedback) }}">
+        <button type="submit" class="btn btn-primary w-20 m-auto" id="saveButton">
+          <i class="fas fa-save me-2"></i> Save Feedback
+        </button>
+      </div>
     </div>
+
   </div>
 </form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('feedbackForm');
+    const saveButton = document.getElementById('saveButton');
+    const saveStatus = document.getElementById('saveStatus');
+    const statusText = document.getElementById('statusText');
+    const lastSaved = document.getElementById('lastSaved');
+
+    let isSaving = false;
+    let autoSaveTimeout;
+    let formChanged = false;
+
+    // Fungsi untuk menampilkan status save
+    function showSaveStatus(message, type = 'success') {
+      const existingAlert = document.getElementById('successAlert') || document.getElementById('errorAlert');
+      if (existingAlert) {
+        existingAlert.remove();
+      }
+
+      // Buat alert baru
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type} fw-bold`;
+      alert.id = type === 'success' ? 'successAlert' : 'errorAlert';
+      alert.style.cssText = 'position: fixed; top: 10%; right: 10px; max-width: fit-content; z-index: 9999; color: #ffffffff;';
+      alert.innerHTML = type === 'success' ?
+        `<div class="alert alert-success text-dark fw-bold" id="successAlert" style="position: fixed; top: 10%; right: 10px; max-width: fit-content; z-index: 9999; color: #ffffffff;">${message}</div>` :
+        `<div class="alert alert-danger fw-bold" id="errorAlert" style="position: fixed; top: 10%; right: 10px; max-width: fit-content; z-index: 9999; color: #ffffffff;">${message}</div>`;
+
+      document.body.appendChild(alert);
+
+      // Auto hide setelah beberapa detik
+      setTimeout(function() {
+        if (alert.parentNode) {
+          alert.parentNode.removeChild(alert);
+        }
+      }, type === 'success' ? 5000 : 10000);
+    }
+
+    // Fungsi untuk menyimpan feedback via AJAX
+    function saveFeedback() {
+      if (isSaving) return;
+
+      isSaving = true;
+      const originalText = saveButton.innerHTML;
+
+      // Update button state
+      saveButton.disabled = true;
+      saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+
+      // Prepare form data
+      const formData = new FormData(form);
+
+      // Add AJAX header
+      formData.append('_ajax', 'true');
+
+      fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            showSaveStatus('Feedback berhasil disimpan!');
+            lastSaved.textContent = `Terakhir disimpan: ${new Date().toLocaleString('id-ID')}`;
+            formChanged = false;
+
+            // Reset button setelah delay singkat
+            setTimeout(() => {
+              saveButton.innerHTML = originalText;
+              saveButton.disabled = false;
+            }, 1000);
+          } else {
+            throw new Error(data.message || 'Terjadi kesalahan');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showSaveStatus('Gagal menyimpan feedback!', 'danger');
+          saveButton.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error';
+
+          // Reset button setelah 2 detik
+          setTimeout(() => {
+            saveButton.innerHTML = originalText;
+            saveButton.disabled = false;
+          }, 2000);
+        })
+        .finally(() => {
+          isSaving = false;
+        });
+    }
+
+    // Auto-save functionality
+    function scheduleAutoSave() {
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(() => {
+        if (formChanged && !isSaving) {
+          saveFeedback();
+        }
+      }, 2000); // Auto-save setelah 2 detik tidak ada perubahan
+    }
+
+    // Deteksi perubahan pada form
+    const inputs = form.querySelectorAll('.feedback-input, .overall-feedback');
+    inputs.forEach(input => {
+      input.addEventListener('input', function() {
+        formChanged = true;
+        scheduleAutoSave();
+      });
+    });
+
+    // Handle form submit
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      saveFeedback();
+    });
+
+    // Konfirmasi sebelum meninggalkan halaman jika ada perubahan
+    window.addEventListener('beforeunload', function(e) {
+      if (formChanged && !isSaving) {
+        e.preventDefault();
+        e.returnValue = 'Anda memiliki perubahan feedback yang belum disimpan. Yakin ingin meninggalkan halaman?';
+      }
+    });
+
+    // Keyboard shortcut: Ctrl + S untuk save
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveFeedback();
+      }
+    });
+
+    // Reset form changed flag ketika halaman dimuat
+    formChanged = false;
+  });
+</script>
+
+<style>
+  #saveStatus {
+    transition: all 0.3s ease;
+  }
+
+  .feedback-input:focus,
+  .overall-feedback:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  .card {
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+</style>
 @endsection

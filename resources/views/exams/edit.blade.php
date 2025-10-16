@@ -37,7 +37,13 @@
 
       <!-- Pilih Course -->
       <div class="row">
-        <div class=" col-md-6 mb-3"> <label for="course_id" class="form-label">Pilih Course</label>
+        <div class="col-md-4 mb-3">
+          <label for="semester_id" class="form-label">Semester</label>
+          <input type="text" class="form-control"
+            value="{{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name }}"
+            readonly>
+        </div>
+        <div class=" col-md-4 mb-3"> <label for="course_id" class="form-label">Pilih Course</label>
           <select name="course_id" id="course_id" class="form-select" required {{ $status === 'ongoing' ? 'disabled' : '' }}>
             <option value="">-- Pilih Course --</option>
             @foreach($courses as $course)
@@ -47,7 +53,7 @@
             @endforeach
           </select>
         </div>
-        <div class="col-md-6 mb-3">
+        <div class="col-md-4 mb-3">
           <label for="password">Password</label>
           <input type="text" name="password" class="form-control" value="{{$exam->password}}" required {{ $status === 'ongoing' ? 'disabled' : '' }}>
         </div>

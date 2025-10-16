@@ -33,6 +33,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
         ]);
 
         $results = [];
+        $no = 1;
 
         foreach ($this->exam->attempts as $attempt) {
             $userAnswers = $this->exam->answers->where('user_id', $attempt->user_id);
@@ -43,6 +44,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
             $scorePercentage = $totalQuestions > 0 ? ($correctAnswers / $totalQuestions) : 0;
 
             $rowData = [
+                'No' => $no++,
                 'NIM' => $attempt->user->student->nim ?? '-',
                 'Nama' => $attempt->user->name ?? '-',
                 'Total Soal' => $totalQuestions,
@@ -83,6 +85,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
         })->toArray();
 
         return array_merge([
+            'No',
             'NIM',
             'Nama',
             'Total Soal',
@@ -102,15 +105,16 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
         $sheet->getStyle('A1:' . $highestColumn . '1')->applyFromArray([
             'font' => [
                 'bold' => true,
-                'color' => ['rgb' => 'FFFFFF']
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 12,
             ],
             'fill' => [
-                'fillType' => 'solid',
-                'startColor' => ['rgb' => '4472C4']
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FF5CB6ED'], // warna biru muda #5cb6ed
             ],
             'alignment' => [
-                'horizontal' => 'center',
-                'vertical' => 'center'
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
             ],
             'borders' => [
                 'allBorders' => [
@@ -147,15 +151,16 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
     {
         // Format sebagai text (tidak ada format khusus)
         return [
-            'A' => NumberFormat::FORMAT_TEXT,
+            'A' => NumberFormat::FORMAT_NUMBER,
             'B' => NumberFormat::FORMAT_TEXT,
-            'C' => NumberFormat::FORMAT_NUMBER,
+            'C' => NumberFormat::FORMAT_TEXT,
             'D' => NumberFormat::FORMAT_NUMBER,
             'E' => NumberFormat::FORMAT_NUMBER,
-            'F' => NumberFormat::FORMAT_PERCENTAGE_00,
+            'F' => NumberFormat::FORMAT_NUMBER,
             'G' => NumberFormat::FORMAT_PERCENTAGE_00,
             'H' => NumberFormat::FORMAT_PERCENTAGE_00,
             'I' => NumberFormat::FORMAT_PERCENTAGE_00,
+            'J' => NumberFormat::FORMAT_PERCENTAGE_00,
 
         ];
     }

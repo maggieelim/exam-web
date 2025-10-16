@@ -21,13 +21,19 @@
           <p><strong>Course:</strong> {{ $exam->course->name }}</p>
         </div>
         <div class="col-md-4">
-          <p><strong>Password:</strong> {{ $exam->password }}</p>
+          <p><strong>Semester:</strong> {{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name }}</p>
         </div>
         <div class="col-md-4">
           <p><strong>Date:</strong> {{ $exam->exam_date->format('d-m-Y') }}</p>
         </div>
         <div class="col-md-4">
           <p><strong>Duration:</strong> {{ $exam->duration }} minutes</p>
+        </div>
+        <div class="col-md-4">
+          <p><strong>Total Participants:</strong> {{ $total_participants }}</p>
+        </div>
+        <div class="col-md-4">
+          <p><strong>Password:</strong> {{ $exam->password }}</p>
         </div>
       </div>
     </div>
@@ -36,7 +42,10 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Daftar Soal</h4>
       <div class="d-flex gap-3">
-        <a href="{{ route('exams.questions.' . $status, $exam->exam_code) }}" class="btn btn-sm btn-warning">
+        <a href="{{ route('exams.questions.download', $exam->exam_code) }}" class="btn btn-sm bg-gradient-success">
+          <i class="fas fa-download"></i> Questions
+        </a>
+        <a href="{{ route('exams.questions.' . $status, $exam->exam_code) }}" class="btn btn-sm bg-gradient-warning">
           Edit Questions
         </a>
         <button class="btn btn-outline-secondary btn-sm " type="button"
@@ -48,7 +57,7 @@
     </div>
 
     <div class="collapse" id="filterCollapse">
-      <form method="GET" action="{{ route('exams.details', $exam->exam_code) }}">
+      <form method="GET" action="{{ route('exams.show.'.$status, $exam->exam_code) }}">
         <div class="mx-3 my-2 py-2">
           <div class="row g-2">
             <div class="col-md-12">
@@ -58,7 +67,7 @@
             </div>
 
             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-              <a href="{{ route('exams.details', $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
+              <a href="{{ route('exams.show.'.$status, $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
               <button type="submit" class="btn btn-primary btn-sm">Apply</button>
             </div>
           </div>

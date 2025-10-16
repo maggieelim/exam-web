@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\CourseParticipantsExport;
 use App\Exports\CoursesExport;
-use App\Exports\CourseStudentsExport;
 use App\Imports\CoursesImport;
-use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\CourseStudent;
@@ -14,55 +12,35 @@ use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\User;
 use Carbon\Carbon;
-use DB;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-
-    public function index(Request $request)
+    private function getActiveSemester()
     {
-        $user = auth()->user();
         $today = Carbon::today();
-        $semesterId = $request->get('semester_id');
-
-        // Cari semester aktif
-        $activeSemester = Semester::where('start_date', '<=', $today)
+        return Semester::where('start_date', '<=', $today)
             ->where('end_date', '>=', $today)
             ->first();
+    }
 
-        if (!$semesterId && $activeSemester) {
-            $semesterId = $activeSemester->id;
+    private function getSemesterId(Request $request)
+    {
+        $semesterId = $request->get('semester_id');
+
+        if (!$semesterId) {
+            $activeSemester = $this->getActiveSemester();
+            $semesterId = $activeSemester ? $activeSemester->id : null;
         }
 
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+        return $semesterId;
+    }
 
-        // Base query
-        $query = Course::query()
-            ->with(['lecturers', 'courseStudents', 'courseLecturer']);
-
-        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
-        if ($user->hasRole('lecturer')) {
-            $lecturer = Lecturer::where('user_id', $user->id)->first();
-            if ($lecturer) {
-                $query->whereHas('courseLecturer', function ($q) use ($lecturer, $semesterId) {
-                    $q->where('lecturer_id', $lecturer->id);
-                    if ($semesterId) {
-                        $q->where('semester_id', $semesterId);
-                    }
-                });
-            }
-        }
-
-
-        // 🔹 Filter semester (ganjil / genap)
+    private function applySemesterFilter($query, $semesterId)
+    {
         if ($semesterId) {
             $selectedSemester = Semester::find($semesterId);
             if ($selectedSemester) {
@@ -77,18 +55,62 @@ class CourseController extends Controller
             }
         }
 
-        // 🔹 Hitung jumlah student di semester terkait
+        return $query;
+    }
+
+    private function applyLecturerFilter($query, $semesterId)
+    {
+        $user = auth()->user();
+        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
+
+        if ($user->hasRole('lecturer')) {
+            $lecturer = Lecturer::where('user_id', $user->id)->first();
+            if ($lecturer) {
+                $query->whereHas('courseLecturer', function ($q) use ($lecturer, $semesterId) {
+                    $q->where('lecturer_id', $lecturer->id);
+                    if ($semesterId) {
+                        $q->where('semester_id', $semesterId);
+                    }
+                });
+            }
+        }
+
+        return $query;
+    }
+
+    private function applyCounts($query, $semesterId)
+    {
         $query->withCount(['courseStudents as student_count' => function ($q) use ($semesterId) {
             if ($semesterId) {
                 $q->where('semester_id', $semesterId);
             }
         }]);
+
         $query->withCount(['courseLecturer as lecturer_count' => function ($q) use ($semesterId) {
             if ($semesterId) {
                 $q->where('semester_id', $semesterId);
             }
         }]);
 
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $semesterId = $this->getSemesterId($request);
+        $activeSemester = $this->getActiveSemester();
+        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+
+        // Base query
+        $query = Course::query()
+            ->with(['lecturers', 'courseStudents', 'courseLecturer']);
+
+        // Apply filters
+        $query = $this->applyLecturerFilter($query, $semesterId);
+        $query = $this->applySemesterFilter($query, $semesterId);
+        $query = $this->applyCounts($query, $semesterId);
+
+        // Search filter
         if ($request->filled('name')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->name . '%')
@@ -96,12 +118,7 @@ class CourseController extends Controller
             });
         }
 
-        if ($request->filled('lecturer')) {
-            $query->whereHas('lecturers', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->lecturer . '%');
-            });
-        }
-
+        // Sorting
         $sort = $request->get('sort', 'name');
         $dir  = $request->get('dir', 'asc');
         $allowedSorts = ['name', 'kode_blok'];
@@ -112,8 +129,9 @@ class CourseController extends Controller
 
         $query->orderBy($sort, $dir);
 
-        // 🔹 Pagination
+        // Pagination
         $courses = $query->paginate(15)->appends($request->all());
+
         return view('courses.index', compact(
             'courses',
             'sort',
@@ -124,9 +142,6 @@ class CourseController extends Controller
         ));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $lecturers = User::role('lecturer')->get();
@@ -141,31 +156,17 @@ class CourseController extends Controller
         $request->validate([
             'kode_blok' => 'required|string|max:255|unique:courses,kode_blok',
             'name'      => 'required|string|max:255',
-            'lecturers' => 'nullable|array',   // jika admin yang create, bisa pilih dosen
-            'lecturers.*' => 'exists:users,id', // validasi ID dosen valid
+            'lecturers' => 'nullable|array',
+            'lecturers.*' => 'exists:users,id',
         ]);
 
         $data = $request->only(['kode_blok', 'name', 'semester']);
         $data['slug'] = Str::slug($data['name']);
 
-        // Buat course
         Course::create($data);
         return redirect()->back()->with('success', 'Course berhasil dibuat!');
     }
 
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
-        ]);
-
-        try {
-            Excel::import(new CoursesImport, $request->file('file'));
-            return redirect()->back()->with('success', 'Data course berhasil diimport.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Import gagal: ' . $e->getMessage());
-        }
-    }
     /**
      * Display the specified resource.
      */
@@ -187,6 +188,20 @@ class CourseController extends Controller
         return view('courses.show', compact('course', 'lecturers', 'students', 'semesterId'));
     }
 
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        try {
+            Excel::import(new CoursesImport, $request->file('file'));
+            return redirect()->back()->with('success', 'Data course berhasil diimport.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Import gagal: ' . $e->getMessage());
+        }
+    }
+
     public function download(Request $request, $slug)
     {
         $course = Course::where('slug', $slug)->firstOrFail();
@@ -198,14 +213,51 @@ class CourseController extends Controller
 
         $fileName = "Peserta-{$slug}-{$semesterName}-{$yearName}.xlsx";
 
-
         return Excel::download(new CourseParticipantsExport($course, $semesterId), $fileName);
     }
 
     public function export(Request $request)
     {
-        // Bisa kirim filter semester atau nama via $request
-        return Excel::download(new CoursesExport($request->all()), 'courses.xlsx');
+        $semesterId = $this->getSemesterId($request);
+
+        // Base query
+        $query = Course::query()
+            ->with(['lecturers', 'courseStudents', 'courseLecturer']);
+
+        // Apply filters (reuse the same methods)
+        $query = $this->applyLecturerFilter($query, $semesterId);
+        $query = $this->applySemesterFilter($query, $semesterId);
+        $query = $this->applyCounts($query, $semesterId);
+
+        // Search filter
+        if ($request->filled('name')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->name . '%')
+                    ->orWhere('kode_blok', 'like', '%' . $request->name . '%');
+            });
+        }
+
+        // Sorting
+        $sort = $request->get('sort', 'name');
+        $dir  = $request->get('dir', 'asc');
+        $allowedSorts = ['name', 'kode_blok'];
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'name';
+        }
+        $query->orderBy($sort, $dir);
+
+        // Get all results without pagination
+        $courses = $query->get();
+
+        // Semester data for file name
+        $semester = Semester::with('academicYear')->findOrFail($semesterId);
+        $semesterName = str_replace(['/', '\\'], '-', $semester->semester_name);
+        $yearName = str_replace(['/', '\\'], '-', $semester->academicYear->year_name);
+
+        $fileName = "Blok_Pembelajaran_tahun_akademik_{$semesterName}_{$yearName}.xlsx";
+
+        return Excel::download(new CoursesExport($courses, $semesterId), $fileName);
     }
 
     /**
@@ -248,19 +300,19 @@ class CourseController extends Controller
 
         $lecturers = $request->lecturers ?? [];
 
-        // Hanya sync untuk semester yang spesifik
+        // Sync lecturers for specific semester
         $existingLecturers = $course->lecturers()
             ->wherePivot('semester_id', $semesterId)
             ->pluck('lecturers.id')
             ->toArray();
 
-        // Detach yang dihapus untuk semester ini
+        // Detach removed lecturers for this semester
         $toRemove = array_diff($existingLecturers, $lecturers);
         if (!empty($toRemove)) {
             $course->lecturers()->detach($toRemove);
         }
 
-        // Attach yang baru untuk semester ini
+        // Attach new lecturers for this semester
         $toAdd = array_diff($lecturers, $existingLecturers);
         foreach ($toAdd as $lecturerId) {
             $course->lecturers()->attach($lecturerId, [
