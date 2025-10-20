@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Exports\ExamQuestionsAnalysisExport;
-use App\Exports\ExamQuestionsExport;
 use App\Exports\ExamResultsExport;
+use App\Mail\ExamPublishedNotification;
 use App\Models\CourseLecturer;
 use App\Models\DifficultyLevel;
 use App\Models\Exam;
@@ -16,6 +16,7 @@ use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExamResultsController extends Controller
@@ -354,11 +355,23 @@ class ExamResultsController extends Controller
 
     public function publish($examCode)
     {
-        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+        $exam = Exam::where('exam_code', $examCode)
+            ->with([
+                'attempts.user',
+                'course'
+            ])
+            ->firstOrFail();
         $exam->update(['is_published' => true]);
         $exam->attempts()->update(['grading_status' => 'published']);
 
-        return back()->with('success', 'Exam berhasil dipublish!');
+        foreach ($exam->attempts as $attempt) {
+            $user = $attempt->user;
+            if ($user && $user->email) {
+                Mail::to($user->email)->queue(new ExamPublishedNotification($exam, $user));
+            }
+        }
+
+        return back()->with('success', 'Exam berhasil dipublish! Email notifikasi sedang dikirim ke mahasiswa.');
     }
 
     public function show($examCode, Request $request)

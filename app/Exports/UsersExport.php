@@ -73,7 +73,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
       return ['NIDN', 'Nama', 'Email', 'Gender', 'Strata', 'Gelar', 'Tipe Dosen', 'Min SKS', 'Max SKS'];
     }
     if ($this->type === 'admin') {
-      return ['Nama', 'Email', 'Role'];
+      return ['Nama', 'Email', 'Gender', 'Role'];
     }
     return ['Nama', 'Email'];
   }
@@ -85,7 +85,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
         $user->student->nim ?? '-',
         $user->name,
         $user->email,
-        $user->student->gender ?? '-',
+        $user->gender ?? '-',
         $user->student->angkatan ?? '-',
       ];
     }
@@ -95,7 +95,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
         $user->lecturer->nidn ?? '-',
         $user->name,
         $user->email,
-        $user->lecturer->gender ?? '-',
+        $user->gender ?? '-',
         $user->lecturer->strata ?? '-',
         $user->lecturer->gelar ?? '-',
         $user->lecturer->tipe_dosen ?? '-',
@@ -107,6 +107,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
       return [
         $user->name,
         $user->email,
+        $user->gender,
         $user->roles->pluck('name')->implode(', ') ?? '-',
       ];
     }

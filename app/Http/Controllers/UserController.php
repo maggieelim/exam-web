@@ -177,7 +177,14 @@ class UserController extends Controller
 
     public function downloadTemplate($type): BinaryFileResponse
     {
-        $fileName = $type === 'student' ? 'template_student.xlsx' : 'template_lecturer.xlsx';
+        if ($type === 'student') {
+            $fileName = 'template_student.xlsx';
+        } elseif ($type === 'lecturer') {
+            $fileName = 'template_lecturer.xlsx';
+        } else {
+            $fileName = 'template_admin.xlsx';
+        }
+
         $filePath = public_path('templates/' . $fileName);
         if (!file_exists($filePath)) {
             abort(404, 'Template file not found.');

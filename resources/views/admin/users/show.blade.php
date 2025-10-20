@@ -25,7 +25,7 @@
             <p><strong>Email:</strong> {{ $user->email }}</p>
           </div>
           <div class="col-md-4 mb-3">
-            <p><strong>Gender:</strong> {{ $type == 'student' ? $user->student->gender : $user->lecturer->gender }}</p>
+            <p><strong>Gender:</strong> {{ $user->gender }}</p>
           </div>
 
           <!-- Data Spesifik Student -->

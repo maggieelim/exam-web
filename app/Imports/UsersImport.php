@@ -40,6 +40,7 @@ class UsersImport implements ToModel, WithHeadingRow
         $user = User::create([
             'name' => $row['nama'],
             'email' => $row['email'],
+            'gender' => $row['gender'],
             'password' => Hash::make('12345678'), // Password default
         ]);
 
@@ -81,6 +82,8 @@ class UsersImport implements ToModel, WithHeadingRow
                 'min_sks'    => $row['min_sks'] ?? null,
                 'max_sks'    => $row['max_sks'] ?? null,
             ]);
+        } elseif ($this->type === 'admin') {
+            $user->assignRole('admin');
         }
 
         return $user;

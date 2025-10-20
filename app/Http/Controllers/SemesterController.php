@@ -43,7 +43,7 @@ class SemesterController extends Controller
         $currentYear = date('Y');
         $academicYears = [];
 
-        for ($i = $currentYear; $i <= $currentYear + 5; $i++) {
+        for ($i = $currentYear; $i <= $currentYear + 3; $i++) {
             $academicYears[] = "{$i}/" . ($i + 1);
         }
         return view('admin.semester.create', compact(
@@ -100,7 +100,11 @@ class SemesterController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $semester = Semester::with('academicYear')->where('id', $id)
+            ->firstOrFail();
+        return view('admin.semester.show', compact(
+            'semester',
+        ));
     }
 
     /**
@@ -111,11 +115,10 @@ class SemesterController extends Controller
         $activeSemester = $this->getActiveSemester();
         $semester = Semester::with('academicYear')->findOrFail($id);
         $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
-
         $currentYear = date('Y');
         $academicYears = [];
 
-        for ($i = $currentYear; $i <= $currentYear + 5; $i++) {
+        for ($i = $currentYear - 2; $i <= $currentYear + 3; $i++) {
             $academicYears[] = "{$i}/" . ($i + 1);
         }
         return view('admin.semester.edit', compact(
@@ -131,7 +134,30 @@ class SemesterController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $semester = Semester::where('id', $id)->first();
+
+        $request->validate([
+            'year_name'      => 'required|string|max:255',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'semester_start' => 'required|date',
+            'semester_end' => 'required|date|after:semester_start',
+        ]);
+
+        Semester::where('id', $semester->id)->update([
+
+            'start_date' => $request->semester_start,
+            'end_date' => $request->semester_end,
+
+        ]);
+
+        AcademicYear::where('id', $semester->academic_year_id)->update([
+            'year_name' => $request->year_name,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+        ]);
+        return redirect()->route('admin.semester.edit', $id)
+            ->with('success', 'Tahun Akademik dan Semester berhasil diperbarui.');
     }
 
     /**

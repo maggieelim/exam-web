@@ -96,14 +96,12 @@
                 <i class="fas fa-hourglass-half me-2"></i> Waiting for Grading
               </div>
               @endif
-              @elseif($exam->has_ongoing)
-              <div class="text-center">
-                <span class="badge bg-warning mb-2">Ongoing</span>
-                <br>
-                <a href="{{ route('student.exams.continue', $exam->exam_code) }}" class="btn btn-sm btn-warning">
-                  <i class="fas fa-play me-1"></i> Lanjutkan Ujian
-                </a>
-              </div>
+              @elseif( optional($exam->attempts->first())->status ==='in_progress')
+              <button class="btn btn-sm btn-warning w-100"
+                data-bs-toggle="modal"
+                data-bs-target="#examPasswordModal-{{ $exam->exam_code }}">
+                <i class="fas fa-play me-1"></i> Lanjutkan Ujian
+              </button>
 
               @elseif($exam->show_start_button)
               <button class="btn btn-sm btn-primary w-100"
@@ -112,6 +110,18 @@
                 <i class="fas fa-play me-1"></i> Start Exam
               </button>
 
+              @elseif($exam->status ==='upcoming')
+              <div class="text-center">
+                <small class="text-muted">
+                  Available soon </small>
+              </div>
+              @else
+              <div class="text-center">
+                <a class="btn btn-sm btn-danger w-100 disabled">
+                  Exam has ended
+                </a>
+              </div>
+              @endif
               <!-- Modal -->
               <div class="modal fade" id="examPasswordModal-{{ $exam->exam_code }}" tabindex="-1">
                 <div class="modal-dialog">
@@ -125,7 +135,7 @@
                       <div class="modal-body">
                         <div class="form-group">
                           <label for="password-{{ $exam->exam_code }}" class="form-label">Exam Password</label>
-                          <input type="text" name="password" class="form-control"
+                          <input type="text" name="password" class="form-control" autocomplete="off"
                             id="password-{{ $exam->exam_code }}" placeholder="Enter exam password" required>
                         </div>
                       </div>
@@ -137,18 +147,6 @@
                   </form>
                 </div>
               </div>
-              @elseif($exam->exam_ended)
-              <div class="text-center">
-                <a class="btn btn-sm btn-danger w-100 disabled">
-                  Exam has ended
-                </a>
-              </div>
-              @else
-              <div class="text-center">
-                <small class="text-muted">
-                  Available soon </small>
-              </div>
-              @endif
             </div>
           </div>
         </div>

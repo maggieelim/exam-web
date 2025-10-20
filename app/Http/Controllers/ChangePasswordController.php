@@ -8,34 +8,40 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class ChangePasswordController extends Controller
 {
     public function changePassword(Request $request)
     {
-        
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|min:8|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+        ], [
+            'password.regex' => 'Password harus mengandung setidaknya satu huruf kecil, satu huruf besar, dan satu angka.',
+            'email.exists' => 'Email tidak terdaftar dalam sistem.'
         ]);
-    
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
+            function ($user) use ($request) {
                 $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60));
-    
-                $user->save();
-    
-                event(new PasswordReset($user));
+                    'password' => Hash::make($request->password)
+                ])->save();
             }
         );
-    
-        return $status === Password::PASSWORD_RESET
-                    ? redirect('/login')->with('success', __($status))
-                    : back()->withErrors(['email' => [__($status)]]);
+
+        if ($status === Password::PASSWORD_RESET) {
+            return redirect()->route('login')
+                ->with('success', 'Password berhasil diubah! Silakan login dengan password baru Anda.');
+        }
+
+        return back()->withErrors(['email' => [__($status)]]);
     }
 }

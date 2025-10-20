@@ -75,10 +75,48 @@
               <button type="submit" class="btn bg-gradient-primary w-100">Simpan</button>
             </div>
           </div>
-
         </form>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const yearSelect = document.getElementById("year_name");
+    const startDate = document.getElementById("start_date");
+    const endDate = document.getElementById("end_date");
+    const oddStart = document.getElementById("odd_start");
+    const oddEnd = document.getElementById("odd_end");
+    const evenStart = document.getElementById("even_start");
+    const evenEnd = document.getElementById("even_end");
+
+    yearSelect.addEventListener("change", function() {
+      const yearValue = this.value;
+
+      if (yearValue) {
+        // Ambil tahun awal dan akhir dari format "2026/2027"
+        const [startYear, endYear] = yearValue.split("/").map(y => parseInt(y));
+
+        const minDate = `${startYear}-01-01`;
+        const maxDate = `${endYear}-12-31`;
+
+        // Set batas tanggal di semua input date
+        [startDate, endDate, oddStart, oddEnd, evenStart, evenEnd].forEach(input => {
+          input.min = minDate;
+          input.max = maxDate;
+          input.value = ""; // reset value kalau di luar rentang
+        });
+      } else {
+        // Reset semua jika tidak ada tahun dipilih
+        [startDate, endDate, oddStart, oddEnd, evenStart, evenEnd].forEach(input => {
+          input.removeAttribute("min");
+          input.removeAttribute("max");
+          input.value = "";
+        });
+      }
+    });
+  });
+</script>
+
 @endsection

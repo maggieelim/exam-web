@@ -42,10 +42,10 @@
 
           <div class="mt-4 d-flex justify-content-center align-items-center">
             @if($prevQuestion)
-            <button type="button" id="prevQuestion" class="btn bg-gradient-primary"> <i class="fas fa-chevron-left"> </i>Sebelumnya
+            <button type="button" id="prevQuestion" class="btn bg-gradient-primary"> <i class="fas fa-chevron-left"> </i>
             </button>
             @else
-            <button type="button" class="btn btn-secondary" disabled> <i class="fas fa-chevron-left"></i>Sebelumnya
+            <button type="button" class="btn btn-secondary" disabled> <i class="fas fa-chevron-left"></i>
             </button>
             @endif
 
@@ -62,9 +62,9 @@
             </div>
 
             @if($nextQuestion)
-            <button type="button" id="nextQuestion" class="btn bg-gradient-primary"><i class="fas fa-chevron-right"></i> Selanjutnya</button>
+            <button type="button" id="nextQuestion" class="btn bg-gradient-primary"><i class="fas fa-chevron-right"></i> </button>
             @else
-            <button disabled type="button" id="nextQuestion" class="btn bg-gradient-primary"><i class="fas fa-chevron-right"></i>Selanjutnya</button>
+            <button disabled type="button" id="nextQuestion" class="btn bg-gradient-primary"><i class="fas fa-chevron-right"></i></button>
             @endif
           </div>
         </form>
@@ -148,6 +148,11 @@
 </div>
 
 <script>
+  history.pushState(null, null, location.href);
+  window.onpopstate = function() {
+    history.go(1);
+    alert("Navigasi kembali dinonaktifkan selama ujian.");
+  };
   document.addEventListener('DOMContentLoaded', function() {
     // Debug info
     console.log('Exam ID:', '{{ $exam->id }}');
