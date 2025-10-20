@@ -35,7 +35,18 @@ class UsersImport implements ToModel, WithHeadingRow
         if (User::where('email', $row['email'])->exists()) {
             throw new \Exception("Email {$row['email']} sudah terdaftar.");
         }
+        $gender = strtolower(trim($row['gender'] ?? ''));
 
+        // Pastikan gender tidak kosong
+        if (empty($gender)) {
+            throw new \Exception('Kolom gender tidak boleh kosong.');
+        }
+
+        // Hanya boleh 'pria' atau 'wanita'
+        $allowedGenders = ['pria', 'wanita'];
+        if (!in_array($gender, $allowedGenders)) {
+            throw new \Exception("Gender '{$row['gender']}' tidak valid. Hanya boleh 'Pria' atau 'Wanita'.");
+        }
         // Simpan user dulu
         $user = User::create([
             'name' => $row['nama'],
@@ -61,10 +72,10 @@ class UsersImport implements ToModel, WithHeadingRow
             }
 
             Student::create([
-                'user_id'  => $user->id,
-                'nim'      => $nim,
+                'user_id' => $user->id,
+                'nim' => $nim,
                 'angkatan' => $angkatan,
-                'gender'   => $row['gender']
+                'gender' => $row['gender'],
             ]);
         }
 
@@ -73,14 +84,14 @@ class UsersImport implements ToModel, WithHeadingRow
             $user->assignRole('lecturer');
 
             Lecturer::create([
-                'user_id'    => $user->id,
-                'nidn'       => $row['nidn'] ?? null,
-                'gender'    => $row['gender'] ?? null,
-                'strata'     => $row['strata'] ?? null,
-                'gelar'      => $row['gelar'] ?? null,
+                'user_id' => $user->id,
+                'nidn' => $row['nidn'] ?? null,
+                'gender' => $row['gender'] ?? null,
+                'strata' => $row['strata'] ?? null,
+                'gelar' => $row['gelar'] ?? null,
                 'tipe_dosen' => $row['tipe_dosen'] ?? null,
-                'min_sks'    => $row['min_sks'] ?? null,
-                'max_sks'    => $row['max_sks'] ?? null,
+                'min_sks' => $row['min_sks'] ?? null,
+                'max_sks' => $row['max_sks'] ?? null,
             ]);
         } elseif ($this->type === 'admin') {
             $user->assignRole('admin');

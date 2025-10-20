@@ -21,89 +21,107 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class UserController extends Controller
 {
 
-    public function indexAdmin(Request $request, $type = null)
-    {
-        if ($request->all()) {
-            session(['user_filter' => $request->all()]);
-        } elseif (session('user_filter')) {
-            $request->merge(session('user_filter'));
-        }
+   public function indexAdmin(Request $request, $type = null)
+{
+    // Dapatkan type terakhir dari session
+    $lastType = session('last_user_type');
 
-        $query = User::with('roles');
-        $today = Carbon::today();
-        $semesterId = $request->get('semester_id');
-
-        $activeSemester = Semester::where('start_date', '<=', $today)
-            ->where('end_date', '>=', $today)
-            ->first();
-
-        $semesters = Semester::with('academicYear')
-            ->orderBy('start_date', 'desc')
-            ->get();
-
-        if ($type === 'student') {
-            $query->role('student')->with('student.courseStudents.semester');
-        } elseif ($type === 'lecturer') {
-            $query->role('lecturer')->with('lecturer');
-        } elseif ($type === 'admin') {
-            $query->role('admin');
-        }
-
-        if ($semesterId) {
-            $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        if ($request->filled('name')) {
-            $query->where('name', 'like', "%{$request->name}%");
-        }
-
-        if ($request->filled('email')) {
-            $query->where('email', 'like', "%{$request->email}%");
-        }
-
-        if ($request->filled('nim')) {
-            $query->whereHas('student', function ($q) use ($request) {
-                $q->where('nim', 'like', "%{$request->nim}%");
-            });
-        }
-        if ($request->filled('nidn')) {
-            $query->whereHas('lecturer', function ($q) use ($request) {
-                $q->where('nidn', 'like', "%{$request->nidn}%");
-            });
-        }
-
-        // SORTING
-        $sort = $request->get('sort', 'name'); // default name
-        $dir  = $request->get('dir', 'asc');   // default asc
-
-        if ($sort === 'nim') {
-            $query->whereHas('student')
-                ->join('students', 'users.id', '=', 'students.user_id')
-                ->orderBy('students.nim', $dir)
-                ->select('users.*');
-        } elseif ($sort === 'nidn') {
-            $query->whereHas('lecturer')
-                ->join('lecturers', 'users.id', '=', 'lecturers.user_id')
-                ->orderBy('lecturers.nidn', $dir)
-                ->select('users.*');
-        } else {
-            $query->orderBy($sort, $dir);
-        }
-
-        $users = $query->paginate(15)->appends($request->all());
-
-        return view('admin.users.index', compact(
-            'users',
-            'type',
-            'sort',
-            'dir',
-            'semesters',
-            'semesterId',
-            'activeSemester'
-        ));
+    // Jika user berpindah tab (type berbeda dari sebelumnya), reset filter
+    if ($lastType !== $type) {
+        session()->forget('user_filter');
     }
+
+    // Simpan type yang sedang aktif ke session
+    session(['last_user_type' => $type]);
+
+    // Jika request mengandung filter baru, simpan ke session
+    if ($request->all()) {
+        session(['user_filter' => $request->all()]);
+    } elseif (session('user_filter')) {
+        // Jika tidak ada input baru tapi session ada, merge ke request
+        $request->merge(session('user_filter'));
+    }
+
+    // === QUERY DASAR ===
+    $query = User::with('roles');
+    $today = Carbon::today();
+    $semesterId = $request->get('semester_id');
+
+    $activeSemester = Semester::where('start_date', '<=', $today)
+        ->where('end_date', '>=', $today)
+        ->first();
+
+    $semesters = Semester::with('academicYear')
+        ->orderBy('start_date', 'desc')
+        ->get();
+
+    // === ROLE FILTER ===
+    if ($type === 'student') {
+        $query->role('student')->with('student.courseStudents.semester');
+    } elseif ($type === 'lecturer') {
+        $query->role('lecturer')->with('lecturer');
+    } elseif ($type === 'admin') {
+        $query->role('admin');
+    }
+
+    // === FILTER TAMBAHAN ===
+    if ($semesterId) {
+        $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
+            $q->where('semester_id', $semesterId);
+        });
+    }
+
+    if ($request->filled('name')) {
+        $query->where('name', 'like', "%{$request->name}%");
+    }
+
+    if ($request->filled('email')) {
+        $query->where('email', 'like', "%{$request->email}%");
+    }
+
+    if ($request->filled('nim')) {
+        $query->whereHas('student', function ($q) use ($request) {
+            $q->where('nim', 'like', "%{$request->nim}%");
+        });
+    }
+
+    if ($request->filled('nidn')) {
+        $query->whereHas('lecturer', function ($q) use ($request) {
+            $q->where('nidn', 'like', "%{$request->nidn}%");
+        });
+    }
+
+    // === SORTING ===
+    $sort = $request->get('sort', 'name');
+    $dir = $request->get('dir', 'asc');
+
+    if ($sort === 'nim') {
+        $query->whereHas('student')
+            ->join('students', 'users.id', '=', 'students.user_id')
+            ->orderBy('students.nim', $dir)
+            ->select('users.*');
+    } elseif ($sort === 'nidn') {
+        $query->whereHas('lecturer')
+            ->join('lecturers', 'users.id', '=', 'lecturers.user_id')
+            ->orderBy('lecturers.nidn', $dir)
+            ->select('users.*');
+    } else {
+        $query->orderBy($sort, $dir);
+    }
+
+    $users = $query->paginate(15)->appends($request->all());
+
+    return view('admin.users.index', compact(
+        'users',
+        'type',
+        'sort',
+        'dir',
+        'semesters',
+        'semesterId',
+        'activeSemester'
+    ));
+}
+
 
     public function create($type)
     {
