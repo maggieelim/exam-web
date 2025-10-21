@@ -135,6 +135,7 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 
 	Route::get('/exams/ongoing/participants/{exam_code}', [OngoingExamController::class, 'ongoing'])->name('exams.ongoing');
 	Route::get('/exams/ongoing/{exam_code}/retake/{user_id}', [OngoingExamController::class, 'resetAttempt'])->name('exams.retake');
+	Route::get('/exams/ongoing/{exam_code}/end/{user_id}', [OngoingExamController::class, 'endAttempt'])->name('exams.endAttempt');
 
 
 	// exam questions
@@ -151,6 +152,9 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
 	Route::get('/exams/{status?}', [ExamController::class, 'index'])->where('status', '(previous|upcoming|ongoing)')
 		->name('studentExams.index');
+		// Route untuk mengecek status exam
+Route::get('/exams/{exam_code}/check-status', [ExamAttemptController::class, 'checkExamStatus'])
+    ->name('exams.check-status');
 	Route::get('/exams/previous/results/{exam_code}', [StudentExamResultsController::class, 'show'])->name('results.show');
 	Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
 	Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');

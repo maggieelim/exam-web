@@ -44,6 +44,7 @@ class CourseStudentController extends Controller
 
         $added = [];
         $notFound = [];
+        $exists = [];
 
         // --- Case 1: Input manual NIM ---
         if ($request->filled('nim')) {
@@ -51,25 +52,35 @@ class CourseStudentController extends Controller
 
             foreach ($nims as $nim) {
                 $nim = trim($nim);
-                if (!$nim) continue;
+                if (!$nim) {
+                    continue;
+                }
 
                 $student = Student::where('nim', $nim)->first();
 
                 if ($student) {
-                    // Cek apakah sudah terdaftar di semester ini
-                    $exists = CourseStudent::where('course_id', $course->id)
-                        ->where('student_id', $student->id)
-                        ->where('semester_id', $semesterId)
-                        ->exists();
+                    // Cek apakah sudah pernah terdaftar (termasuk soft deleted)
+                    $existing = CourseStudent::withTrashed()->where('course_id', $course->id)->where('student_id', $student->id)->where('semester_id', $semesterId)->first();
 
-                    if (!$exists) {
+                    if ($existing) {
+                        if ($existing->trashed()) {
+                            // Jika soft-deleted, restore
+                            $existing->restore();
+                            $existing->updated_at = $now;
+                            $existing->save();
+                            $added[] = $nim . ' (dipulihkan)';
+                        } else {
+                            $exists[] = $nim;
+                        }
+                    } else {
+                        // Jika belum pernah ada, buat baru
                         CourseStudent::create([
-                            'course_id'   => $course->id,
-                            'student_id'  => $student->id,
-                            'user_id'     => $student->user_id,
+                            'course_id' => $course->id,
+                            'student_id' => $student->id,
+                            'user_id' => $student->user_id,
                             'semester_id' => $semesterId,
-                            'created_at'  => $now,
-                            'updated_at'  => $now,
+                            'created_at' => $now,
+                            'updated_at' => $now,
                         ]);
                         $added[] = $nim;
                     }
@@ -85,6 +96,9 @@ class CourseStudentController extends Controller
             if (!empty($notFound)) {
                 $messages['error'] = 'Mahasiswa tidak ditemukan: ' . implode(', ', $notFound);
             }
+            if (!empty($exists)) {
+                $messages['error_exists'] = 'Mahasiswa sudah terdaftar: ' . implode(', ', $exists);
+            }
 
             return back()->with($messages);
         }
@@ -95,23 +109,22 @@ class CourseStudentController extends Controller
 
             foreach ($collection[0] as $row) {
                 $nim = trim($row[0]);
-                if (!$nim) continue;
+                if (!$nim) {
+                    continue;
+                }
 
                 $student = Student::where('nim', $nim)->first();
                 if ($student) {
-                    $exists = CourseStudent::where('course_id', $course->id)
-                        ->where('student_id', $student->id)
-                        ->where('semester_id', $semesterId)
-                        ->exists();
+                    $exists = CourseStudent::where('course_id', $course->id)->where('student_id', $student->id)->where('semester_id', $semesterId)->exists();
 
                     if (!$exists) {
                         CourseStudent::create([
-                            'course_id'   => $course->id,
-                            'student_id'  => $student->id,
-                            'user_id'     => $student->user_id,
+                            'course_id' => $course->id,
+                            'student_id' => $student->id,
+                            'user_id' => $student->user_id,
                             'semester_id' => $semesterId,
-                            'created_at'  => $now,
-                            'updated_at'  => $now,
+                            'created_at' => $now,
+                            'updated_at' => $now,
                         ]);
                     }
                 }
@@ -122,7 +135,6 @@ class CourseStudentController extends Controller
 
         return back()->withErrors(['error' => 'Tidak ada data yang dikirim.']);
     }
-
 
     /**
      * Display the specified resource.
@@ -137,72 +149,45 @@ class CourseStudentController extends Controller
      */
     public function edit(Request $request, string $slug)
     {
-        // Ambil semester_id dari query parameter
         $semesterId = $request->query('semester_id');
-
-        // Ambil data course beserta dosen pengajar
-        $course = Course::with(['lecturers'])->where('slug', $slug)->firstOrFail();
-
-        // Ambil semua dosen (user dengan role lecturer)
+        $course = Course::with(['lecturers'])
+            ->where('slug', $slug)
+            ->firstOrFail();
         $lecturers = User::role('lecturer')->get();
 
-        // Query mahasiswa yang terdaftar di course ini
-        $query = CourseStudent::with(['student.user'])
-            ->where('course_id', $course->id);
+        $query = CourseStudent::with(['student.user'])->where('course_id', $course->id);
 
         if ($semesterId) {
             $query->where('semester_id', $semesterId);
         }
 
-        // 🔹 Filter berdasarkan NIM
         if ($request->filled('nim')) {
             $query->whereHas('student', function ($q) use ($request) {
                 $q->where('nim', 'like', '%' . $request->nim . '%');
             });
         }
 
-        // 🔹 Filter berdasarkan nama mahasiswa
         if ($request->filled('name')) {
             $query->whereHas('student.user', function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->name . '%');
             });
         }
 
-        // 🔹 Sorting
         $sort = $request->get('sort', 'name');
-        $dir  = $request->get('dir', 'asc');
+        $dir = $request->get('dir', 'asc');
 
         if ($sort === 'nim') {
-            // Urut berdasarkan NIM mahasiswa
-            $query->join('students', 'course_students.student_id', '=', 'students.id')
-                ->orderBy('students.nim', $dir)
-                ->select('course_students.*');
+            $query->join('students', 'course_students.student_id', '=', 'students.id')->orderBy('students.nim', $dir)->select('course_students.*');
         } elseif ($sort === 'name') {
-            // Urut berdasarkan nama user dari relasi student
-            $query->join('students', 'course_students.student_id', '=', 'students.id')
-                ->join('users', 'students.user_id', '=', 'users.id')
-                ->orderBy('users.name', $dir)
-                ->select('course_students.*');
+            $query->join('students', 'course_students.student_id', '=', 'students.id')->join('users', 'students.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('course_students.*');
         } else {
-            // Default: order by created_at
             $query->orderBy('course_students.created_at', 'desc');
         }
 
-        // 🔹 Pagination
         $students = $query->paginate(15)->appends($request->all());
 
-        // 🔹 Kirim semua data ke view
-        return view('courses.student.edit', compact(
-            'course',
-            'lecturers',
-            'students',
-            'sort',
-            'dir',
-            'semesterId'
-        ));
+        return view('courses.student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
     }
-
-
 
     /**
      * Update the specified resource in storage.
@@ -218,16 +203,12 @@ class CourseStudentController extends Controller
     public function destroy(Course $course, $studentId)
     {
         // pastikan mahasiswa ada di course
-        $exists = CourseStudent::where('id', $studentId)
-            ->where('course_id', $course->id)
-            ->exists();
+        $exists = CourseStudent::where('id', $studentId)->where('course_id', $course->id)->exists();
         if (!$exists) {
             return back()->with('error', 'Mahasiswa tidak ditemukan di course ini.');
         }
 
-        CourseStudent::where('id', $studentId)
-            ->where('course_id', $course->id)
-            ->delete();
+        CourseStudent::where('id', $studentId)->where('course_id', $course->id)->delete();
         return back()->with('success', 'Mahasiswa berhasil dihapus dari course.');
     }
 }

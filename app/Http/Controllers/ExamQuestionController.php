@@ -308,7 +308,7 @@ class ExamQuestionController extends Controller
         // hapus soal
         $question->delete();
 
-        return redirect()->route('exams.questions', $exam->exam_code)
+        return redirect()->route('exams.questions.'. $exam->status, $exam->exam_code)
             ->with('success', 'Soal berhasil dihapus!');
     }
 }

@@ -1,5 +1,6 @@
 <!-- Navbar -->
-<nav class="navbar navbar-main navbar-expand-lg px-3 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+<nav class="navbar navbar-main navbar-expand-lg px-3 mx-4 shadow-none border-radius-xl" id="navbarBlur"
+    navbar-scroll="true">
     <div class="container-fluid py-2 px-0 d-flex flex-wrap align-items-center justify-content-between">
 
         <!-- Breadcrumb + Title -->
@@ -20,8 +21,8 @@
         <!-- Right Section (User Info + Dropdown) -->
         <div class="d-flex align-items-center">
             <ul class="navbar-nav d-flex flex-row align-items-center mb-0">
-                <!-- User Dropdown -->
-                <li class="nav-item dropdown">
+                <!-- User Dropdown - Desktop Only -->
+                <li class="nav-item dropdown d-none d-lg-block">
                     <a class="nav-link d-flex align-items-center p-0" href="#" id="userDropdown" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="d-none d-sm-flex flex-column text-end me-2">
@@ -40,6 +41,17 @@
                             </a>
                         </li>
                     </ul>
+                </li>
+
+                <!-- Mobile View - Simple Logout Link -->
+                <li class="nav-item d-lg-none">
+                    <a class="nav-link d-flex align-items-center p-0">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=random"
+                            alt="profile" class="avatar avatar-sm rounded-circle">
+                    </a>
+                    <form id="logout-form-mobile" action="{{ url('/logout') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
                 </li>
 
                 <!-- Sidebar Toggle (for mobile only) -->

@@ -35,4 +35,11 @@ class ExamAttempt extends Model
         return $this->hasMany(ExamAnswer::class, 'exam_id', 'exam_id')
             ->where('user_id', $this->user_id);
     }
+       public function findAnswerByQuestion($questionId)
+    {
+        return ExamAnswer::where('exam_id', $this->exam_id)
+                        ->where('user_id', $this->user_id)
+                        ->where('exam_question_id', $questionId)
+                        ->first();
+    }
 }

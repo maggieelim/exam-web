@@ -20,12 +20,7 @@ class OngoingExamController extends Controller
         $user = auth()->user();
         $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
 
-        $exam = Exam::with([
-            'course',
-            'creator',
-            'updater',
-            'attempts.user.student'
-        ])
+        $exam = Exam::with(['course', 'creator', 'updater', 'attempts.user.student'])
             ->withCount('questions', 'attempts')
             ->where('exam_code', $exam_code)
             ->firstOrFail();
@@ -34,29 +29,30 @@ class OngoingExamController extends Controller
             abort(403, 'Unauthorized access to this exam.');
         }
 
-        $attemptsQuery = $exam->attempts()->with(
-            [
+        $attemptsQuery = $exam
+            ->attempts()
+            ->with([
                 'user.student',
                 'answers' => function ($q) use ($exam) {
                     $q->where('exam_id', $exam->id);
-                }
-            ]
-        )->where('exam_id', $exam->id);
+                },
+            ])
+            ->where('exam_id', $exam->id);
         if ($request->filled('status')) {
             $attemptsQuery->where('status', $request->status);
         }
         if ($request->filled('search')) {
             $search = $request->search;
             $attemptsQuery->whereHas('user.student', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('nim', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")->orWhere('nim', 'like', "%{$search}%");
             });
         }
         $sort = $request->get('sort', 'created_at');
-        $dir  = $request->get('dir', 'desc');
+        $dir = $request->get('dir', 'desc');
 
         if (in_array($sort, ['nim', 'name'])) {
-            $attemptsQuery->join('users', 'exam_attempts.user_id', '=', 'users.id')
+            $attemptsQuery
+                ->join('users', 'exam_attempts.user_id', '=', 'users.id')
                 ->leftJoin('students', 'users.id', '=', 'students.user_id')
                 ->select('exam_attempts.*')
                 ->orderBy($sort === 'nim' ? 'students.nim' : 'users.name', $dir);
@@ -65,13 +61,11 @@ class OngoingExamController extends Controller
             $attemptsQuery->orderBy($sort, $dir);
         }
 
-        $attempts = $attemptsQuery->orderBy($sort, $dir)
-            ->paginate(10)
-            ->withQueryString();
+        $attempts = $attemptsQuery->orderBy($sort, $dir)->paginate(10)->withQueryString();
 
         $attempts->getCollection()->transform(function ($attempt) use ($exam) {
             $student = $attempt->user->student;
-            $answeredCount = $exam->answers->where('user_id', $attempt->user_id)->count();
+            $answeredCount = $exam->answers->where('user_id', $attempt->user_id)->where('answer', !null)->count();
 
             $totalQuestions = $exam->questions->count();
 
@@ -110,9 +104,9 @@ class OngoingExamController extends Controller
 
         $availableStatuses = [
             'in_progress' => 'In Progress',
-            'completed'   => 'Completed',
-            'idle'        => 'Idle',
-            'timeout'     => 'Timeout',
+            'completed' => 'Completed',
+            'idle' => 'Idle',
+            'timeout' => 'Timeout',
         ];
         return view('exams.ongoing.index', compact('exam', 'attempts', 'stats', 'sort', 'dir', 'availableStatuses'));
     }
@@ -150,7 +144,6 @@ class OngoingExamController extends Controller
 
     private function canRetakeExam($attempt, $exam)
     {
-
         if ($attempt->status !== 'completed') {
             return false;
         }
@@ -163,9 +156,7 @@ class OngoingExamController extends Controller
     public function resetAttempt(Request $request, $exam_code, $attempt_id)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
-        $attempt = ExamAttempt::where('id', $attempt_id)
-            ->where('exam_id', $exam->id)
-            ->firstOrFail();
+        $attempt = ExamAttempt::where('id', $attempt_id)->where('exam_id', $exam->id)->firstOrFail();
 
         // Authorization check
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
@@ -180,22 +171,39 @@ class OngoingExamController extends Controller
             DB::beginTransaction();
 
             // Delete all answers for this attempt
-            ExamAnswer::where('exam_id', $exam->id)
-                ->where('user_id', $attempt->user_id)
-                ->delete();
+            ExamAnswer::where('exam_id', $exam->id)->where('user_id', $attempt->user_id)->delete();
 
             // DELETE attempt (bukan update)
             $attempt->delete();
 
             DB::commit();
 
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('success', "Exam attempt for {$studentName} has been deleted successfully. Student can start a new attempt.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('error', 'Failed to delete exam attempt: ' . $e->getMessage());
         }
+    }
+
+    public function endAttempt($examCode, $attemptId)
+    {
+        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+        $attempt = ExamAttempt::where('exam_id', $exam->id)->where('id', $attemptId)->firstOrFail();
+
+        if ($attempt->status === 'completed') {
+            return redirect()->back()->with('error', 'Attempt sudah selesai.');
+        }
+
+        $attempt->update([
+            'status' => 'completed',
+            'ended_at' => now(), // opsional, kalau ada kolom ended_at
+        ]);
+
+        return redirect()->back()->with('success', 'Attempt berhasil diakhiri.');
     }
 
     /**
@@ -214,22 +222,17 @@ class OngoingExamController extends Controller
         }
 
         if (empty($attemptIds)) {
-            return redirect()->back()
-                ->with('error', 'No attempts selected.');
+            return redirect()->back()->with('error', 'No attempts selected.');
         }
 
         try {
             DB::beginTransaction();
 
-            $attempts = ExamAttempt::whereIn('id', $attemptIds)
-                ->where('exam_id', $exam->id)
-                ->get();
+            $attempts = ExamAttempt::whereIn('id', $attemptIds)->where('exam_id', $exam->id)->get();
 
             foreach ($attempts as $attempt) {
                 // Delete answers
-                ExamAnswer::where('exam_id', $exam->id)
-                    ->where('user_id', $attempt->user_id)
-                    ->delete();
+                ExamAnswer::where('exam_id', $exam->id)->where('user_id', $attempt->user_id)->delete();
 
                 // Reset attempt
                 $attempt->update([
@@ -237,17 +240,19 @@ class OngoingExamController extends Controller
                     'started_at' => null,
                     'completed_at' => null,
                     'score' => null,
-                    'feedback' => null
+                    'feedback' => null,
                 ]);
             }
 
             DB::commit();
 
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('success', "Successfully reset {$attempts->count()} exam attempts.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('error', 'Failed to reset exam attempts: ' . $e->getMessage());
         }
     }

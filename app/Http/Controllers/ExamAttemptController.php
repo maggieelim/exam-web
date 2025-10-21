@@ -9,6 +9,7 @@ use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 
 class ExamAttemptController extends Controller
 {
@@ -31,19 +32,16 @@ class ExamAttemptController extends Controller
         $user = auth()->user();
 
         // Cek apakah sudah ada attempt in_progress
-        $attempt = ExamAttempt::where('user_id', $user->id)
-            ->where('exam_id', $exam->id)
-            ->where('status', 'in_progress')
-            ->first();
+        $attempt = ExamAttempt::where('user_id', $user->id)->where('exam_id', $exam->id)->where('status', 'in_progress')->first();
 
         if (!$attempt) {
             $attempt = ExamAttempt::create([
                 'user_id' => $user->id,
                 'exam_id' => $exam->id,
-                'status'  => 'in_progress',
+                'status' => 'in_progress',
                 'question_order' => $questionOrder->toJson(),
                 'started_at' => now(),
-                'created_at' => now()
+                'created_at' => now(),
             ]);
         }
 
@@ -53,9 +51,13 @@ class ExamAttemptController extends Controller
 
     public function do($exam_code, $kode_soal = null)
     {
-        $exam = Exam::with(['questions' => function ($query) {
-            $query->orderBy('id'); // Pastikan urutan konsisten
-        }])->where('exam_code', $exam_code)->firstOrFail();
+        $exam = Exam::with([
+            'questions' => function ($query) {
+                $query->orderBy('id'); // Pastikan urutan konsisten
+            },
+        ])
+            ->where('exam_code', $exam_code)
+            ->firstOrFail();
 
         $attempt = ExamAttempt::where('exam_id', $exam->id)
             ->where('user_id', auth()->id())
@@ -63,9 +65,8 @@ class ExamAttemptController extends Controller
             ->firstOrFail();
 
         // Cek jika attempt sudah completed, redirect ke index
-        if ($attempt->status === 'completed||timeout') {
-            return redirect()->route('student.studentExams.index')
-                ->with('info', 'Ujian sudah diselesaikan.');
+        if (!$attempt || in_array($attempt->status, ['completed', 'timeout'])) {
+            return redirect()->route('student.studentExams.index')->with('info', 'Ujian telah diselesaikan atau diakhiri oleh pengawas.');
         }
 
         $endTime = $attempt->created_at->copy()->addMinutes($exam->duration);
@@ -74,16 +75,19 @@ class ExamAttemptController extends Controller
             \Log::warning('Time already expired for attempt: ' . $attempt->id);
             $attempt->update([
                 'finished_at' => now(),
-                'status' => 'timeout'
+                'status' => 'timeout',
             ]);
-            return redirect()->route('student.studentExams.index')
+            return redirect()
+                ->route('student.studentExams.index', ['status' => 'previous'])
                 ->with('error', 'Waktu ujian telah habis.');
         }
         $questionOrder = collect(json_decode($attempt->question_order, true));
 
-        $questions = $exam->questions->sortBy(function ($q) use ($questionOrder) {
-            return $questionOrder->search($q->kode_soal);
-        })->values();
+        $questions = $exam->questions
+            ->sortBy(function ($q) use ($questionOrder) {
+                return $questionOrder->search($q->kode_soal);
+            })
+            ->values();
 
         // Pilih soal saat ini
         if ($kode_soal) {
@@ -93,8 +97,7 @@ class ExamAttemptController extends Controller
         }
 
         if (!$currentQuestion) {
-            return redirect()->route('student.studentExams.index')
-                ->with('error', 'Tidak ada soal dalam ujian ini.');
+            return redirect()->route('student.studentExams.index')->with('error', 'Tidak ada soal dalam ujian ini.');
         }
 
         $currentIndex = $questions->search(function ($item) use ($currentQuestion) {
@@ -103,10 +106,13 @@ class ExamAttemptController extends Controller
 
         // Soal sebelumnya & selanjutnya
         $prevQuestion = $currentIndex > 0 ? $questions->get($currentIndex - 1) : null;
-        $nextQuestion = $currentIndex < ($questions->count() - 1) ? $questions->get($currentIndex + 1) : null;
+        $nextQuestion = $currentIndex < $questions->count() - 1 ? $questions->get($currentIndex + 1) : null;
 
         // Ambil jawaban yang sudah disimpan user
-        $savedAnswer = $currentQuestion->answers()->where('user_id', auth()->id())->first();
+        $savedAnswer = $currentQuestion
+            ->answers()
+            ->where('user_id', auth()->id())
+            ->first();
 
         $questionNumber = $currentIndex + 1;
         $totalQuestions = $questions->count();
@@ -122,21 +128,7 @@ class ExamAttemptController extends Controller
             ->where('user_id', auth()->id())
             ->pluck('answer', 'exam_question_id');
 
-        return view('students.exams.do', compact(
-            'exam',
-            'attempt',
-            'endTime',
-            'questionNumber',
-            'currentQuestion',
-            'prevQuestion',
-            'nextQuestion',
-            'savedAnswer',
-            'allAnswered',
-            'userAnswers',
-            'totalQuestions',
-            'answeredCount',
-            'questions'
-        ));
+        return view('students.exams.do', compact('exam', 'attempt', 'endTime', 'questionNumber', 'currentQuestion', 'prevQuestion', 'nextQuestion', 'savedAnswer', 'allAnswered', 'userAnswers', 'totalQuestions', 'answeredCount', 'questions'));
     }
 
     public function answer(Request $request, $exam_code, $kode_soal)
@@ -152,14 +144,14 @@ class ExamAttemptController extends Controller
                 [
                     'exam_id' => $exam->id,
                     'exam_question_id' => $question->id,
-                    'user_id' => auth()->id()
+                    'user_id' => auth()->id(),
                 ],
                 [
                     'answer' => $request->answer,
                     'marked_doubt' => $request->mark_doubt ?? 0,
                     'is_correct' => $isCorrect,
-                    'score' => $score
-                ]
+                    'score' => $score,
+                ],
             );
             $attempt = ExamAttempt::where('exam_id', $exam->id)
                 ->where('user_id', auth()->id())
@@ -168,20 +160,23 @@ class ExamAttemptController extends Controller
 
             if ($attempt) {
                 $attempt->touch(); // Update updated_at untuk menandakan aktivitas terakhir
-            };
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Jawaban berhasil disimpan',
                 'marked_doubt' => $answer->marked_doubt,
                 'is_correct' => $isCorrect,
-                'score' => $score
+                'score' => $score,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan jawaban: ' . $e->getMessage()
-            ], 500);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal menyimpan jawaban: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
@@ -189,28 +184,38 @@ class ExamAttemptController extends Controller
     public function finish($exam_code)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
-
-        $attempt = ExamAttempt::where('exam_id', $exam->id)
-            ->where('user_id', Auth::id())
-            ->first();
+        $user = FacadesAuth::user();
+        $attempt = ExamAttempt::where('exam_id', $exam->id)->where('user_id', $user->id)->first();
 
         if ($attempt) {
             $totalQuestions = $exam->questions()->count();
-            $answeredCount = ExamAnswer::where('exam_id', $exam->id)
-                ->where('user_id', Auth::id())
-                ->count();
+            $answeredCount = ExamAnswer::where('exam_id', $exam->id)->where('user_id', $user->id)->count();
 
-            $iscomplete = ($totalQuestions >= $answeredCount);
+            $iscomplete = $totalQuestions >= $answeredCount;
             $attempt->update([
                 'finished_at' => now(),
-                'status' => $iscomplete ? 'completed' : 'time_out'
+                'status' => $iscomplete ? 'completed' : 'time_out',
             ]);
         }
 
-        return redirect()->route('student.studentExams.index', ['status' => 'previous'])
+        return redirect()
+            ->route('student.studentExams.index', ['status' => 'previous'])
             ->with('success', 'Ujian selesai!');
     }
 
+    // Di StudentExamController
+    public function checkExamStatus($exam_code)
+    {
+        $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
+        $attempt = ExamAttempt::where('exam_id', $exam->id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        return response()->json([
+            'status' => $attempt->status ?? 'in_progress',
+            'message' => $attempt->status === 'completed' ? 'Exam has been completed' : 'Exam in progress',
+        ]);
+    }
     // Mark as doubt (tombol ragu-ragu)
     public function markDoubt(Request $request, $exam_code, $kode_soal)
     {
@@ -222,23 +227,26 @@ class ExamAttemptController extends Controller
                 [
                     'exam_id' => $exam->id,
                     'exam_question_id' => $question->id,
-                    'user_id' => auth()->id()
+                    'user_id' => auth()->id(),
                 ],
                 [
                     'marked_doubt' => 1,
-                    'answer' => $request->answer // Tetap simpan jawaban jika ada
-                ]
+                    'answer' => $request->answer, // Tetap simpan jawaban jika ada
+                ],
             );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Soal ditandai sebagai ragu-ragu'
+                'message' => 'Soal ditandai sebagai ragu-ragu',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menandai soal: ' . $e->getMessage()
-            ], 500);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal menandai soal: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 }

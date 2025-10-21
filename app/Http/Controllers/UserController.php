@@ -20,108 +20,88 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UserController extends Controller
 {
+    public function indexAdmin(Request $request, $type = null)
+    {
+        // Dapatkan type terakhir dari session
+        $lastType = session('last_user_type');
 
-   public function indexAdmin(Request $request, $type = null)
-{
-    // Dapatkan type terakhir dari session
-    $lastType = session('last_user_type');
+        // Jika user berpindah tab (type berbeda dari sebelumnya), reset filter
+        if ($lastType !== $type) {
+            session()->forget('user_filter');
+        }
 
-    // Jika user berpindah tab (type berbeda dari sebelumnya), reset filter
-    if ($lastType !== $type) {
-        session()->forget('user_filter');
+        // Simpan type yang sedang aktif ke session
+        session(['last_user_type' => $type]);
+
+        // Jika request mengandung filter baru, simpan ke session
+        if ($request->all()) {
+            session(['user_filter' => $request->all()]);
+        } elseif (session('user_filter')) {
+            // Jika tidak ada input baru tapi session ada, merge ke request
+            $request->merge(session('user_filter'));
+        }
+
+        // === QUERY DASAR ===
+        $query = User::with('roles');
+        $today = Carbon::today();
+        $semesterId = $request->get('semester_id');
+
+        $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
+
+        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+
+        // === ROLE FILTER ===
+        if ($type === 'student') {
+            $query->role('student')->with('student.courseStudents.semester');
+        } elseif ($type === 'lecturer') {
+            $query->role('lecturer')->with('lecturer');
+        } elseif ($type === 'admin') {
+            $query->role('admin');
+        }
+
+        // === FILTER TAMBAHAN ===
+        if ($semesterId) {
+            $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            });
+        }
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', "%{$request->name}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('email', 'like', "%{$request->email}%");
+        }
+
+        if ($request->filled('nim')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('nim', 'like', "%{$request->nim}%");
+            });
+        }
+
+        if ($request->filled('nidn')) {
+            $query->whereHas('lecturer', function ($q) use ($request) {
+                $q->where('nidn', 'like', "%{$request->nidn}%");
+            });
+        }
+
+        // === SORTING ===
+        $sort = $request->get('sort', 'name');
+        $dir = $request->get('dir', 'asc');
+
+        if ($sort === 'nim') {
+            $query->whereHas('student')->join('students', 'users.id', '=', 'students.user_id')->orderBy('students.nim', $dir)->select('users.*');
+        } elseif ($sort === 'nidn') {
+            $query->whereHas('lecturer')->join('lecturers', 'users.id', '=', 'lecturers.user_id')->orderBy('lecturers.nidn', $dir)->select('users.*');
+        } else {
+            $query->orderBy($sort, $dir);
+        }
+
+        $users = $query->paginate(15)->appends($request->all());
+
+        return view('admin.users.index', compact('users', 'type', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
     }
-
-    // Simpan type yang sedang aktif ke session
-    session(['last_user_type' => $type]);
-
-    // Jika request mengandung filter baru, simpan ke session
-    if ($request->all()) {
-        session(['user_filter' => $request->all()]);
-    } elseif (session('user_filter')) {
-        // Jika tidak ada input baru tapi session ada, merge ke request
-        $request->merge(session('user_filter'));
-    }
-
-    // === QUERY DASAR ===
-    $query = User::with('roles');
-    $today = Carbon::today();
-    $semesterId = $request->get('semester_id');
-
-    $activeSemester = Semester::where('start_date', '<=', $today)
-        ->where('end_date', '>=', $today)
-        ->first();
-
-    $semesters = Semester::with('academicYear')
-        ->orderBy('start_date', 'desc')
-        ->get();
-
-    // === ROLE FILTER ===
-    if ($type === 'student') {
-        $query->role('student')->with('student.courseStudents.semester');
-    } elseif ($type === 'lecturer') {
-        $query->role('lecturer')->with('lecturer');
-    } elseif ($type === 'admin') {
-        $query->role('admin');
-    }
-
-    // === FILTER TAMBAHAN ===
-    if ($semesterId) {
-        $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
-            $q->where('semester_id', $semesterId);
-        });
-    }
-
-    if ($request->filled('name')) {
-        $query->where('name', 'like', "%{$request->name}%");
-    }
-
-    if ($request->filled('email')) {
-        $query->where('email', 'like', "%{$request->email}%");
-    }
-
-    if ($request->filled('nim')) {
-        $query->whereHas('student', function ($q) use ($request) {
-            $q->where('nim', 'like', "%{$request->nim}%");
-        });
-    }
-
-    if ($request->filled('nidn')) {
-        $query->whereHas('lecturer', function ($q) use ($request) {
-            $q->where('nidn', 'like', "%{$request->nidn}%");
-        });
-    }
-
-    // === SORTING ===
-    $sort = $request->get('sort', 'name');
-    $dir = $request->get('dir', 'asc');
-
-    if ($sort === 'nim') {
-        $query->whereHas('student')
-            ->join('students', 'users.id', '=', 'students.user_id')
-            ->orderBy('students.nim', $dir)
-            ->select('users.*');
-    } elseif ($sort === 'nidn') {
-        $query->whereHas('lecturer')
-            ->join('lecturers', 'users.id', '=', 'lecturers.user_id')
-            ->orderBy('lecturers.nidn', $dir)
-            ->select('users.*');
-    } else {
-        $query->orderBy($sort, $dir);
-    }
-
-    $users = $query->paginate(15)->appends($request->all());
-
-    return view('admin.users.index', compact(
-        'users',
-        'type',
-        'sort',
-        'dir',
-        'semesters',
-        'semesterId',
-        'activeSemester'
-    ));
-}
-
 
     public function create($type)
     {
@@ -134,21 +114,22 @@ class UserController extends Controller
     public function store(Request $request, $type)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'gender'   => 'required',
-            'nim'      => $type === 'student' ? 'required|string|unique:students,nim' : 'nullable',
-            'nidn'     => $type === 'lecturer' ? 'required|string|unique:lecturers,nidn' : 'nullable',
-            'strata'       => $type === 'lecturer' ? 'required|in:S1,S2,S3,Sp1,Sp2' : 'nullable',
-            'gelar'        => $type === 'lecturer' ? 'nullable|string|max:50' : 'nullable',
-            'tipe_dosen'   => $type === 'lecturer' ? 'required|in:Asdos,CDT,DT,DTT' : 'nullable',
-            'min_sks'      => $type === 'lecturer' ? 'nullable|integer|min:0' : 'nullable',
-            'max_sks'      => $type === 'lecturer' ? 'nullable|integer|min:0' : 'nullable',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'gender' => 'required',
+            'nim' => $type === 'student' ? 'required|string|unique:students,nim' : 'nullable',
+            'nidn' => $type === 'lecturer' ? 'required|string|unique:lecturers,nidn' : 'nullable',
+            'strata' => $type === 'lecturer' ? 'required|in:S1,S2,S3,Sp1,Sp2' : 'nullable',
+            'gelar' => $type === 'lecturer' ? 'nullable|string|max:50' : 'nullable',
+            'tipe_dosen' => $type === 'lecturer' ? 'required|in:Asdos,CDT,DT,DTT' : 'nullable',
+            'min_sks' => $type === 'lecturer' ? 'nullable|integer|min:0' : 'nullable',
+            'max_sks' => $type === 'lecturer' ? 'nullable|integer|min:0' : 'nullable',
         ]);
 
         $user = User::create([
-            'name'     => $request['name'],
-            'email'    => $request['email'],
+            'name' => $request['name'],
+            'email' => $request['email'],
+            'gender' => $request['gender'],
             'password' => Hash::make('12345678'),
         ]);
 
@@ -165,22 +146,22 @@ class UserController extends Controller
             }
 
             Student::create([
-                'user_id'  => $user->id,
-                'nim'      => $nim,
+                'user_id' => $user->id,
+                'nim' => $nim,
                 'angkatan' => $angkatan,
-                'gender'   => $request->gender,
+                'gender' => $request->gender,
             ]);
         } elseif ($type === 'lecturer') {
             Lecturer::create([
-                'user_id'    => $user->id,
-                'nidn'       => $request['nidn'],
-                'faculty'    => $request['faculty'] ?? null,
-                'gender'     => $request['gender'],
-                'strata'     => $request['strata'],
-                'gelar'      => $request['gelar'],
+                'user_id' => $user->id,
+                'nidn' => $request['nidn'],
+                'faculty' => $request['faculty'] ?? null,
+                'gender' => $request['gender'],
+                'strata' => $request['strata'],
+                'gelar' => $request['gelar'],
                 'tipe_dosen' => $request['tipe_dosen'],
-                'min_sks'    => $request['min_sks'],
-                'max_sks'    => $request['max_sks'],
+                'min_sks' => $request['min_sks'],
+                'max_sks' => $request['max_sks'],
             ]);
 
             // Sync role sesuai input
@@ -189,7 +170,8 @@ class UserController extends Controller
             }
         }
 
-        return redirect()->route('admin.users.index', $type)
+        return redirect()
+            ->route('admin.users.index', $type)
             ->with('success', ucfirst($type) . ' berhasil ditambahkan.');
     }
 
@@ -234,10 +216,10 @@ class UserController extends Controller
     {
         $date = Carbon::now()->format('d-M-Y');
         $label = match ($type) {
-            'student'  => 'Mahasiswa',
+            'student' => 'Mahasiswa',
             'lecturer' => 'Dosen',
-            'admin'    => 'Admin',
-            default    => 'User',
+            'admin' => 'Admin',
+            default => 'User',
         };
 
         $semesterPart = '';
@@ -265,67 +247,66 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user', 'type', 'roles'));
     }
 
-
     public function update(Request $request, $type, $id)
     {
         $user = User::findOrFail($id);
 
         $rules = [
-            'name'  => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'gender' => 'required',
         ];
 
         if ($type === 'student') {
-            $rules['nim']      = 'required|string';
+            $rules['nim'] = 'required|string';
             $rules['angkatan'] = 'required|string';
-            $rules['gender']   = 'required';
         } elseif ($type === 'lecturer') {
-            $rules['nidn']       = 'required|string';
-            $rules['role']       = 'required|exists:roles,name';
-            $rules['strata']     = 'required|in:S1,S2,S3,Sp1,Sp2';
-            $rules['gelar']      = 'nullable|string|max:50';
+            $rules['nidn'] = 'required|string';
+            $rules['role'] = 'required|exists:roles,name';
+            $rules['strata'] = 'required|in:S1,S2,S3,Sp1,Sp2';
+            $rules['gelar'] = 'nullable|string|max:50';
             $rules['tipe_dosen'] = 'required|in:Asdos,CDT,DT,DTT';
-            $rules['min_sks']    = 'nullable|integer|min:0';
-            $rules['max_sks']    = 'nullable|integer|min:0';
-            $rules['gender']     = 'required';
+            $rules['min_sks'] = 'nullable|integer|min:0';
+            $rules['max_sks'] = 'nullable|integer|min:0';
         }
 
         $request->validate($rules);
 
         // Update user
         $user->update([
-            'name'  => $request->name,
+            'name' => $request->name,
             'email' => $request->email,
+            'gender' =>$request->gender
         ]);
 
         if ($type === 'student') {
             $user->student()->update([
-                'nim'      => $request->nim,
+                'nim' => $request->nim,
                 'angkatan' => $request->angkatan,
-                'gender'   => $request->gender,
+                'gender' => $request->gender,
             ]);
         } elseif ($type === 'lecturer') {
             if ($user->lecturer) {
                 $user->lecturer->update([
-                    'nidn'       => $request->nidn,
-                    'faculty'    => $request->faculty ?? null,
-                    'gender'     => $request->gender,
-                    'strata'     => $request->strata,
-                    'gelar'      => $request->gelar,
+                    'nidn' => $request->nidn,
+                    'faculty' => $request->faculty ?? null,
+                    'gender' => $request->gender,
+                    'strata' => $request->strata,
+                    'gelar' => $request->gelar,
                     'tipe_dosen' => $request->tipe_dosen,
-                    'min_sks'    => $request->min_sks,
-                    'max_sks'    => $request->max_sks,
+                    'min_sks' => $request->min_sks,
+                    'max_sks' => $request->max_sks,
                 ]);
             } else {
                 $user->lecturer()->create([
-                    'nidn'       => $request->nidn,
-                    'faculty'    => $request->faculty ?? null,
-                    'gender'     => $request->gender,
-                    'strata'     => $request->strata,
-                    'gelar'      => $request->gelar,
+                    'nidn' => $request->nidn,
+                    'faculty' => $request->faculty ?? null,
+                    'gender' => $request->gender,
+                    'strata' => $request->strata,
+                    'gelar' => $request->gelar,
                     'tipe_dosen' => $request->tipe_dosen,
-                    'min_sks'    => $request->min_sks,
-                    'max_sks'    => $request->max_sks,
+                    'min_sks' => $request->min_sks,
+                    'max_sks' => $request->max_sks,
                 ]);
             }
 
@@ -335,10 +316,10 @@ class UserController extends Controller
             }
         }
 
-        return redirect()->route('admin.users.index', $type)
+        return redirect()
+            ->route('admin.users.index', $type)
             ->with('success', ucfirst($type) . ' updated successfully.');
     }
-
 
     public function show($type, $id)
     {

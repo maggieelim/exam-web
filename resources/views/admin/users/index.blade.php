@@ -75,7 +75,7 @@
                                 </div>
 
                                 <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                    <a href="{{ route('admin.users.index', $type) }}"
+                                    <a href="{{ route('admin.users.index', ['type' => $type, 'reset' => true]) }}"
                                         class="btn btn-light btn-sm">Reset</a>
                                     <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                                 </div>
@@ -103,17 +103,6 @@
                                                 href="{{ route('admin.users.index', array_merge(['type' => $type, 'sort' => 'nim', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc'], $filters)) }}">
                                                 NIM
                                                 @if (request('sort') === 'nim')
-                                                    <i
-                                                        class="fa fa-sort-{{ request('dir') === 'asc' ? 'asc' : 'desc' }}"></i>
-                                                @endif
-                                            </a>
-                                        </th>
-                                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-
-                                            <a
-                                                href="{{ route('admin.users.index', array_merge(['type' => $type, 'sort' => 'semester_id', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc'], $filters)) }}">
-                                                Semester
-                                                @if (request('sort') === 'semester_id')
                                                     <i
                                                         class="fa fa-sort-{{ request('dir') === 'asc' ? 'asc' : 'desc' }}"></i>
                                                 @endif

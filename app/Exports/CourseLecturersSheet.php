@@ -35,7 +35,7 @@ class CourseLecturersSheet implements FromCollection, WithHeadings, WithTitle, W
           'Gelar'   => $item->lecturer->gelar,
           'Tipe Dosen'   => $item->lecturer->tipe_dosen,
           'Email'  => $item->lecturer->user->email,
-          'Gender'  => $item->lecturer->gender,
+          'Gender'  => $item->lecturer->user->gender,
         ];
       });
   }

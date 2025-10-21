@@ -32,7 +32,7 @@ class CourseStudentsSheet implements FromCollection, WithHeadings, WithTitle, Wi
           'NIM'   => $item->student->nim,
           'Nama'  => $item->student->user->name,
           'Email' => $item->student->user->email,
-          'Gender' => $item->student->gender,
+          'Gender' => $item->student->user->gender,
           'Angkatan' => $item->student->angkatan
         ];
       });

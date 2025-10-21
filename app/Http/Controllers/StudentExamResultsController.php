@@ -204,7 +204,7 @@ class StudentExamResultsController extends Controller
         // Filter questions berdasarkan status jawaban & feedback
         $filteredQuestions = $exam->questions->filter(function ($question) use ($allUserAnswers) {
             $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
-            $isAnswered = !is_null($userAnswer);
+            $isAnswered = !is_null($userAnswer->answer);
             $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
             $hasFeedback = $userAnswer && !empty($userAnswer->feedback);
 
@@ -245,7 +245,7 @@ class StudentExamResultsController extends Controller
         $questionsData = [];
         foreach ($filteredQuestions as $index => $question) {
             $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
-            $isAnswered = !is_null($userAnswer);
+            $isAnswered = !is_null($userAnswer->answer);
             $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
             $studentAnswerId = $userAnswer ? $userAnswer->answer : null;
 
