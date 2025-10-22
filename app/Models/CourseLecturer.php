@@ -23,4 +23,8 @@ class CourseLecturer extends Model
     {
         return $this->belongsTo(Course::class, 'course_id');
     }
+    
+    public function attendanceSessions(){
+        return $this->hasMany(AttendanceSessions::class);
+    }
 }
