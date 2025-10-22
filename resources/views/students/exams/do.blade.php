@@ -214,7 +214,6 @@
 
             console.log('Server End Time (ms):', serverEndTime);
             console.log('Now (ms):', now);
-            console.log('Time remaining (ms):', serverEndTime - now);
 
             // Cek jika waktu sudah habis berdasarkan server time
             if (now >= serverEndTime) {
@@ -254,8 +253,6 @@
             function updateTimer() {
                 const now = new Date().getTime();
                 const distance = savedEndTime - now;
-
-                console.log('Time remaining:', distance, 'ms');
 
                 // Jika waktu habis
                 if (distance <= 0) {

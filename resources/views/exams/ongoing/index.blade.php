@@ -142,11 +142,12 @@
                                     </span>
                                 </td>
                                 <td class="align-middle text-center">
-                                    <a href="{{ route('exams.retake', [$exam->exam_code, $attempt['id']]) }}"
-                                        class="btn bg-gradient-warning m-1 p-2 px-3" title="Info">
-                                        Allow retake <i class="fas fa-redo"></i>
-                                    </a>
-                                    @if ($attempt['status'] === 'in_progress')
+                                    @if ($attempt['status'] === 'completed' || $attempt['status'] === 'timeout')
+                                        <a href="{{ route('exams.retake', [$exam->exam_code, $attempt['id']]) }}"
+                                            class="btn bg-gradient-warning m-1 p-2 px-3" title="Retake">
+                                            Allow retake <i class="fas fa-redo"></i>
+                                        </a>
+                                    @elseif ($attempt['status'] === 'in_progress')
                                         <a href="{{ route('exams.endAttempt', [$exam->exam_code, $attempt['id']]) }}"
                                             class="btn bg-gradient-danger m-1 p-2 px-3" title="Info">
                                             End Attempt

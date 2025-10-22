@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CourseLecturer;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
@@ -156,12 +157,13 @@ class OngoingExamController extends Controller
     public function resetAttempt(Request $request, $exam_code, $attempt_id)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
+        $lecturer = CourseLecturer::where('course_id', $exam->course_id)->where('semester_id', $exam->semester_id)->get();
         $attempt = ExamAttempt::where('id', $attempt_id)->where('exam_id', $exam->id)->firstOrFail();
 
         // Authorization check
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $user = auth()->user();
-        if (!$user->hasRole('admin') && !$exam->course->lecturers->contains($user->id)) {
+        if (!$user->hasRole('admin') && !$lecturer) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -200,7 +202,7 @@ class OngoingExamController extends Controller
 
         $attempt->update([
             'status' => 'completed',
-            'ended_at' => now(), // opsional, kalau ada kolom ended_at
+            'finished_at' => now(), // opsional, kalau ada kolom ended_at
         ]);
 
         return redirect()->back()->with('success', 'Attempt berhasil diakhiri.');

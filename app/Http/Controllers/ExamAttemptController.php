@@ -212,6 +212,7 @@ class ExamAttemptController extends Controller
             ->first();
 
         return response()->json([
+            'user'=> auth()->id(),
             'status' => $attempt->status ?? 'in_progress',
             'message' => $attempt->status === 'completed' ? 'Exam has been completed' : 'Exam in progress',
         ]);

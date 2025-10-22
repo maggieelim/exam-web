@@ -30,19 +30,16 @@ class ExamQuestionTemplateImport implements ToModel
         }
 
         $categoryName = trim($row[1]);
-        $category = ExamQuestionCategory::firstOrCreate(
-            ['exam_id' => $this->examId, 'name' => $categoryName],
-            ['created_at' => now(), 'updated_at' => now()]
-        );
+        $category = ExamQuestionCategory::firstOrCreate(['exam_id' => $this->examId, 'name' => $categoryName], ['created_at' => now(), 'updated_at' => now()]);
         // Simpan soal
         $question = new ExamQuestion([
-            'exam_id'       => $this->examId,
-            'category_id'      => $category->id,
-            'badan_soal'    => $row[2],
+            'exam_id' => $this->examId,
+            'category_id' => $category->id,
+            'badan_soal' => $row[2],
             'kalimat_tanya' => $row[3],
-            'kode_soal'     => $this->generateKodeSoal(),
-            'created_by'    => Auth::id(),
-            'updated_by'    => Auth::id(),
+            'kode_soal' => $this->generateKodeSoal(),
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
         ]);
         $question->save();
 
@@ -59,12 +56,12 @@ class ExamQuestionTemplateImport implements ToModel
         ];
 
         foreach ($options as $opt => $text) {
-            if (!empty($text)) {
+            if (isset($text) && $text !== '') {
                 ExamQuestionAnswer::create([
                     'exam_question_id' => $question->id,
-                    'option'           => $opt,
-                    'text'             => $text,
-                    'is_correct'       => in_array($opt, $correctAnswers),
+                    'option' => $opt,
+                    'text' => $text,
+                    'is_correct' => in_array($opt, $correctAnswers),
                 ]);
             }
         }
