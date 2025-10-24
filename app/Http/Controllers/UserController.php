@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -22,22 +23,19 @@ class UserController extends Controller
 {
     public function indexAdmin(Request $request, $type = null)
     {
-        // Dapatkan type terakhir dari session
+        $agent = new Agent();
         $lastType = session('last_user_type');
 
-        // Jika user berpindah tab (type berbeda dari sebelumnya), reset filter
         if ($lastType !== $type) {
             session()->forget('user_filter');
         }
 
-        // Simpan type yang sedang aktif ke session
         session(['last_user_type' => $type]);
 
         // Jika request mengandung filter baru, simpan ke session
         if ($request->all()) {
             session(['user_filter' => $request->all()]);
         } elseif (session('user_filter')) {
-            // Jika tidak ada input baru tapi session ada, merge ke request
             $request->merge(session('user_filter'));
         }
 
@@ -100,6 +98,9 @@ class UserController extends Controller
 
         $users = $query->paginate(15)->appends($request->all());
 
+        if ($agent->isMobile()) {
+            return view('admin.users.index_mobile', compact('users', 'type', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
+        }
         return view('admin.users.index', compact('users', 'type', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
     }
 
@@ -276,7 +277,7 @@ class UserController extends Controller
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
-            'gender' =>$request->gender
+            'gender' => $request->gender,
         ]);
 
         if ($type === 'student') {

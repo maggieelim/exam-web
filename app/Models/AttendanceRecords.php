@@ -15,6 +15,6 @@ class AttendanceRecords extends Model
     }
 
     public function session(){
-        return $this->belongsTo(AttendanceSessions::class, 'absensi_code', 'absensi_code');
+        return $this->belongsTo(AttendanceSessions::class, 'attendance_session_id');
     }
 }

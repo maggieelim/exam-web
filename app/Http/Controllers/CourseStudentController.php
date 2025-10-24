@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CourseStudentController extends Controller
@@ -149,6 +150,7 @@ class CourseStudentController extends Controller
      */
     public function edit(Request $request, string $slug)
     {
+        $agent = new Agent();
         $semesterId = $request->query('semester_id');
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
@@ -185,8 +187,10 @@ class CourseStudentController extends Controller
         }
 
         $students = $query->paginate(15)->appends($request->all());
-
-        return view('courses.student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
+        if ($agent->isMobile()) {
+            return view('courses.Student.edit_mobile', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
+        }
+        return view('courses.Student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
     }
 
     /**

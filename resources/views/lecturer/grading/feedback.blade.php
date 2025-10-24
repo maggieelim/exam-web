@@ -79,14 +79,13 @@
     </div>
 
     <!-- Form Utama dengan ID untuk AJAX -->
-    <form id="feedbackForm"
+    <form role="form" id="feedbackForm"
         action="{{ route('lecturer.feedback.update', [
             'exam_code' => $exam->exam_code,
             'nim' => $student->nim,
         ]) }}"
         method="POST">
         @csrf
-        @method('PUT')
 
         @forelse($paginatedQuestions as $question)
             <div class="card mb-3 shadow-sm">

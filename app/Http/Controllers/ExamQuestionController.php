@@ -9,6 +9,7 @@ use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use App\Models\ExamQuestionCategory;
 use Illuminate\Http\Request;
+use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExamQuestionController extends Controller
@@ -18,6 +19,7 @@ class ExamQuestionController extends Controller
      */
     public function index(Request $request, $exam_code)
     {
+        $agent = new Agent();
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
         $categories = ExamQuestionCategory::where('exam_id', $exam->id)->get();
         $query = $exam->questions()->with('options');
@@ -31,8 +33,7 @@ class ExamQuestionController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('badan_soal', 'like', "%$search%")
-                    ->orWhere('kalimat_tanya', 'like', "%$search%");
+                $q->where('badan_soal', 'like', "%$search%")->orWhere('kalimat_tanya', 'like', "%$search%");
             });
         }
         if ($request->filled('category')) {
@@ -44,7 +45,9 @@ class ExamQuestionController extends Controller
 
         // default urut berdasarkan id ASC
         $questions = $query->orderBy('id', 'asc')->paginate(10);
-
+        if ($agent->isMobile()) {
+            return view('exams.mobile.questions_mobile', compact('exam', 'questions', 'categories', 'status'));
+        }
         return view('exams.questions', compact('exam', 'questions', 'categories', 'status'));
     }
 
@@ -56,36 +59,33 @@ class ExamQuestionController extends Controller
         $this->authorize('create', ExamQuestion::class);
 
         $request->validate([
-            'exam_id'       => 'required|exists:exams,id',
+            'exam_id' => 'required|exists:exams,id',
             'category_name' => 'required|string|max:255', // pakai nama kategori dari form
-            'badan_soal'    => 'required|string',
+            'badan_soal' => 'required|string',
             'kalimat_tanya' => 'required|string',
-            'opsi_a'        => 'required|string',
-            'opsi_b'        => 'required|string',
-            'opsi_c'        => 'required|string',
-            'opsi_d'        => 'required|string',
-            'opsi_e'        => 'nullable|string',
-            'jawaban'       => 'required|string',
-            'kode_soal'     => 'required|string|max:50',
+            'opsi_a' => 'required|string',
+            'opsi_b' => 'required|string',
+            'opsi_c' => 'required|string',
+            'opsi_d' => 'required|string',
+            'opsi_e' => 'nullable|string',
+            'jawaban' => 'required|string',
+            'kode_soal' => 'required|string|max:50',
         ]);
 
         // cari kategori atau buat baru
-        $category = ExamQuestionCategory::firstOrCreate(
-            ['exam_id' => $request->exam_id, 'name' => $request->category_name]
-        );
+        $category = ExamQuestionCategory::firstOrCreate(['exam_id' => $request->exam_id, 'name' => $request->category_name]);
 
         ExamQuestion::create([
-            'exam_id'       => $request->exam_id,
-            'category_id'   => $category->id,
-            'badan_soal'    => $request->badan_soal,
+            'exam_id' => $request->exam_id,
+            'category_id' => $category->id,
+            'badan_soal' => $request->badan_soal,
             'kalimat_tanya' => $request->kalimat_tanya,
-            'kode_soal'     => $request->kode_soal,
-            'created_by'    => auth()->id(),
-            'updated_by'    => auth()->id(),
+            'kode_soal' => $request->kode_soal,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
         ]);
 
-        return redirect()->route('exams.questions.index')
-            ->with('success', 'Soal berhasil dibuat');
+        return redirect()->route('exams.questions.index')->with('success', 'Soal berhasil dibuat');
     }
 
     public function showByKode($kode)
@@ -107,9 +107,7 @@ class ExamQuestionController extends Controller
 
     public function export($exam_code)
     {
-        $exam = Exam::with('questions.options', 'questions.category')
-            ->where('exam_code', $exam_code)
-            ->firstOrFail();
+        $exam = Exam::with('questions.options', 'questions.category')->where('exam_code', $exam_code)->firstOrFail();
         $fileName = "Soal-{$exam->title}.xlsx";
         return Excel::download(new ExamQuestionsExport($exam), $fileName);
     }
@@ -150,7 +148,7 @@ class ExamQuestionController extends Controller
             foreach ($question->answers as $answer) {
                 $answer->update([
                     'is_correct' => 1,
-                    'score'      => 1,
+                    'score' => 1,
                 ]);
             }
 
@@ -164,18 +162,18 @@ class ExamQuestionController extends Controller
                 'message' => 'Soal berhasil dianulir!',
                 'data' => [
                     'question_id' => $question->id,
-                    'action' => 'anulir'
-                ]
+                    'action' => 'anulir',
+                ],
             ]);
         }
 
         // --- VALIDASI ---
         $request->validate([
-            'category_id'     => 'nullable|exists:exam_question_categories,id',
-            'badan_soal'      => 'required|string',
-            'kalimat_tanya'   => 'required|string',
-            'options.*.text'  => 'required|string',
-            'image'           => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'category_id' => 'nullable|exists:exam_question_categories,id',
+            'badan_soal' => 'required|string',
+            'kalimat_tanya' => 'required|string',
+            'options.*.text' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
         $imagePath = $question->image;
@@ -197,9 +195,9 @@ class ExamQuestionController extends Controller
 
         // --- UPDATE SOAL ---
         $question->update([
-            'badan_soal'    => $request->badan_soal,
+            'badan_soal' => $request->badan_soal,
             'kalimat_tanya' => $request->kalimat_tanya,
-            'image'         => $imagePath,
+            'image' => $imagePath,
         ]);
 
         // --- UPDATE OPTIONS ---
@@ -209,7 +207,7 @@ class ExamQuestionController extends Controller
             if ($option && $option->exam_question_id == $question->id) {
                 $isCorrect = isset($opt['is_correct']) ? 1 : 0;
                 $option->update([
-                    'text'      => $opt['text'],
+                    'text' => $opt['text'],
                     'is_correct' => $isCorrect,
                 ]);
 
@@ -223,7 +221,7 @@ class ExamQuestionController extends Controller
         foreach ($question->answers as $answer) {
             $answer->update([
                 'is_correct' => in_array($answer->answer, $correctOptionIds) ? 1 : 0,
-                'score'      => in_array($answer->answer, $correctOptionIds) ? 1 : 0,
+                'score' => in_array($answer->answer, $correctOptionIds) ? 1 : 0,
             ]);
         }
 
@@ -240,15 +238,15 @@ class ExamQuestionController extends Controller
                 'question_id' => $question->id,
                 'action' => 'update',
                 'image_url' => $imagePath ? asset('storage/' . $imagePath) : null,
-                'has_image' => !empty($imagePath)
-            ]
+                'has_image' => !empty($imagePath),
+            ],
         ]);
     }
 
     public function updateByExcel(Request $request, $examCode)
     {
         $request->validate([
-            'file' => 'required|mimes:xls,xlsx'
+            'file' => 'required|mimes:xls,xlsx',
         ]);
 
         $exam = Exam::where('exam_code', $examCode)->firstOrFail();
@@ -261,21 +259,21 @@ class ExamQuestionController extends Controller
 
         // Loop data excel, skip header (row pertama)
         foreach ($rows as $index => $row) {
-            if ($index == 0) continue;
+            if ($index == 0) {
+                continue;
+            }
 
             $category = null;
             if (!empty($row[1])) {
-                $category = ExamQuestionCategory::firstOrCreate(
-                    ['exam_id' => $exam->id, 'name' => trim($row[1])]
-                );
+                $category = ExamQuestionCategory::firstOrCreate(['exam_id' => $exam->id, 'name' => trim($row[1])]);
             }
 
             $question = ExamQuestion::create([
-                'exam_id'       => $exam->id,
-                'category_id'      => $category ? $category->id : null,
-                'badan_soal'    => $row[2] ?? '',
+                'exam_id' => $exam->id,
+                'category_id' => $category ? $category->id : null,
+                'badan_soal' => $row[2] ?? '',
                 'kalimat_tanya' => $row[3] ?? '',
-                'kode_soal'     => $exam->exam_code . '-' . str_pad($index, 3, '0', STR_PAD_LEFT),
+                'kode_soal' => $exam->exam_code . '-' . str_pad($index, 3, '0', STR_PAD_LEFT),
             ]);
 
             // Insert options (A-E)
@@ -284,9 +282,9 @@ class ExamQuestionController extends Controller
                 if (!empty($row[4 + $i])) {
                     ExamQuestionAnswer::create([
                         'exam_question_id' => $question->id,
-                        'option'           => $opt,
-                        'text'             => $row[4 + $i],
-                        'is_correct'       => (str_contains($row[9] ?? '', $opt)) ? 1 : 0,
+                        'option' => $opt,
+                        'text' => $row[4 + $i],
+                        'is_correct' => str_contains($row[9] ?? '', $opt) ? 1 : 0,
                     ]);
                 }
             }
@@ -308,7 +306,8 @@ class ExamQuestionController extends Controller
         // hapus soal
         $question->delete();
 
-        return redirect()->route('exams.questions.'. $exam->status, $exam->exam_code)
+        return redirect()
+            ->route('exams.questions.' . $exam->status, $exam->exam_code)
             ->with('success', 'Soal berhasil dihapus!');
     }
 }

@@ -16,15 +16,14 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Jenssegers\Agent\Agent;
 
 class CourseController extends Controller
 {
     private function getActiveSemester()
     {
         $today = Carbon::today();
-        return Semester::where('start_date', '<=', $today)
-            ->where('end_date', '>=', $today)
-            ->first();
+        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
     }
 
     private function getSemesterId(Request $request)
@@ -80,30 +79,34 @@ class CourseController extends Controller
 
     private function applyCounts($query, $semesterId)
     {
-        $query->withCount(['courseStudents as student_count' => function ($q) use ($semesterId) {
-            if ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            }
-        }]);
+        $query->withCount([
+            'courseStudents as student_count' => function ($q) use ($semesterId) {
+                if ($semesterId) {
+                    $q->where('semester_id', $semesterId);
+                }
+            },
+        ]);
 
-        $query->withCount(['courseLecturer as lecturer_count' => function ($q) use ($semesterId) {
-            if ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            }
-        }]);
+        $query->withCount([
+            'courseLecturer as lecturer_count' => function ($q) use ($semesterId) {
+                if ($semesterId) {
+                    $q->where('semester_id', $semesterId);
+                }
+            },
+        ]);
 
         return $query;
     }
 
     public function index(Request $request)
     {
+        $agent = new Agent();
         $semesterId = $this->getSemesterId($request);
         $activeSemester = $this->getActiveSemester();
         $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
 
         // Base query
-        $query = Course::query()
-            ->with(['lecturers', 'courseStudents', 'courseLecturer']);
+        $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer']);
 
         // Apply filters
         $query = $this->applyLecturerFilter($query, $semesterId);
@@ -113,14 +116,13 @@ class CourseController extends Controller
         // Search filter
         if ($request->filled('name')) {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->name . '%')
-                    ->orWhere('kode_blok', 'like', '%' . $request->name . '%');
+                $q->where('name', 'like', '%' . $request->name . '%')->orWhere('kode_blok', 'like', '%' . $request->name . '%');
             });
         }
 
         // Sorting
         $sort = $request->get('sort', 'name');
-        $dir  = $request->get('dir', 'asc');
+        $dir = $request->get('dir', 'asc');
         $allowedSorts = ['name', 'kode_blok'];
 
         if (!in_array($sort, $allowedSorts)) {
@@ -131,15 +133,10 @@ class CourseController extends Controller
 
         // Pagination
         $courses = $query->paginate(15)->appends($request->all());
-
-        return view('courses.index', compact(
-            'courses',
-            'sort',
-            'dir',
-            'semesters',
-            'semesterId',
-            'activeSemester'
-        ));
+        if ($agent->isMobile()) {
+            return view('courses.index_mobile', compact('courses', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
+        }
+        return view('courses.index', compact('courses', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
     }
 
     public function create()
@@ -155,7 +152,7 @@ class CourseController extends Controller
     {
         $request->validate([
             'kode_blok' => 'required|string|max:255|unique:courses,kode_blok',
-            'name'      => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'lecturers' => 'nullable|array',
             'lecturers.*' => 'exists:users,id',
         ]);
@@ -183,7 +180,7 @@ class CourseController extends Controller
         $students = CourseStudent::with(['student.user'])
             ->where('course_id', $course->id)
             ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
-            ->get();
+            ->paginate(20);
 
         return view('courses.show', compact('course', 'lecturers', 'students', 'semesterId'));
     }
@@ -195,10 +192,12 @@ class CourseController extends Controller
         ]);
 
         try {
-            Excel::import(new CoursesImport, $request->file('file'));
+            Excel::import(new CoursesImport(), $request->file('file'));
             return redirect()->back()->with('success', 'Data course berhasil diimport.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Import gagal: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Import gagal: ' . $e->getMessage());
         }
     }
 
@@ -221,8 +220,7 @@ class CourseController extends Controller
         $semesterId = $this->getSemesterId($request);
 
         // Base query
-        $query = Course::query()
-            ->with(['lecturers', 'courseStudents', 'courseLecturer']);
+        $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer']);
 
         // Apply filters (reuse the same methods)
         $query = $this->applyLecturerFilter($query, $semesterId);
@@ -232,14 +230,13 @@ class CourseController extends Controller
         // Search filter
         if ($request->filled('name')) {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->name . '%')
-                    ->orWhere('kode_blok', 'like', '%' . $request->name . '%');
+                $q->where('name', 'like', '%' . $request->name . '%')->orWhere('kode_blok', 'like', '%' . $request->name . '%');
             });
         }
 
         // Sorting
         $sort = $request->get('sort', 'name');
-        $dir  = $request->get('dir', 'asc');
+        $dir = $request->get('dir', 'asc');
         $allowedSorts = ['name', 'kode_blok'];
 
         if (!in_array($sort, $allowedSorts)) {
@@ -269,9 +266,7 @@ class CourseController extends Controller
         $semesterId = $request->query('semester_id');
 
         $lecturers = User::role('lecturer')->get();
-        $selectedLecturers = CourseLecturer::where('course_id', $course->id)
-            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
-            ->get();
+        $selectedLecturers = CourseLecturer::where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
 
         return view('courses.edit', compact('course', 'lecturers', 'selectedLecturers', 'semesterId'));
     }
@@ -283,13 +278,8 @@ class CourseController extends Controller
     {
         $semesterId = $request->input('semester_id');
         $request->validate([
-            'kode_blok' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('courses', 'kode_blok')->ignore($course->id),
-            ],
-            'name'      => 'required|string|max:255',
+            'kode_blok' => ['required', 'string', 'max:255', Rule::unique('courses', 'kode_blok')->ignore($course->id)],
+            'name' => 'required|string|max:255',
             'lecturers' => 'nullable|array',
         ]);
 
@@ -301,10 +291,7 @@ class CourseController extends Controller
         $lecturers = $request->lecturers ?? [];
 
         // Sync lecturers for specific semester
-        $existingLecturers = $course->lecturers()
-            ->wherePivot('semester_id', $semesterId)
-            ->pluck('lecturers.id')
-            ->toArray();
+        $existingLecturers = $course->lecturers()->wherePivot('semester_id', $semesterId)->pluck('lecturers.id')->toArray();
 
         // Detach removed lecturers for this semester
         $toRemove = array_diff($existingLecturers, $lecturers);
@@ -317,12 +304,13 @@ class CourseController extends Controller
         foreach ($toAdd as $lecturerId) {
             $course->lecturers()->attach($lecturerId, [
                 'semester_id' => $semesterId,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
-        return redirect()->route('courses.index', ['semester_id' => $semesterId])
+        return redirect()
+            ->route('courses.index', ['semester_id' => $semesterId])
             ->with('success', 'Course berhasil diperbarui!');
     }
 

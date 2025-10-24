@@ -4,7 +4,8 @@
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
-                <div class="card-header pb-0 d-flex flex-row justify-content-between align-items-center">
+                <div
+                    class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
                     <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
                         <h5 class="mb-0">List Attendance</h5>
 
@@ -25,15 +26,15 @@
                         @endif
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-                            <i class="fas fa-filter"></i> Filter
-                        </button>
+                    <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
                         <a href="{{ route('attendance.create') }}" class="btn btn-primary btn-sm"
                             style="white-space: nowrap;">
                             +&nbsp; New attendance
                         </a>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
                     </div>
                 </div>
 
@@ -49,7 +50,8 @@
                                         @foreach ($semesters as $semester)
                                             <option value="{{ $semester->id }}"
                                                 {{ $semesterId == $semester->id ? 'selected' : '' }}>
-                                                {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
+                                                {{ $semester->semester_name }} -
+                                                {{ $semester->academicYear->year_name }}
                                                 @if ($activeSemester && $semester->id == $activeSemester->id)
                                                     (Aktif)
                                                 @endif
@@ -114,8 +116,10 @@
                                     <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Total
                                         Attendance
                                     </th>
-                                    <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Status</th>
-                                    <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Action</th>
+                                    <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Status
+                                    </th>
+                                    <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Action
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -123,7 +127,7 @@
                                 @forelse ($attendances as $attendance)
                                     <tr>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold">{{ $attendance->kode_blok }}</span>
+                                            <span class="text-sm font-weight-bold">{{ $attendance->start_time }}</span>
                                         </td>
                                         <td class="">
                                             <span class="text-sm font-weight-bold">{{ $attendance->name }}</span>

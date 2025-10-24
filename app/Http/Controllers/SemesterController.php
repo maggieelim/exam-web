@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Semester;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Jenssegers\Agent\Agent;
 
 class SemesterController extends Controller
 {
@@ -20,9 +21,13 @@ class SemesterController extends Controller
 
     public function index()
     {
+        $agent = new Agent();
         $activeSemester = $this->getActiveSemester();
         $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->paginate(15);
-
+     
+        if ($agent->isMobile()) {
+            return view('admin.semester.index_mobile', compact('semesters', 'activeSemester'));
+        }
         return view('admin.semester.index', compact('semesters', 'activeSemester'));
     }
 
@@ -150,12 +155,12 @@ class SemesterController extends Controller
             'semester_end' => 'required|date|after:semester_start',
         ]);
 
-         if ($request->start_date >= $request->semester_start) {
+        if ($request->start_date >= $request->semester_start) {
             return back()
                 ->withInput()
                 ->withErrors(['Tanggal mulai semester tidak boleh sebelum dengan Tahun Akademik.']);
         }
-        
+
         if ($request->semester_end >= $request->end_date) {
             return back()
                 ->withInput()

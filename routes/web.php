@@ -99,10 +99,10 @@ Route::middleware(['auth', 'role:lecturer'])
         Route::get('/ungraded/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.ungraded');
         Route::get('/published/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.published');
         Route::get('/ungraded/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.ungraded');
-        Route::put('/{exam_code}/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
+        Route::post('/{exam_code}/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
         Route::get('/published/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
         Route::get('/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
-        Route::put('/{exam_code}/{nim}', [ExamResultsController::class, 'update'])->name('feedback.update');
+        Route::post('/{exam_code}/{nim}/feedback', [ExamResultsController::class, 'update'])->name('feedback.update');
         Route::get('/results/{exam_code}/download', [ExamResultsController::class, 'download'])->name('results.download');
         Route::get('/results/{exam_code}/quetions/download', [ExamResultsController::class, 'downloadQuestions'])->name('results.downloadQuestions');
     });
@@ -119,7 +119,7 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
     Route::post('/courses/store', [CourseController::class, 'store'])->name('courses.store');
     Route::post('/courses/import', [CourseController::class, 'import'])->name('courses.import');
     Route::get('/courses/edit/{course}', [CourseController::class, 'edit'])->name('courses.edit');
-    Route::put('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
+    Route::post('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
@@ -177,3 +177,4 @@ Route::middleware(['auth'])
         Route::get('/results', [StudentExamResultsController::class, 'index'])->name('results.index');
     });
 
+Route::view('login', 'session/login-session')->name('login');

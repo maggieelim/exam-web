@@ -181,7 +181,7 @@ class ExamResultsController extends Controller
         // Filter questions berdasarkan status jawaban
         $filteredQuestions = $exam->questions->filter(function ($question) use ($allUserAnswers) {
             $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
-            $isAnswered = !is_null($userAnswer->answer);
+            $isAnswered = $userAnswer && !is_null($userAnswer->answer);
             $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
 
             $answerStatus = request('answer_status');
@@ -206,7 +206,7 @@ class ExamResultsController extends Controller
         $questionsData = [];
         foreach ($filteredQuestions as $index => $question) {
             $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
-            $isAnswered = !is_null($userAnswer->answer);
+            $isAnswered = $userAnswer && !is_null($userAnswer->answer);
             $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
             $studentAnswerId = $userAnswer ? $userAnswer->answer : null;
 
@@ -272,7 +272,7 @@ class ExamResultsController extends Controller
                 if ($answer) {
                     $answer->feedback = $feedback;
                     $answer->save();
-                } elseif(!$answer) {
+                } elseif (!$answer) {
                     // Jika answer tidak ada, buat baru
                     $answer = ExamAnswer::create([
                         'exam_question_id' => $questionId,
