@@ -159,6 +159,9 @@
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-center mt-3">
+                <x-pagination :paginator="$attempts" />
+            </div>
         </div>
     </div>
 

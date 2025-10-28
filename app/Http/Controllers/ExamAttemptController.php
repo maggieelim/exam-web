@@ -107,7 +107,6 @@ class ExamAttemptController extends Controller
         // Soal sebelumnya & selanjutnya
         $prevQuestion = $currentIndex > 0 ? $questions->get($currentIndex - 1) : null;
         $nextQuestion = $currentIndex < $questions->count() - 1 ? $questions->get($currentIndex + 1) : null;
-
         // Ambil jawaban yang sudah disimpan user
         $savedAnswer = $currentQuestion
             ->answers()

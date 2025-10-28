@@ -17,8 +17,12 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = $request->user();
-
-        if (! $user || ! $user->roles()->whereIn('name', $roles)->exists()) {
+       if (! $user) {
+            // Simpan URL saat ini supaya bisa redirect setelah login
+            session(['url.intended' => $request->fullUrl()]);
+            return redirect()->route('login');
+        }
+        if (!$user || !$user->roles()->whereIn('name', $roles)->exists()) {
             abort(403, 'Unauthorized.');
         }
 

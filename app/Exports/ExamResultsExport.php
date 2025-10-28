@@ -25,30 +25,26 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
 
     public function collection()
     {
-        $this->exam->load([
-            'attempts.user.student',
-            'answers.user.student',
-            'answers.question.category',
-            'questions.category'
-        ]);
+        $this->exam->load(['attempts.user.student', 'answers.user.student', 'answers.question.category', 'questions.category']);
 
         $results = [];
         $no = 1;
 
         foreach ($this->exam->attempts as $attempt) {
             $userAnswers = $this->exam->answers->where('user_id', $attempt->user_id);
+            $totalAnswer = $this->exam->answers->where('answer', !null)->count();
             $totalQuestions = $this->exam->questions->count();
             $correctAnswers = number_format($userAnswers->where('is_correct', true)->count());
 
             // Hitung nilai total
-            $scorePercentage = $totalQuestions > 0 ? ($correctAnswers / $totalQuestions) : 0;
+            $scorePercentage = $totalQuestions > 0 ? $correctAnswers / $totalQuestions : 0;
 
             $rowData = [
                 'No' => $no++,
                 'NIM' => $attempt->user->student->nim ?? '-',
                 'Nama' => $attempt->user->name ?? '-',
                 'Total Soal' => $totalQuestions,
-                'Dijawab' => $userAnswers->count(),
+                'Dijawab' => $totalAnswer,
                 'Benar' => $correctAnswers,
             ];
 
@@ -63,7 +59,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
                 $categoryCorrect = $categoryAnswers->where('is_correct', true)->count();
                 $categoryTotal = $this->exam->questions->where('category_id', $category->id)->count();
 
-                $categoryPercentage = $categoryTotal > 0 ? ($categoryCorrect / $categoryTotal) : 0;
+                $categoryPercentage = $categoryTotal > 0 ? $categoryCorrect / $categoryTotal : 0;
 
                 // Format sebagai string dengan 2 desimal + simbol %
                 $rowData[$categoryName] = number_format(($categoryPercentage * 100) / 100, 4);
@@ -80,20 +76,13 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
 
     public function headings(): array
     {
-        $categoryHeadings = $this->categories->map(function ($category) {
-            return $category->name ?? 'Uncategorized';
-        })->toArray();
+        $categoryHeadings = $this->categories
+            ->map(function ($category) {
+                return $category->name ?? 'Uncategorized';
+            })
+            ->toArray();
 
-        return array_merge([
-            'No',
-            'NIM',
-            'Nama',
-            'Total Soal',
-            'Dijawab',
-            'Benar',
-        ], $categoryHeadings, [
-            'Total Score (%)'
-        ]);
+        return array_merge(['No', 'NIM', 'Nama', 'Total Soal', 'Dijawab', 'Benar'], $categoryHeadings, ['Total Score (%)']);
     }
 
     public function styles(Worksheet $sheet)
@@ -114,14 +103,14 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
             ],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
             ],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => 'thin',
-                    'color' => ['rgb' => '000000']
-                ]
-            ]
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
         ]);
 
         // Border semua sel
@@ -130,13 +119,15 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => 'thin',
-                        'color' => ['rgb' => '000000']
-                    ]
-                ]
+                        'color' => ['rgb' => '000000'],
+                    ],
+                ],
             ]);
 
             // Center alignment untuk semua data
-            $sheet->getStyle('A2:' . $highestColumn . $highestRow)->getAlignment()
+            $sheet
+                ->getStyle('A2:' . $highestColumn . $highestRow)
+                ->getAlignment()
                 ->setHorizontal('center')
                 ->setVertical('center');
         }
@@ -160,8 +151,6 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
             'G' => NumberFormat::FORMAT_PERCENTAGE_00,
             'H' => NumberFormat::FORMAT_PERCENTAGE_00,
             'I' => NumberFormat::FORMAT_PERCENTAGE_00,
-            'J' => NumberFormat::FORMAT_PERCENTAGE_00,
-
         ];
     }
 }

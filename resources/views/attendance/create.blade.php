@@ -3,23 +3,43 @@
 @section('content')
     <div class="col-12 mb-4">
         <div class="card">
-            <div class="card-header pb-0">
-                <h5 class="mb-0">Create New Attendance</h5>
+            <div class="card-header pb-3">
+                <h5 class="mb-1">Create New Attendance</h5>
             </div>
             <div class="card-body px-4 pt-2 pb-2">
-                <form method="POST" action="{{ route('attendance.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('attendance.store') }}" enctype="multipart/form-data" id="attendanceForm">
                     @csrf
+
+                    <!-- Course & Lecturer Section -->
                     <div class="row">
                         <div class="mb-3 col-md-6">
-                            <label>Blok</label>
-                            <select id="course" name="course" class="form-select">
+                            <label for="semester_id" class="form-label mb-1">Semester</label>
+                            <select name="semester_id" id="semester_id" class="form-select">
+                                @foreach ($semesters as $semester)
+                                    <option value="{{ $semester->id }}"
+                                        {{ $semesterId == $semester->id ? 'selected' : '' }}>
+                                        {{ $semester->semester_name }} -
+                                        {{ $semester->academicYear->year_name }}
+                                        @if ($activeSemester && $semester->id == $activeSemester->id)
+                                            (Aktif)
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">Blok</label>
+                            <select id="course" name="course" class="form-select" required>
+                                <option value="" disabled selected>Select a course</option>
                                 @foreach ($courses as $course)
                                     <option value="{{ $course->id }}">{{ $course->name }}</option>
                                 @endforeach
                             </select>
                         </div>
+
                         <div class="mb-3 col-md-6">
-                            <label for="lecturers" class="form-label">Lecturer</label>
+                            <label for="lecturers" class="form-label">Lecturer(s)</label>
                             <select id="lecturers" name="lecturers[]" multiple class="form-select">
                                 @foreach ($lecturers as $lec)
                                     <option value="{{ $lec->id }}" @if ($lecturer && $lecturer->id == $lec->id) selected @endif>
@@ -28,74 +48,86 @@
                                 @endforeach
                             </select>
                         </div>
-
-                        <div class="mb-3 col-md-3">
-                            <label>Activity</label>
-                            <select id="activity" name="activity" class="form-select">
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">Activity</label>
+                            <select id="activity_id" name="activity_id" class="form-select" required>
+                                <option value="" disabled selected>Select activity</option>
                                 @foreach ($activity as $act)
                                     <option value="{{ $act->id }}">{{ $act->activity_name }}</option>
                                 @endforeach
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Activity & Time Section -->
+                    <div class="row">
                         <div class="mb-3 col-md-3">
-                            <label>Date</label>
+                            <label class="form-label">Tolerance Meter</label>
+                            <input type="number" name="tolerance" class="form-control" required value="50">
+                        </div>
+
+                        <div class="mb-3 col-md-3">
+                            <label class="form-label">Date</label>
                             <input type="date" name="date" class="form-control" required>
                         </div>
+
                         <div class="mb-3 col-md-3">
-                            <label>Start Time</label>
+                            <label class="form-label">Start Time</label>
                             <input type="time" name="startTime" class="form-control" required>
                         </div>
+
                         <div class="mb-3 col-md-3">
-                            <label>End Time</label>
+                            <label class="form-label">End Time</label>
                             <input type="time" name="endTime" class="form-control" required>
                         </div>
+                    </div>
 
-                        <!-- Lokasi Section yang Diperbaiki -->
-                        <div class="mb-3 col-md-6">
-                            <label for="location_address" class="form-label">Alamat / Nama Jalan</label>
-                            <input type="text" id="location_address" name="location_address" class="form-control"
-                                readonly>
+                    <!-- Location Section -->
+                    <div class="row">
+                        <div class="mb-3 col-md-9">
+                            <label for="location_address" class="form-label">Address / Street Name</label>
+                            <div class="input-group">
+                                <input type="text" id="location_address" name="location_address" class="form-control">
+                                <span class="input-group-text"><i class="fas fa-map-pin"></i></span>
+                            </div>
                         </div>
 
+                        <input type="hidden" id="location_lat" name="location_lat" readonly required>
+                        <input type="hidden" id="location_long" name="location_long" readonly required>
+
                         <div class="mb-3 col-md-3">
-                            <label for="location_lat" class="form-label">Latitude</label>
-                            <input type="text" id="location_lat" name="location_lat" class="form-control" readonly
-                                required>
+                            <label for="location_accuracy" class="form-label">Accuracy (meters)</label>
+                            <div class="input-group">
+                                <input type="text" id="location_accuracy" class="form-control" readonly>
+                                <span class="input-group-text"><i class="fas fa-crosshairs"></i></span>
+                            </div>
                         </div>
-                        <div class="mb-3 col-md-3">
-                            <label for="location_long" class="form-label">Longitude</label>
-                            <input type="text" id="location_long" name="location_long" class="form-control" readonly
-                                required>
-                        </div>
-                        <div class="mb-3 col-md-3">
-                            <label for="location_accuracy" class="form-label">Akurasi (meter)</label>
-                            <input type="text" id="location_accuracy" class="form-control" readonly>
-                        </div>
-                        <div class="mb-3 col-md-3 d-flex align-items-end">
-                            <button type="button" class="btn btn-secondary me-2" onclick="getHighAccuracyLocation()">
-                                Ambil Lokasi
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3 col-md-4">
+                            <button type="button" class="btn btn-primary btn-sm" id="getLocationBtn"
+                                onclick="getHighAccuracyLocation()">
+                                <i class="fas fa-location-arrow me-1"></i> Get Location
                             </button>
-                            <div id="locationStatus" class="text-sm"></div>
+                            <div id="locationStatus" class="small"></div>
                         </div>
 
-                        <!-- Tampilkan Map untuk Verifikasi -->
-                        <div class="mb-3 col-md-12" id="mapContainer" style="display: none;">
-                            <label>Peta Lokasi</label>
+                        <!-- Map for Location Verification -->
+                        <div class="mb-3 col-md-8" id="mapContainer" style="display: none;">
+                            <label class="form-label">Location Map</label>
                             <div id="map" style="height: 300px; width: 100%; border-radius: 8px;"></div>
-                            <small class="text-muted">Verifikasi lokasi Anda di peta</small>
+                            <small class="text-muted">Verify your location on the map</small>
                         </div>
+                    </div>
 
-                        <div class="mb-3 col-md-12">
-                            <label>Semester</label>
-                            <select id="semester" name="semester" class="form-select form-select">
-                                <option value="Ganjil/Genap">Ganjil/Genap</option>
-                                <option value="Ganjil">Ganjil</option>
-                                <option value="Genap">Genap</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn bg-gradient-primary">Save</button>
-                        </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetForm()">
+                            <i class="fas fa-redo me-1"></i> Reset
+                        </button>
+                        <button type="submit" class="btn btn-sm bg-gradient-primary" id="submitBtn">
+                            <i class="fas fa-save me-1"></i> Save Attendance
+                        </button>
                     </div>
                 </form>
             </div>
@@ -106,14 +138,52 @@
 @push('dashboard')
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // Initialize Choices for multiple select
             const multipleSelect = new Choices('#lecturers', {
                 removeItemButton: true,
-                searchEnabled: true
+                searchEnabled: true,
+                placeholder: true,
+                placeholderValue: 'Select lecturers',
+                searchPlaceholderValue: 'Search lecturers...'
+            });
+
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="date"]').value = today;
+
+
+            // Add form validation
+            document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+                const lat = document.getElementById('location_lat').value;
+                const lng = document.getElementById('location_long').value;
+
+                if (!lat || !lng) {
+                    e.preventDefault();
+                    alert('Please get your location before submitting');
+                    document.getElementById('getLocationBtn').focus();
+                }
             });
         });
+
+        function resetForm() {
+            if (confirm('Are you sure you want to reset the form?')) {
+                document.getElementById('attendanceForm').reset();
+                // Reset location fields
+                document.getElementById('location_address').value = '';
+                document.getElementById('location_accuracy').value = '';
+                document.getElementById('location_lat').value = '';
+                document.getElementById('location_long').value = '';
+                document.getElementById('locationStatus').innerHTML = '';
+                document.getElementById('mapContainer').style.display = 'none';
+
+                // Reset to today's date
+                const today = new Date().toISOString().split('T')[0];
+                document.querySelector('input[name="date"]').value = today;
+            }
+        }
     </script>
 
-    <!-- Include Leaflet CSS & JS untuk peta -->
+    <!-- Include Leaflet CSS & JS for maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -121,37 +191,45 @@
         let watchId = null;
         let map = null;
         let marker = null;
+        let accuracyCircle = null;
 
         function getHighAccuracyLocation() {
             const statusElement = document.getElementById('locationStatus');
-            statusElement.innerHTML = '<span class="text-warning">Mengambil lokasi dengan akurasi tinggi...</span>';
+            const getLocationBtn = document.getElementById('getLocationBtn');
+
+            getLocationBtn.disabled = true;
+            getLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Getting Location...';
+            statusElement.innerHTML = '<span class="text-warning">Getting high accuracy location...</span>';
 
             if (!navigator.geolocation) {
-                statusElement.innerHTML = '<span class="text-danger">Browser tidak mendukung geolocation</span>';
+                statusElement.innerHTML = '<span class="text-danger">Browser does not support geolocation</span>';
+                resetLocationButton();
                 return;
             }
 
-            // Options untuk high accuracy
             const options = {
-                enableHighAccuracy: true, // High accuracy mode
-                timeout: 10000, // Timeout 10 detik
-                maximumAge: 0 // Tidak menggunakan cached position
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
             };
 
-            // Gunakan watchPosition untuk mendapatkan pembaruan terus menerus
-            watchId = navigator.geolocation.watchPosition(
-                showHighAccuracyPosition,
-                showError,
-                options
-            );
+            watchId = navigator.geolocation.watchPosition(showHighAccuracyPosition, showError, options);
 
-            // Stop setelah 15 detik
             setTimeout(() => {
                 if (watchId) {
                     navigator.geolocation.clearWatch(watchId);
-                    statusElement.innerHTML = '<span class="text-info">Pemindaian lokasi selesai</span>';
+                    if (statusElement.innerHTML.includes('Getting high accuracy location')) {
+                        statusElement.innerHTML = '<span class="text-info">Location scanning completed</span>';
+                    }
+                    resetLocationButton();
                 }
-            }, 15000);
+            }, 20000);
+        }
+
+        function resetLocationButton() {
+            const getLocationBtn = document.getElementById('getLocationBtn');
+            getLocationBtn.disabled = false;
+            getLocationBtn.innerHTML = '<i class="fas fa-location-arrow me-1"></i> Get Location';
         }
 
         function showHighAccuracyPosition(position) {
@@ -159,111 +237,133 @@
             const lng = position.coords.longitude;
             const accuracy = position.coords.accuracy;
 
-            // Update form fields
             document.getElementById("location_lat").value = lat.toFixed(8);
             document.getElementById("location_long").value = lng.toFixed(8);
-            document.getElementById("location_accuracy").value = accuracy.toFixed(2) + " meter";
+            document.getElementById("location_accuracy").value = accuracy.toFixed(2) + " meters";
 
             getAddressFromCoordinates(lat, lng);
-            const statusElement = document.getElementById('locationStatus');
-
-            // Tampilkan status berdasarkan akurasi
-            if (accuracy <= 10) {
-                statusElement.innerHTML = '<span class="text-success">✔ Akurasi sangat tinggi (' + accuracy.toFixed(2) +
-                    'm)</span>';
-            } else if (accuracy <= 30) {
-                statusElement.innerHTML = '<span class="text-success">✔ Akurasi baik (' + accuracy.toFixed(2) + 'm)</span>';
-            } else if (accuracy <= 100) {
-                statusElement.innerHTML = '<span class="text-warning">✓ Akurasi cukup (' + accuracy.toFixed(2) +
-                    'm)</span>';
-            } else {
-                statusElement.innerHTML = '<span class="text-danger">✗ Akurasi rendah (' + accuracy.toFixed(2) +
-                    'm) - Coba lagi</span>';
-            }
-
-            // Tampilkan peta untuk verifikasi
             showMap(lat, lng, accuracy);
+            resetLocationButton();
         }
 
+        // === Reverse geocoding ===
         function getAddressFromCoordinates(lat, lng) {
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data && data.address) {
-                        const address = data.display_name || "Alamat tidak ditemukan";
-                        document.getElementById("location_address").value = address;
+                    if (data && data.display_name) {
+                        document.getElementById("location_address").value = data.display_name;
                     } else {
-                        document.getElementById("location_address").value = "Alamat tidak ditemukan";
+                        document.getElementById("location_address").value = "Address not found";
                     }
                 })
                 .catch(error => {
-                    console.error("Error mengambil alamat:", error);
-                    document.getElementById("location_address").value = "Gagal memuat alamat";
+                    console.error("Error fetching address:", error);
+                    document.getElementById("location_address").value = "Failed to load address";
                 });
         }
 
-        function showMap(lat, lng, accuracy) {
+        // === Forward geocoding ===
+        function getCoordinatesFromAddress(address) {
+            if (!address) return;
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        document.getElementById("location_lat").value = lat.toFixed(8);
+                        document.getElementById("location_long").value = lng.toFixed(8);
+                        showMap(lat, lng);
+                    } else {
+                        alert('Location not found. Please refine your address.');
+                    }
+                })
+                .catch(error => console.error("Error fetching coordinates:", error));
+        }
+
+        function showMap(lat, lng, accuracy = 0) {
             const mapContainer = document.getElementById('mapContainer');
             mapContainer.style.display = 'block';
 
             if (!map) {
-                // Initialize map
                 map = L.map('map').setView([lat, lng], 18);
-
-                // Add tile layer
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
+
+                // event ketika user pindahkan pin
+                map.on('click', function(e) {
+                    const newLat = e.latlng.lat;
+                    const newLng = e.latlng.lng;
+                    document.getElementById("location_lat").value = newLat.toFixed(8);
+                    document.getElementById("location_long").value = newLng.toFixed(8);
+                    getAddressFromCoordinates(newLat, newLng);
+                    showMap(newLat, newLng);
+                });
             } else {
                 map.setView([lat, lng], 18);
             }
 
-            // Remove existing marker
             if (marker) {
                 map.removeLayer(marker);
             }
+            if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+            }
 
-            // Add new marker dengan accuracy circle
-            marker = L.marker([lat, lng]).addTo(map)
-                .bindPopup(`Lokasi Anda<br>Akurasi: ${accuracy.toFixed(2)} meter`)
-                .openPopup();
+            marker = L.marker([lat, lng], {
+                    draggable: true
+                }).addTo(map)
+                .bindPopup(`Drag to adjust location`).openPopup();
 
-            // Add accuracy circle
-            L.circle([lat, lng], {
-                color: 'red',
-                fillColor: '#f03',
-                fillOpacity: 0.1,
-                radius: accuracy
-            }).addTo(map);
+            // event ketika marker digeser manual
+            marker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                document.getElementById("location_lat").value = pos.lat.toFixed(8);
+                document.getElementById("location_long").value = pos.lng.toFixed(8);
+                getAddressFromCoordinates(pos.lat, pos.lng);
+            });
+
+            if (accuracy > 0) {
+                accuracyCircle = L.circle([lat, lng], {
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0.1,
+                    radius: accuracy
+                }).addTo(map);
+            }
         }
 
         function showError(error) {
             const statusElement = document.getElementById('locationStatus');
 
-            // Stop watching jika ada error
             if (watchId) {
                 navigator.geolocation.clearWatch(watchId);
             }
 
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    statusElement.innerHTML =
-                        '<span class="text-danger">Izin lokasi ditolak. Izinkan akses lokasi di browser settings.</span>';
+                    statusElement.innerHTML = '<span class="text-danger">Location permission denied</span>';
                     break;
                 case error.POSITION_UNAVAILABLE:
-                    statusElement.innerHTML =
-                        '<span class="text-danger">Informasi lokasi tidak tersedia. Pastikan GPS/Location Services aktif.</span>';
+                    statusElement.innerHTML = '<span class="text-danger">Location information unavailable</span>';
                     break;
                 case error.TIMEOUT:
-                    statusElement.innerHTML =
-                        '<span class="text-danger">Timeout. Coba lagi di area dengan sinyal GPS yang baik.</span>';
+                    statusElement.innerHTML = '<span class="text-danger">Location request timeout</span>';
                     break;
                 default:
-                    statusElement.innerHTML = '<span class="text-danger">Terjadi kesalahan tak dikenal.</span>';
+                    statusElement.innerHTML = '<span class="text-danger">An unknown error occurred</span>';
             }
+
+            resetLocationButton();
         }
 
-        // Cleanup ketika page unload
+        // === Event untuk forward geocoding ===
+        document.getElementById('location_address').addEventListener('change', function() {
+            getCoordinatesFromAddress(this.value);
+        });
+
         window.addEventListener('beforeunload', function() {
             if (watchId) {
                 navigator.geolocation.clearWatch(watchId);
@@ -272,24 +372,21 @@
     </script>
 
     <style>
-        #mapContainer {
-            margin-top: 20px;
+        .card-header {
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .text-success {
-            color: #28a745;
+        h6.text-primary {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 8px;
         }
 
-        .text-warning {
-            color: #ffc107;
+        .input-group-text {
+            background-color: #f8f9fa;
         }
 
-        .text-danger {
-            color: #dc3545;
-        }
-
-        .text-info {
-            color: #17a2b8;
+        #map {
+            border: 1px solid #dee2e6;
         }
     </style>
 @endpush

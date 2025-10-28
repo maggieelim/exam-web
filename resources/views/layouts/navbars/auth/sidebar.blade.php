@@ -9,7 +9,7 @@
     </div>
 
     <hr class="horizontal dark mt-0">
-    <div class="collapse navbar-collapse w-auto h-100" id="sidenav-collapse-main">
+    <div class="collapse navbar-collapse w-auto h-100 mb-4" id="sidenav-collapse-main">
         <ul class="navbar-nav">
             <!-- <li class="nav-item">
         <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('dashboard') }}">
@@ -159,13 +159,13 @@
                     </a>
                 </li>
                 <!-- <li class="nav-item">
-                                                            <a class="nav-link {{ Request::is('user-profile') ? 'active' : '' }}" href="{{ url('user-profile') }}">
-                                                              <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                                                <i class="fas fa-chart-bar {{ Request::is('user-profile') ? 'text-white' : 'text-dark' }}"></i>
-                                                              </div>
-                                                              <span class="nav-link-text ms-1">Graded</span>
-                                                            </a>
-                                                          </li> -->
+                                                                        <a class="nav-link {{ Request::is('user-profile') ? 'active' : '' }}" href="{{ url('user-profile') }}">
+                                                                          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                                                                            <i class="fas fa-chart-bar {{ Request::is('user-profile') ? 'text-white' : 'text-dark' }}"></i>
+                                                                          </div>
+                                                                          <span class="nav-link-text ms-1">Graded</span>
+                                                                        </a>
+                                                                      </li> -->
             @endrole
 
             @role('student')
@@ -196,16 +196,16 @@
                 </li>
 
                 <!-- <li class="nav-item mt-2">
-                                                            <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Academic</h6>
-                                                          </li>
-                                                          <li class="nav-item">
-                                                            <a class="nav-link {{ request()->is('student/results*') ? 'active' : '' }}" href="{{ url('student/results') }}">
-                                                              <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                                                <i class="fas fa-chart-line {{ request()->is('student/results*') ? 'text-white' : 'text-dark' }}"></i>
-                                                              </div>
-                                                              <span class="nav-link-text ms-1">Exam Results</span>
-                                                            </a>
-                                                          </li> -->
+                                                                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Academic</h6>
+                                                                      </li>
+                                                                      <li class="nav-item">
+                                                                        <a class="nav-link {{ request()->is('student/results*') ? 'active' : '' }}" href="{{ url('student/results') }}">
+                                                                          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                                                                            <i class="fas fa-chart-line {{ request()->is('student/results*') ? 'text-white' : 'text-dark' }}"></i>
+                                                                          </div>
+                                                                          <span class="nav-link-text ms-1">Exam Results</span>
+                                                                        </a>
+                                                                      </li> -->
             @endrole
 
             <li class="nav-item mt-3">

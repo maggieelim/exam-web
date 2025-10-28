@@ -81,12 +81,12 @@
                                 {{ $exam->updater->name }}
                             </p>
                             <p class="mb-1">
-                                <i class="fas fa-chalkboard-teacher me-2"></i>
+                                <i class="fas fa-file-alt me-2"></i>
                                 Total Questions:
                                 {{ $exam->questions_count > 0 ? $exam->questions_count . ' Questions' : 'No Questions Yet' }}
                             </p>
                             <p class="mb-1">
-                                <i class="fas fa-user-graduate me-2"></i>
+                                <i class="fas fa-clock me-2"></i>
                                 Exam Duration: {{ $exam->duration . ' Minutes' }}
                             </p>
                             {{-- Tombol Aksi --}}

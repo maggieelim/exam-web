@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-
 class SessionsController extends Controller
 {
     public function create()
@@ -15,6 +14,10 @@ class SessionsController extends Controller
 
     private function redirectToRoleHome($user)
     {
+        if (session()->has('url.intended')) {
+            return redirect()->intended();
+        }
+
         if ($user->hasRole('student')) {
             return redirect()->route('student.studentExams.index', ['status' => 'upcoming']);
         }
@@ -35,7 +38,7 @@ class SessionsController extends Controller
     {
         $attributes = request()->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
         ]);
 
         if (Auth::attempt($attributes)) {
@@ -44,14 +47,12 @@ class SessionsController extends Controller
 
             return $this->redirectToRoleHome($user)->with(['success' => 'Welcome back!']);
         } else {
-
             return back()->withErrors(['email' => 'Email or password invalid.']);
         }
     }
 
     public function destroy()
     {
-
         Auth::logout();
 
         return redirect('/login')->with(['success' => 'You\'ve been logged out.']);

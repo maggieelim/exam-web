@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Mail;
+use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExamResultsController extends Controller
@@ -48,6 +49,7 @@ class ExamResultsController extends Controller
         $lecturer = Lecturer::where('user_id', $user->id)->first();
         $today = Carbon::today();
         $semesterId = $request->get('semester_id');
+        $agent = new Agent();
 
         $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
 
@@ -81,6 +83,9 @@ class ExamResultsController extends Controller
 
         $exams = $query->orderBy('exam_date', 'desc')->paginate(10)->appends($request->query());
 
+        if ($agent->isMobile()) {
+            return view('lecturer.grading.mobile.index_mobile', compact('exams', 'status', 'courses', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
+        }
         return view('lecturer.grading.index', compact('exams', 'status', 'courses', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
     }
 
@@ -109,6 +114,7 @@ class ExamResultsController extends Controller
 
     public function grade($examCode, Request $request)
     {
+        $agent = new Agent();
         $exam = Exam::with(['course.lecturers', 'questions.category', 'attempts.user.student', 'answers.question.category'])
             ->where('exam_code', $examCode)
             ->withCount('questions')
@@ -157,12 +163,15 @@ class ExamResultsController extends Controller
         }
 
         $status = $this->determineStatus($exam);
-
+        if ($agent->isMobile()) {
+            return view('lecturer.grading.mobile.grade_mobile', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
+        }
         return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
     }
 
     public function edit($examCode, $nim)
     {
+        $agent = new Agent();
         $exam = Exam::with(['questions.category', 'questions.options', 'attempts.user.student'])
             ->where('exam_code', $examCode)
             ->firstOrFail();
@@ -250,7 +259,9 @@ class ExamResultsController extends Controller
         ]);
 
         $status = $this->determineStatus($exam);
-
+        if ($agent->isMobile()) {
+            return view('lecturer.grading.mobile.feedback_mobile', compact('exam', 'attempt', 'allUserAnswers', 'paginatedQuestions', 'student', 'user', 'status'));
+        }
         return view('lecturer.grading.feedback', compact('exam', 'attempt', 'allUserAnswers', 'paginatedQuestions', 'student', 'user', 'status'));
     }
 
@@ -378,6 +389,11 @@ class ExamResultsController extends Controller
         $analytics = $this->buildAnalytics($exam, $rankingPaginator);
         $chartData = $this->prepareChartData($allQuestionAnalysis, $exam); // Gunakan semua data untuk chart
         $status = $this->determineStatus($exam);
+        $agent = new Agent();
+
+        if ($agent->isMobile()) {
+        return view('lecturer.grading.show.mobile.index_mobile', compact('activeTab', 'exam', 'rankingPaginator', 'analytics', 'questionAnalysisPaginator', 'optionsAnalysis', 'chartData', 'status', 'sort', 'dir', 'difficultyLevel'));
+        }
         return view('lecturer.grading.show.index', compact('activeTab', 'exam', 'rankingPaginator', 'analytics', 'questionAnalysisPaginator', 'optionsAnalysis', 'chartData', 'status', 'sort', 'dir', 'difficultyLevel'));
     }
 
@@ -398,6 +414,7 @@ class ExamResultsController extends Controller
 
         $ranking = $exam->attempts->map(function ($attempt) use ($exam) {
             $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
+            $totalAnswer = $exam->answers->where('answer', !null)->count();
             $totalQuestions = $exam->questions_count;
             $correctAnswers = $userAnswers->where('is_correct', true)->count();
             $feedback = $userAnswers->whereNotNull('feedback')->count();
@@ -431,7 +448,7 @@ class ExamResultsController extends Controller
                 'attempt' => $attempt,
                 'answers' => $userAnswers,
                 'categories_result' => $categoriesResult,
-                'total_answered' => $userAnswers->count(),
+                'total_answered' => $totalAnswer,
                 'total_questions' => $totalQuestions,
                 'correct_answers' => $correctAnswers,
                 'total_score' => $userAnswers->sum('score'),

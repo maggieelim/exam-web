@@ -231,6 +231,7 @@ class ExamController extends Controller
      */
     public function show(Request $request, string $exam_code)
     {
+        $agent = new Agent();
         $exam = Exam::with(['course', 'creator', 'updater'])
             ->where('exam_code', $exam_code)
             ->firstOrFail();
@@ -252,6 +253,10 @@ class ExamController extends Controller
 
         // ambil data hasil query
         $questions = $query->paginate(15)->withQueryString();
+
+         if ($agent->isMobile()) {
+            return view('exams.mobile.show_mobile', compact('exam', 'questions', 'status', 'total_participants'));
+        }
         return view('exams.show', compact('exam', 'questions', 'status', 'total_participants'));
     }
 

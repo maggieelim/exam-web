@@ -93,7 +93,7 @@
                         @endforeach
                     </div>
                     <hr>
-                    @if ($allAnswered)
+                    <div id="finishExamContainer" style="display: {{ $allAnswered ? 'block' : 'none' }};">
                         <form action="{{ route('student.exams.finish', $exam->exam_code) }}" method="POST"
                             id="finishForm">
                             @csrf
@@ -101,7 +101,7 @@
                                 Selesaikan Ujian
                             </button>
                         </form>
-                    @endif
+                    </div>
                     <form id="autoFinishForm" action="{{ route('student.exams.finish', $exam->exam_code) }}" method="POST"
                         style="display: none;">
                         @csrf
@@ -159,6 +159,43 @@
             @if (optional($exam->attempt)->status === 'completed')
                 document.getElementById('autoFinishForm').submit();
             @endif
+
+            let answeredQuestions = new Set({!! json_encode(
+                collect($userAnswers)->filter(function ($answer) {
+                        return $answer !== null;
+                    })->keys()->toArray(),
+            ) !!});
+            const totalQuestions = {{ $totalQuestions }};
+
+
+            function checkAllQuestionsAnswered() {
+                return answeredQuestions.size >= totalQuestions;
+            }
+
+            function updateFinishButton() {
+                const allAnswered = checkAllQuestionsAnswered();
+                const finishContainer = document.getElementById('finishExamContainer');
+                const answeredCountSpan = document.getElementById('answeredCount');
+                const unansweredCountSpan = document.getElementById('unansweredCount');
+
+                if (allAnswered) {
+                    finishContainer.style.display = 'block';
+                } else {
+                    finishContainer.style.display = 'none';
+                }
+
+                // Update counters
+                if (answeredCountSpan) {
+                    answeredCountSpan.textContent = answeredQuestions.size;
+                }
+                if (unansweredCountSpan) {
+                    unansweredCountSpan.textContent = totalQuestions - answeredQuestions.size;
+                }
+
+                console.log('Answered questions:', answeredQuestions.size, '/', totalQuestions);
+            }
+
+            updateFinishButton();
 
             function checkExamStatus() {
                 return fetch("{{ route('student.exams.check-status', $exam->exam_code) }}", {
@@ -315,10 +352,12 @@
                 const answerValue = selectedAnswer ? selectedAnswer.value : null;
                 const markDoubtCheckbox = document.getElementById('markDoubtCheckbox');
                 const markDoubtValue = markDoubtCheckbox.checked ? 1 : 0;
+                const currentQuestionId = {{ $currentQuestion->id }};
 
                 console.log('Saving answer:', {
                     answer: answerValue,
-                    mark_doubt: markDoubtValue
+                    mark_doubt: markDoubtValue,
+                    question_id: currentQuestionId
                 });
 
                 return fetch(
@@ -344,8 +383,14 @@
                         if (data.success) {
                             console.log('Answer saved successfully. marked_doubt:', data.marked_doubt);
 
+                            if (answerValue) {
+                                answeredQuestions.add(currentQuestionId);
+                            } else {
+                                answeredQuestions.delete(currentQuestionId);
+                            }
                             // Update tampilan tombol navigasi jika perlu
                             updateNavigationButtons();
+                            updateFinishButton();
 
                             return true;
                         } else {

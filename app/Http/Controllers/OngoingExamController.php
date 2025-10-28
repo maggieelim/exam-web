@@ -8,6 +8,7 @@ use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
 use DB;
 use Illuminate\Http\Request;
+use Jenssegers\Agent\Agent;
 
 class OngoingExamController extends Controller
 {
@@ -18,6 +19,7 @@ class OngoingExamController extends Controller
     public function ongoing(Request $request, $exam_code)
     {
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
+        $agent = new Agent();
         $user = auth()->user();
         $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
 
@@ -62,7 +64,7 @@ class OngoingExamController extends Controller
             $attemptsQuery->orderBy($sort, $dir);
         }
 
-        $attempts = $attemptsQuery->orderBy($sort, $dir)->paginate(10)->withQueryString();
+        $attempts = $attemptsQuery->orderBy($sort, $dir)->paginate(15)->withQueryString();
 
         $attempts->getCollection()->transform(function ($attempt) use ($exam) {
             $student = $attempt->user->student;
@@ -109,6 +111,9 @@ class OngoingExamController extends Controller
             'idle' => 'Idle',
             'timeout' => 'Timeout',
         ];
+         if ($agent->isMobile()) {
+            return view('exams.ongoing.index_mobile', compact('exam', 'attempts', 'stats', 'sort', 'dir', 'availableStatuses'));
+        }
         return view('exams.ongoing.index', compact('exam', 'attempts', 'stats', 'sort', 'dir', 'availableStatuses'));
     }
 

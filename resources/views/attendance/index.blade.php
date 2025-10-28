@@ -130,14 +130,14 @@
                                             <span class="text-sm font-weight-bold">{{ $attendance->start_time }}</span>
                                         </td>
                                         <td class="">
-                                            <span class="text-sm font-weight-bold">{{ $attendance->name }}</span>
-                                        </td>
-                                        <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold">{{ $attendance->semester }}</span>
+                                            <span class="text-sm font-weight-bold">{{ $attendance->course->name }}</span>
                                         </td>
                                         <td class="align-middle text-center">
                                             <span
-                                                class="text-sm font-weight-bold">{{ $attendance->lecturer_count ?? 0 }}</span>
+                                                class="text-sm font-weight-bold">{{ $attendance->activity->activity_name }}</span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold">{{ $attendance->status }}</span>
                                         </td>
                                         <td class="align-middle text-center">
                                             <span
@@ -152,14 +152,14 @@
                                                 </button>
                                                 <ul class="dropdown-menu shadow">
                                                     <li>
-                                                        <a class="dropdown-item"
+                                                        {{-- <a class="dropdown-item"
                                                             href="{{ route('attendance.edit', ['course' => $attendance->slug, 'semester_id' => $semesterId]) }}">
                                                             <i class="fas fa-cog text-secondary me-2"></i> Kelola Blok
-                                                        </a>
+                                                        </a> --}}
                                                     </li>
                                                 </ul>
                                             </div>
-                                            <a href="{{ route('attendance.show', ['course' => $attendance->slug, 'semester_id' => $semesterId]) }}"
+                                            <a href="{{ route('attendance.show', $attendance->absensi_code) }}"
                                                 class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                                 <i class="fas fa-info-circle"></i>
                                             </a>

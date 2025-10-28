@@ -16,6 +16,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\SessionsController;
+use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentExamResultsController;
@@ -111,6 +112,7 @@ Route::middleware(['auth', 'role:lecturer'])
 Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
     //attendance
     Route::resource('attendance', AttendanceSessionsController::class);
+   Route::get('/attendance/{attendanceCode}/qr-code', [AttendanceSessionsController::class, 'getQrCode']);
     // courses
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{course}/download', [CourseController::class, 'download'])->name('courses.download');
@@ -159,7 +161,7 @@ Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
 });
 
 // ================= STUDENT =================
-Route::middleware(['auth'])
+Route::middleware(['auth', 'role:student'])
     ->prefix('student')
     ->name('student.')
     ->group(function () {
@@ -175,6 +177,10 @@ Route::middleware(['auth'])
         Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
 
         Route::get('/results', [StudentExamResultsController::class, 'index'])->name('results.index');
+        //attendance
+        Route::get('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'showAttendanceForm'])->name('attendance.form');
+        Route::post('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'submitAttendance'])->name('attendance.submit');
+
     });
 
 Route::view('login', 'session/login-session')->name('login');

@@ -180,7 +180,7 @@ class ExamQuestionController extends Controller
 
         if ($request->filled('delete_image') && $request->delete_image == 1) {
             if ($question->image && \Storage::disk('public')->exists($question->image)) {
-                \Storage::disk('public')->delete($question->image);
+                \Storage::delete($question->image);
             }
             $imagePath = null;
         }
@@ -295,19 +295,52 @@ class ExamQuestionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($examCode, $questionId)
-    {
+   public function destroy($examCode, $questionId)
+{
+    try {
         $exam = Exam::where('exam_code', $examCode)->firstOrFail();
         $question = ExamQuestion::where('exam_id', $exam->id)->findOrFail($questionId);
 
-        // hapus semua opsi jawaban terkait
+        // Hapus gambar jika ada
+        if ($question->image) {
+            \Storage::disk('public')->delete($question->image);
+        }
+
+        // Hapus semua opsi jawaban terkait
         $question->options()->delete();
 
-        // hapus soal
+        // Hapus soal
         $question->delete();
+
+        // Check if request is AJAX
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Soal berhasil dihapus!'
+            ]);
+        }
 
         return redirect()
             ->route('exams.questions.' . $exam->status, $exam->exam_code)
             ->with('success', 'Soal berhasil dihapus!');
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Soal tidak ditemukan'
+            ], 404);
+        }
+        return redirect()->back()->with('error', 'Soal tidak ditemukan');
+        
+    } catch (\Exception $e) {
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
+}
 }
