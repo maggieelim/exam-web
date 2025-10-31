@@ -5,6 +5,15 @@
         <div class="card">
             <div class="card-header pb-3">
                 <h5 class="mb-1">Attendance Session: {{ $attendanceSession->absensi_code }}</h5>
+                <div class="status-badge">
+                    @if ($attendanceSession->isExpired())
+                        <span class="badge bg-danger">Finished</span>
+                    @elseif($attendanceSession->isActive())
+                        <span class="badge bg-success">Active</span>
+                    @else
+                        <span class="badge bg-warning">Not Started</span>
+                    @endif
+                </div>
             </div>
             <div class="card-body px-4 pt-2 pb-2">
                 <div class="row">
@@ -14,7 +23,19 @@
                                 <h6 class="mb-3">QR Code for Attendance</h6>
                                 <div id="qrCodeContainer">
                                     <div id="qrCode" class="mb-3"></div>
-                                    <small class="text-muted">QR code refreshes every 30 seconds</small>
+                                    @if ($attendanceSession->isExpired())
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Attendance session has ended. QR code is no longer available.
+                                        </div>
+                                    @elseif(!$attendanceSession->isActive())
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i>
+                                            QR code will be available when session starts.
+                                        </div>
+                                    @else
+                                        <small class="text-muted">QR code refreshes every 60 seconds</small>
+                                    @endif
                                 </div>
                                 <div class="mt-3">
                                     <p class="small text-muted mb-1">Session Code:
@@ -22,11 +43,21 @@
                                     </p>
                                     <p class="small text-muted mb-1">Valid until:
                                         {{ \Carbon\Carbon::parse($attendanceSession->end_time)->format('M d, Y H:i') }}</p>
+                                    <p class="small text-muted mb-1">Status:
+                                        @if ($attendanceSession->isExpired())
+                                            <span class="text-danger">Finished</span>
+                                        @elseif($attendanceSession->isActive())
+                                            <span class="text-success">Active</span>
+                                        @else
+                                            <span class="text-warning">Not Started</span>
+                                        @endif
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
+                        <!-- Session details remain the same -->
                         <div class="card">
                             <div class="card-body">
                                 <h6>Session Details</h6>
@@ -79,14 +110,27 @@
 @endsection
 
 @push('dashboard')
-    <!-- Include QR Code library dari CDN yang lebih reliable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
     <script>
         let refreshInterval;
         const attendanceCode = '{{ $attendanceSession->absensi_code }}';
+        const isSessionActive = {{ $attendanceSession->isActive() ? 'true' : 'false' }};
+        const isSessionExpired = {{ $attendanceSession->isExpired() ? 'true' : 'false' }};
 
         function generateQRCode() {
+            // Don't generate QR if session has ended
+            if (isSessionExpired) {
+                clearInterval(refreshInterval);
+                return;
+            }
+
+            // Don't generate QR if session hasn't started
+            if (!isSessionActive) {
+                clearInterval(refreshInterval);
+                return;
+            }
+
             fetch(`/attendance/${attendanceCode}/qr-code`)
                 .then(response => {
                     if (!response.ok) {
@@ -95,21 +139,29 @@
                     return response.json();
                 })
                 .then(data => {
-                    const qrData = data.url;
-
-                    // Clear previous QR code
                     const qrCodeElement = document.getElementById('qrCode');
                     qrCodeElement.innerHTML = '';
 
+                    if (data.expired) {
+                        clearInterval(refreshInterval);
+                        qrCodeElement.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                ${data.message}
+                            </div>`;
+                        document.querySelector('#qrCodeContainer small').textContent = 'Session ended';
+                        return;
+                    }
+
+                    const qrData = data.url;
+
                     try {
-                        // Generate QR code menggunakan library yang berbeda
-                        const typeNumber = 0; // Auto
+                        const typeNumber = 0;
                         const errorCorrectionLevel = 'L';
                         const qr = qrcode(typeNumber, errorCorrectionLevel);
                         qr.addData(qrData);
                         qr.make();
 
-                        // Create canvas element
                         const canvas = document.createElement('canvas');
                         const size = 250;
                         const cellSize = size / qr.getModuleCount();
@@ -120,11 +172,9 @@
                         canvas.height = scaledSize;
                         const ctx = canvas.getContext('2d');
 
-                        // Fill background
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, scaledSize, scaledSize);
 
-                        // Draw QR code
                         ctx.fillStyle = '#000000';
                         for (let row = 0; row < qr.getModuleCount(); row++) {
                             for (let col = 0; col < qr.getModuleCount(); col++) {
@@ -143,22 +193,24 @@
 
                     } catch (error) {
                         console.error('QR Generation Error:', error);
-                        qrCodeElement.innerHTML = '<div class="text-danger p-3">Error generating QR code</div>';
+                        qrCodeElement.innerHTML = '<div class="alert alert-danger">Error generating QR code</div>';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching QR code:', error);
                     document.getElementById('qrCode').innerHTML =
-                        '<div class="text-danger p-3">Failed to load QR code</div>';
+                        '<div class="alert alert-danger">Failed to load QR code</div>';
                 });
         }
 
         function startQRRefresh() {
-            // Generate immediately
-            generateQRCode();
-
-            // Refresh every 15 seconds
-            refreshInterval = setInterval(generateQRCode, 60000);
+            // Only start refresh if session is active
+            if (isSessionActive && !isSessionExpired) {
+                // Generate immediately
+                generateQRCode();
+                // Refresh every 60 seconds
+                refreshInterval = setInterval(generateQRCode, 60000);
+            }
         }
 
         // Wait for DOM to be fully loaded
@@ -193,11 +245,10 @@
             height: auto;
         }
 
-        .text-danger {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            padding: 10px;
+        .status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
         }
     </style>
 @endpush

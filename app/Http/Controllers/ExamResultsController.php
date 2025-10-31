@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\ExamQuestionsAnalysisExport;
 use App\Exports\ExamResultsExport;
 use App\Mail\ExamPublishedNotification;
+use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
 use App\Models\DifficultyLevel;
 use App\Models\Exam;
@@ -28,9 +29,10 @@ class ExamResultsController extends Controller
 
     private function examQueryForLecturer($user, $status = null)
     {
+        $coordinated = CourseCoordinator::where('lecturer_id', $user->id)->pluck('course_id');
         $query = Exam::with(['course', 'attempts', 'semester'])
             ->withCount('questions')
-            ->whereHas('course.lecturers', fn($q) => $q->where('lecturer_id', $user->id))
+            ->whereIn('course_id', $coordinated)
             ->where('status', 'ended');
 
         if ($status === 'published') {
@@ -392,7 +394,7 @@ class ExamResultsController extends Controller
         $agent = new Agent();
 
         if ($agent->isMobile()) {
-        return view('lecturer.grading.show.mobile.index_mobile', compact('activeTab', 'exam', 'rankingPaginator', 'analytics', 'questionAnalysisPaginator', 'optionsAnalysis', 'chartData', 'status', 'sort', 'dir', 'difficultyLevel'));
+            return view('lecturer.grading.show.mobile.index_mobile', compact('activeTab', 'exam', 'rankingPaginator', 'analytics', 'questionAnalysisPaginator', 'optionsAnalysis', 'chartData', 'status', 'sort', 'dir', 'difficultyLevel'));
         }
         return view('lecturer.grading.show.index', compact('activeTab', 'exam', 'rankingPaginator', 'analytics', 'questionAnalysisPaginator', 'optionsAnalysis', 'chartData', 'status', 'sort', 'dir', 'difficultyLevel'));
     }
@@ -517,6 +519,7 @@ class ExamResultsController extends Controller
                     ];
                 })
                 ->values();
+            $isAnulir = $question->is_anulir ?? false;
 
             return [
                 'question_id' => $question->id,
@@ -529,6 +532,7 @@ class ExamResultsController extends Controller
                 'options' => $options,
                 'discrimination_index' => $this->calculateDiscriminationIndex($exam, $question),
                 'difficulty_level' => $this->getDifficultyLevel($correct, $totalStudents),
+                'is_anulir' => $isAnulir,
             ];
         });
     }

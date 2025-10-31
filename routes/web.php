@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttendanceSessionsController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseScheduleController;
 use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamController;
@@ -87,9 +88,15 @@ Route::middleware(['auth', 'role:admin'])
                 Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
             });
         Route::resource('semester', SemesterController::class);
+        Route::get('/course/{course}/schedule/create', [CourseScheduleController::class, 'create'])->name('course.create');
+        Route::post('/course/{course}/schedule', [CourseScheduleController::class, 'store'])->name('course.store');
+        Route::get('/course', [CourseScheduleController::class, 'index'])->name('course.index');
+        Route::get('/course/schedule/{schedule}', [CourseScheduleController::class, 'show'])->name('course.show');
+        Route::post('/course/schedule/{schedule}/update-schedules', [CourseScheduleController::class, 'updateSchedules'])->name('course.updateSchedules');
+
     });
 
-Route::middleware(['auth', 'role:lecturer'])
+Route::middleware(['auth', 'role:lecturer,koordinator,admin'])
     ->prefix('lecturer')
     ->name('lecturer.')
     ->group(function () {
@@ -109,10 +116,10 @@ Route::middleware(['auth', 'role:lecturer'])
     });
 
 // ================= SHARED ADMIN & LECTURER =================
-Route::middleware(['auth', 'role:admin,lecturer'])->group(function () {
+Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function () {
     //attendance
     Route::resource('attendance', AttendanceSessionsController::class);
-   Route::get('/attendance/{attendanceCode}/qr-code', [AttendanceSessionsController::class, 'getQrCode']);
+    Route::get('/attendance/{attendanceCode}/qr-code', [AttendanceSessionsController::class, 'getQrCode']);
     // courses
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{course}/download', [CourseController::class, 'download'])->name('courses.download');
@@ -180,7 +187,6 @@ Route::middleware(['auth', 'role:student'])
         //attendance
         Route::get('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'showAttendanceForm'])->name('attendance.form');
         Route::post('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'submitAttendance'])->name('attendance.submit');
-
     });
 
 Route::view('login', 'session/login-session')->name('login');

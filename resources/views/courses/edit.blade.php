@@ -2,79 +2,51 @@
 
 @section('content')
     <div class="row">
-
         <div class="col-12 mb-4">
             <div class="card">
                 <div class="card-header pb-0">
-                    <h5 class="mb-0">Edit Course</h5>
+                    <ul class="nav nav-tabs card-header-tabs" id="courseTabs" role="tablist">
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#kelas"
+                                role="tab">KELAS</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#siswa"
+                                role="tab">SISWA</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dosen"
+                                role="tab">DOSEN</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#praktikum"
+                                role="tab">PRAKTIKUM</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pemicu"
+                                role="tab">PEMICU</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pleno"
+                                role="tab">PLENO</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#skilllab" role="tab">SKILL
+                                LAB</a></li>
+                    </ul>
                 </div>
-                <div class="card-body px-4 pt-2 pb-2">
-                    <form role="form" method="POST" action="/courses/update/{{ $course->slug }}"
-                        enctype="multipart/form-data">
-                        @csrf
 
-                        <input hidden type="text" name="semester_id" class="form-control" value="{{ $semesterId }}"
-                            required>
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label>Kode Blok</label>
-                                <input type="text" name="kode_blok" class="form-control" value="{{ $course->kode_blok }}"
-                                    required>
-                            </div>
-                            <div class="col-md-4">
-                                <label>Nama Blok</label>
-                                <input type="text" name="name" class="form-control" value="{{ $course->name }}"
-                                    required>
-                            </div>
-                            <div class="col-md-4">
-                                <label>Semester</label>
-                                <select id="semester" name="semester" class="form-select form-select">
-                                    <option value="Ganjil/Genap" {{ $course->semester === '' ? 'selected' : '' }}>
-                                        Ganjil/Genap
-                                    </option>
-                                    <option value="Ganjil" {{ $course->semester === 'Ganjil' ? 'selected' : '' }}>Ganjil
-                                    </option>
-                                    <option value="Genap" {{ $course->semester === 'Genap' ? 'selected' : '' }}>Genap
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label for="lecturers" class="form-label">Dosen Pengajar</label>
-                                <select id="lecturers" name="lecturers[]" multiple class="form-select">
-                                    @foreach ($lecturers as $lecturer)
-                                        <option value="{{ $lecturer->lecturer->id }}"
-                                            @if (isset($selectedLecturers) && in_array($lecturer->lecturer->id, $selectedLecturers->pluck('lecturer_id')->toArray())) selected @endif>
-                                            {{ $lecturer->lecturer->user->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-
-                        <div class="row">
-                            <div class="col-md-2">
-                                <button type="submit" class="btn bg-gradient-primary w-100">Update</button>
-                            </div>
-                        </div>
-
-                    </form>
+                <div class="card-body px-4 pt-3 pb-2 tab-content">
+                    <div class="tab-pane fade show active" id="kelas" role="tabpanel">
+                        @include('courses.tabs._kelas')
+                    </div>
+                    <div class="tab-pane fade" id="siswa" role="tabpanel">
+                        @include('courses.tabs._siswa')
+                    </div>
+                    <div class="tab-pane fade" id="dosen" role="tabpanel">
+                        @include('courses.tabs._dosen')
+                    </div>
+                    <div class="tab-pane fade" id="praktikum" role="tabpanel">
+                        @include('courses.tabs._praktikum')
+                    </div>
+                    <div class="tab-pane fade" id="pemicu" role="tabpanel">
+                        @include('courses.tabs._pemicu')
+                    </div>
+                    <div class="tab-pane fade" id="pleno" role="tabpanel">
+                        @include('courses.tabs._pleno')
+                    </div>
+                    <div class="tab-pane fade" id="skilllab" role="tabpanel">
+                        @include('courses.tabs._skilllab')
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 @endsection
-@push('dashboard')
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const multipleSelect = new Choices('#lecturers', {
-                removeItemButton: true,
-                searchEnabled: true
-            });
-        });
-    </script>
-@endpush

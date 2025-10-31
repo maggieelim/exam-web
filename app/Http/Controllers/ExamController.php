@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Imports\ExamQuestionTemplateImport;
 use App\Models\Course;
+use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
 use App\Models\CourseStudent;
 use App\Models\Exam;
@@ -75,6 +76,13 @@ class ExamController extends Controller
             $query->whereHas('course.courseLecturer', function ($q) use ($lecturer) {
                 $q->where('lecturer_id', $lecturer->id);
             });
+        } elseif ($user->hasRole('koordinator')) {
+            // Koordinator blok → tampilkan exam hanya untuk blok yang dia koordinatori
+            $coordinatedCourseIds = CourseCoordinator::where('lecturer_id', $lecturer->id)->pluck('course_id');
+
+            $courses = Course::whereIn('id', $coordinatedCourseIds)->get();
+
+            $query->whereIn('course_id', $coordinatedCourseIds);
         } elseif ($user->hasRole('student')) {
             $courses = CourseStudent::where('user_id', $user->id)->with('course')->get()->pluck('course');
             $query->whereHas('course.courseStudents', function ($q) use ($user) {
@@ -119,7 +127,7 @@ class ExamController extends Controller
      */
     private function applyStatusFilter($query, $user, &$status)
     {
-        if ($user->hasRole('lecturer|admin')) {
+        if ($user->hasRole('lecturer|admin|koordinator')) {
             $query->when($status, function ($q) use ($status) {
                 $map = [
                     'previous' => 'ended',
@@ -181,6 +189,8 @@ class ExamController extends Controller
         $lecturer = Lecturer::where('user_id', $user->id)->first();
         if ($user->hasRole('lecturer') && $lecturer) {
             $courses = CourseLecturer::with('course')->where('lecturer_id', $lecturer->id)->where('semester_id', $activeSemester->id)->get()->map(fn($cl) => $cl->course); // ambil model Course dari pivot
+        }elseif ($user->hasRole('koordinator')) {
+            $courses = CourseCoordinator::with('course')->where('lecturer_id', $lecturer->id)->where('semester_id', $activeSemester->id)->get()->map(fn($cl) => $cl->course);
         } else {
             $courses = Course::where('semester', $activeSemester->semester_name)->orWhere('semester', 'Ganjil/Genap')->get();
         }
@@ -254,7 +264,7 @@ class ExamController extends Controller
         // ambil data hasil query
         $questions = $query->paginate(15)->withQueryString();
 
-         if ($agent->isMobile()) {
+        if ($agent->isMobile()) {
             return view('exams.mobile.show_mobile', compact('exam', 'questions', 'status', 'total_participants'));
         }
         return view('exams.show', compact('exam', 'questions', 'status', 'total_participants'));

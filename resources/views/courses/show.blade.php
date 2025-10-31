@@ -31,7 +31,7 @@
                 <p><strong>Kode Blok:</strong> {{ $course->kode_blok }}</p>
             </div>
             <div class="col-md-6 d-flex gap-2">
-                <p><strong>Lecturer:</strong></p>
+                <p><strong>Koordinator:</strong></p>
                 <ul class="mb-0 ps-3">
                     @foreach ($lecturers as $lecturer)
                         <li>{{ $lecturer->lecturer->user->name }}</li>
@@ -47,7 +47,7 @@
             <h5>List Students</h5>
             <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
                 <a href="{{ route('courses.editStudent', [$course->slug, 'semester_id' => $semesterId]) }}"
-                    class="btn btn-sm btn-warning">
+                    class="btn btn-warning">
                     <i class="fas fa-edit"></i>
                 </a>
                 <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"

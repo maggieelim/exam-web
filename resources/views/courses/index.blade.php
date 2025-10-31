@@ -118,9 +118,6 @@
                                     </th>
                                     <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Semester
                                     </th>
-                                    <th class="text-uppercase text-dark text-sm font-weight-bolder text-wrap text-center">
-                                        Total Dosen
-                                    </th>
                                     <th class="text-uppercase text-dark text-sm font-weight-bolder text-center text-wrap">
                                         Total
                                         Mahasiswa</th>
@@ -141,13 +138,13 @@
                                             <span class="text-sm font-weight-bold">{{ $course->semester }}</span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span
-                                                class="text-sm font-weight-bold">{{ $course->lecturer_count ?? 0 }}</span>
-                                        </td>
-                                        <td class="align-middle text-center">
                                             <span class="text-sm font-weight-bold">{{ $course->student_count ?? 0 }}</span>
                                         </td>
                                         <td class="align-middle text-center">
+                                            <a href="{{ route('admin.course.create', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                                class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
+                                                Buat Kelas
+                                            </a>
                                             <div class="btn-group">
                                                 <button type="button"
                                                     class="btn bg-gradient-primary m-1 p-2 px-3 dropdown-toggle"

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\AttendanceRecords;
 use App\Models\AttendanceSessions;
 use App\Models\AttendanceTokens;
 use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\Lecturer;
+use App\Models\LecturerAttendanceRecords;
 use App\Models\Semester;
 use App\Models\User;
 use Auth;
@@ -31,27 +33,48 @@ class AttendanceSessionsController extends Controller
 
     public function index(Request $request)
     {
-        $semesterId = $request->get('semester_id');
-
-        if (!$semesterId) {
-            $activeSemester = $this->getActiveSemester();
-            $semesterId = $activeSemester ? $activeSemester->id : null;
-        }
-
+        // Ambil semester aktif jika tidak dipilih
         $activeSemester = $this->getActiveSemester();
+        $semesterId = $request->get('semester_id', $activeSemester?->id);
+
+        // Ambil semua semester (untuk dropdown)
         $semesters = Semester::with('academicYear')->get();
-        $query = AttendanceSessions::query()->with(['course', 'activity']);
 
-        $sort = $request->get('sort', 'start_time');
-        $dir = $request->get('dir', 'asc');
+        // Sorting
         $allowedSorts = ['kode_blok', 'start_time'];
+        $sort = in_array($request->get('sort'), $allowedSorts) ? $request->get('sort') : 'start_time';
+        $dir = $request->get('dir', 'desc');
 
-        if (!in_array($sort, $allowedSorts)) {
-            $sort = 'start_time';
+        // Query dasar
+        $query = AttendanceSessions::with(['course', 'activity']);
+
+        // 🔍 Filter berdasarkan semester (jika ada)
+        if ($semesterId) {
+            $query->where('semester_id', $semesterId);
         }
 
-        $query->orderBy($sort, $dir);
-        $attendances = $query->paginate(15)->appends($request->all());
+        // 🔍 Filter berdasarkan nama/kode blok (jika ada input 'name')
+        if ($request->filled('name')) {
+            $query->whereHas('course', function ($q) use ($request) {
+                $q->where('kode_blok', 'LIKE', "%{$request->name}%")->orWhere('name', 'LIKE', "%{$request->name}%");
+            });
+        }
+        // Urutkan hasil
+        $attendances = $query->orderBy($sort, $dir)->paginate(15)->appends($request->all());
+
+        // Format waktu dan update status otomatis
+        $attendances->getCollection()->transform(function ($attendance) {
+            $attendance->updateStatusIfExpired();
+
+            $start = Carbon::parse($attendance->start_time);
+            $end = Carbon::parse($attendance->end_time);
+
+            $attendance->total_attendance = AttendanceRecords::where('attendance_session_id', $attendance->id)->count();
+            $attendance->formatted_time = $start->translatedFormat('d M Y H:i') . ' - ' . $end->translatedFormat('H:i');
+
+            return $attendance;
+        });
+
         return view('attendance.index', compact('activeSemester', 'semesterId', 'semesters', 'sort', 'dir', 'attendances'));
     }
 
@@ -68,7 +91,7 @@ class AttendanceSessionsController extends Controller
         $lecturers = Lecturer::with('courseLecturers')->get();
         $activity = Activity::all();
 
-        if ($user->hasRole('lecturer')) {
+        if ($user->hasRole('lecturer') || $user->hasRole('koordinator')) {
             $courses = Course::whereHas('courseLecturer', function ($query) use ($lecturer, $semesterId) {
                 $query->where('lecturer_id', $lecturer->id)->where('semester_id', $semesterId);
             })
@@ -127,6 +150,7 @@ class AttendanceSessionsController extends Controller
                 'end_time' => $endDateTime,
                 'location_lat' => $request->location_lat,
                 'location_long' => $request->location_long,
+                'loc_name' => $request->location_address,
                 'tolerance_meter' => $request->tolerance,
                 'semester_id' => $request->semester_id,
                 'status' => 'active',
@@ -137,13 +161,19 @@ class AttendanceSessionsController extends Controller
 
             // Associate lecturers with this session
             foreach ($request->lecturers as $lecturerId) {
-                $courseLecturer = CourseLecturer::firstOrCreate([
-                    'course_id' => $request->course,
-                    'lecturer_id' => $lecturerId,
-                ]);
+            // pastikan course_lecturer_id ada
+            $courseLecturer = CourseLecturer::firstOrCreate([
+                'course_id' => $request->course,
+                'lecturer_id' => $lecturerId,
+            ]);
 
-                // You might want to store lecturer association in a pivot table
-                // This depends on your database structure
+            // Simpan ke tabel LecturerAttendanceRecords
+            LecturerAttendanceRecords::create([
+                'attendance_session_id' => $attendanceSession->id,
+                'course_lecturer_id' => $courseLecturer->id,
+                'status' => 'not_checked_in', // default, bisa diganti sesuai kebutuhan
+                'checked_in_at' => null,
+            ]);
             }
 
             DB::commit();
@@ -160,10 +190,17 @@ class AttendanceSessionsController extends Controller
 
     private function generateQrToken($attendanceSessionId)
     {
-        // Delete old tokens
-        AttendanceTokens::where('attendance_session_id', $attendanceSessionId)->delete();
+        $attendanceSession = AttendanceSessions::find($attendanceSessionId);
+        if ($attendanceSession->isExpired()) {
+            $attendanceSession->update(['status' => 'finished']);
+            return null;
+        }
 
-        // Generate new token valid for 15 seconds
+        if (!$attendanceSession->isActive()) {
+            return null;
+        }
+
+        AttendanceTokens::where('attendance_session_id', $attendanceSessionId)->delete();
         $token = Str::random(32);
 
         AttendanceTokens::create([
@@ -187,15 +224,35 @@ class AttendanceSessionsController extends Controller
     public function getQrCode($attendanceCode)
     {
         $attendanceSession = AttendanceSessions::where('absensi_code', $attendanceCode)->firstOrFail();
+        if ($attendanceSession->isExpired()) {
+            // Update status to finished if not already
+            if ($attendanceSession->status !== 'finished') {
+                $attendanceSession->update(['status' => 'finished']);
+            }
 
-        // Generate atau ambil token yang masih valid
-        $currentToken = AttendanceTokens::where('attendance_session_id', $attendanceSession->id)->where('expired_at', '>', Carbon::now())->first();
-
-        if (!$currentToken) {
-            $currentToken = $this->generateQrToken($attendanceSession->id);
-        } else {
-            $currentToken = $currentToken->token;
+            return response()->json([
+                'expired' => true,
+                'message' => 'Attendance session has ended. QR code is no longer available.',
+            ]);
         }
+        // Generate atau ambil token yang masih valid
+        if ($attendanceSession->isActive()) {
+            $currentToken = AttendanceTokens::where('attendance_session_id', $attendanceSession->id)->where('expired_at', '>', Carbon::now())->first();
+
+            if (!$currentToken) {
+                $currentToken = $this->generateQrToken($attendanceSession->id);
+            } else {
+                $currentToken = $currentToken->token;
+                
+            }
+        } else {
+            // Session hasn't started yet or has ended
+            return response()->json([
+                'expired' => true,
+                'message' => 'Attendance session is not active.',
+            ]);
+        }
+
         $attendanceUrl = url("/student/attendance/{$attendanceSession->id}?token={$currentToken}");
 
         $qrData = [
@@ -226,6 +283,12 @@ class AttendanceSessionsController extends Controller
             return response()->json(['error' => 'Attendance session not found'], 404);
         }
 
+        if ($attendanceSession->isExpired()) {
+            // Update status to finished
+            $attendanceSession->update(['status' => 'finished']);
+            return response()->json(['error' => 'Attendance session has ended'], 400);
+        }
+
         // Check if token is valid
         $validToken = AttendanceTokens::where('attendance_session_id', $attendanceSession->id)->where('token', $request->token)->where('expired_at', '>', Carbon::now())->first();
 
@@ -250,6 +313,7 @@ class AttendanceSessionsController extends Controller
         }
 
         if ($currentTime->gt($endTime)) {
+            $attendanceSession->update(['status' => 'finished']);
             return response()->json(['error' => 'Attendance session has ended'], 400);
         }
 

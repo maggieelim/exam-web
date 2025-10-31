@@ -52,8 +52,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
 
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-    <script src="https://cdn.datatables.net/2.3.4/js/dataTables.js"></script>
 </head>
 
 <body
@@ -86,6 +86,7 @@
             Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <!-- Github buttons -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>

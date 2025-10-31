@@ -190,7 +190,7 @@ class CourseStudentController extends Controller
         if ($agent->isMobile()) {
             return view('courses.Student.edit_mobile', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
         }
-        return view('courses.Student.edit', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
+        return view('courses.tabs._siswa', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
     }
 
     /**

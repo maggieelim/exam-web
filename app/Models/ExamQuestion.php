@@ -19,6 +19,7 @@ class ExamQuestion extends Model
         'image',
         'created_by',
         'updated_by',
+        'is_anulir'
     ];
 
     protected static function boot()

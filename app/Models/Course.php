@@ -7,14 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-
 class Course extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $guarded = [
-        'id',
-    ];
+    protected $guarded = ['id'];
     protected $fillable = ['kode_blok', 'name', 'slug', 'semester'];
     protected static function boot()
     {
@@ -37,9 +34,7 @@ class Course extends Model
     // Course.php
     public function students()
     {
-        return $this->belongsToMany(User::class, 'course_students', 'course_id', 'user_id')
-            ->withTimestamps()
-            ->withPivot('deleted_at');
+        return $this->belongsToMany(User::class, 'course_students', 'course_id', 'user_id')->withTimestamps()->withPivot('deleted_at');
     }
 
     public function lecturers()
@@ -58,5 +53,9 @@ class Course extends Model
     public function courseLecturer()
     {
         return $this->hasMany(CourseLecturer::class, 'course_id');
+    }
+    public function coordinators()
+    {
+        return $this->hasMany(CourseCoordinator::class);
     }
 }

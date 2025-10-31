@@ -39,7 +39,7 @@
                 </div>
 
                 <!-- Collapse Form -->
-                <div class="collapse {{ request()->hasAny(['semester_id', 'name', 'lecturer']) }}" id="filterCollapse">
+                <div class="collapse {{ request()->hasAny(['semester_id', 'name']) }}" id="filterCollapse">
                     <form method="GET" action="{{ route('attendance.index') }}">
                         <div class="mx-3 my-2 py-2">
                             <div class="row g-2">
@@ -86,31 +86,17 @@
                                             href="{{ route(
                                                 'attendance.index',
                                                 array_merge(request()->all(), [
-                                                    'sort' => 'kode_blok',
-                                                    'dir' => $sort === 'kode_blok' && $dir === 'asc' ? 'desc' : 'asc',
+                                                    'sort' => 'start_time',
+                                                    'dir' => $sort === 'start_time' && $dir === 'asc' ? 'desc' : 'asc',
                                                 ]),
                                             ) }}">
                                             Tanggal
-                                            @if ($sort === 'kode_blok')
+                                            @if ($sort === 'start_time')
                                                 <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
                                             @endif
                                         </a>
                                     </th>
-                                    <th class="text-uppercase text-dark text-sm font-weight-bolder">
-                                        <a
-                                            href="{{ route(
-                                                'attendance.index',
-                                                array_merge(request()->all(), [
-                                                    'sort' => 'name',
-                                                    'dir' => $sort === 'name' && $dir === 'asc' ? 'desc' : 'asc',
-                                                ]),
-                                            ) }}">
-                                            Blok
-                                            @if ($sort === 'name')
-                                                <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                                            @endif
-                                        </a>
-                                    </th>
+                                    <th class="text-uppercase text-dark text-sm font-weight-bolder">Blok</th>
                                     <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Kegiatan
                                     </th>
                                     <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Total
@@ -127,7 +113,7 @@
                                 @forelse ($attendances as $attendance)
                                     <tr>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold">{{ $attendance->start_time }}</span>
+                                            <span class="text-sm font-weight-bold">{{ $attendance->formatted_time }}</span>
                                         </td>
                                         <td class="">
                                             <span class="text-sm font-weight-bold">{{ $attendance->course->name }}</span>
@@ -137,11 +123,11 @@
                                                 class="text-sm font-weight-bold">{{ $attendance->activity->activity_name }}</span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold">{{ $attendance->status }}</span>
+                                            <span
+                                                class="text-sm font-weight-bold">{{ $attendance->total_attendance }}</span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span
-                                                class="text-sm font-weight-bold">{{ $attendance->student_count ?? 0 }}</span>
+                                            <span class="text-sm font-weight-bold">{{ $attendance->status }}</span>
                                         </td>
                                         <td class="align-middle text-center">
                                             <div class="btn-group">

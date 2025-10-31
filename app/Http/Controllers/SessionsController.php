@@ -16,13 +16,11 @@ class SessionsController extends Controller
     {
         if (session()->has('url.intended')) {
             return redirect()->intended();
-        }
-
-        if ($user->hasRole('student')) {
+        } elseif ($user->hasRole('student')) {
             return redirect()->route('student.studentExams.index', ['status' => 'upcoming']);
         }
 
-        if ($user->hasRole('lecturer')) {
+        if ($user->hasRole('lecturer') || $user->hasRole('koordinator')) {
             return redirect()->route('courses.index');
         }
 

@@ -12,3 +12,47 @@
     word-break: break-all;
     box-sizing: border-box;
 }
+.soft-info {
+    background-color: rgba(13, 202, 240, 0.267) !important;
+}
+.compact-table {
+    width: 100%;
+    font-size: 0.875rem;
+    border-collapse: collapse; /* satukan border */
+        border: 1px solid rgba(0, 0, 0, 0.3);
+
+}
+
+.compact-table th,
+.compact-table td {
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    padding: 4px 6px;
+    vertical-align: middle;
+}
+
+.compact-table thead th {
+    font-size: 0.8rem;
+    height: 38px;
+}
+
+.compact-table tbody tr:last-child td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+/* 🔧 Override Bootstrap yang kadang hilangkan border */
+.compact-table th,
+.compact-table td {
+    border-top: 1px solid rgba(0, 0, 0, 0.4) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Style input di dalam tabel */
+.compact-table .form-control,
+.compact-table .form-select {
+    height: 24px;
+    font-size: 0.8rem;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}

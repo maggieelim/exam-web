@@ -140,6 +140,9 @@ class ExamQuestionController extends Controller
 
         if ($request->input('action') === 'anulir') {
             // Semua opsi jadi benar
+            $question->update([
+                'is_anulir' => true,
+            ]);
             foreach ($question->options as $option) {
                 $option->update(['is_correct' => 1]);
             }
@@ -295,52 +298,58 @@ class ExamQuestionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-   public function destroy($examCode, $questionId)
-{
-    try {
-        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
-        $question = ExamQuestion::where('exam_id', $exam->id)->findOrFail($questionId);
+    public function destroy($examCode, $questionId)
+    {
+        try {
+            $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+            $question = ExamQuestion::where('exam_id', $exam->id)->findOrFail($questionId);
 
-        // Hapus gambar jika ada
-        if ($question->image) {
-            \Storage::disk('public')->delete($question->image);
+            // Hapus gambar jika ada
+            if ($question->image) {
+                \Storage::disk('public')->delete($question->image);
+            }
+
+            // Hapus semua opsi jawaban terkait
+            $question->options()->delete();
+
+            // Hapus soal
+            $question->delete();
+
+            // Check if request is AJAX
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Soal berhasil dihapus!',
+                ]);
+            }
+
+            return redirect()
+                ->route('exams.questions.' . $exam->status, $exam->exam_code)
+                ->with('success', 'Soal berhasil dihapus!');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Soal tidak ditemukan',
+                    ],
+                    404,
+                );
+            }
+            return redirect()->back()->with('error', 'Soal tidak ditemukan');
+        } catch (\Exception $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                    ],
+                    500,
+                );
+            }
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        // Hapus semua opsi jawaban terkait
-        $question->options()->delete();
-
-        // Hapus soal
-        $question->delete();
-
-        // Check if request is AJAX
-        if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Soal berhasil dihapus!'
-            ]);
-        }
-
-        return redirect()
-            ->route('exams.questions.' . $exam->status, $exam->exam_code)
-            ->with('success', 'Soal berhasil dihapus!');
-
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Soal tidak ditemukan'
-            ], 404);
-        }
-        return redirect()->back()->with('error', 'Soal tidak ditemukan');
-        
-    } catch (\Exception $e) {
-        if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
-}
 }

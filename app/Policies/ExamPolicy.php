@@ -18,13 +18,13 @@ class ExamPolicy
     }
 
     /**
-     * Anyone with role 'lecturer' may attempt to create.
+     * Anyone with role ['lecturer', 'koordinator'] may attempt to create.
      * (Detailed check whether the lecturer teaches the selected course
      * will be done in controller because exam is not created yet.)
      */
     public function create(User $user)
     {
-        return $user->hasRole('lecturer');
+        return $user->hasRole(['lecturer', 'koordinator']);
     }
 
     /**
@@ -32,7 +32,7 @@ class ExamPolicy
      */
     public function update(User $user, Exam $exam)
     {
-        if ($user->hasRole('lecturer')) {
+        if ($user->hasRole(['lecturer', 'koordinator'])) {
             // pastikan relasi course->lecturers siap (eager loaded atau akses lazy)
             return $exam->course->lecturers->contains('id', $user->id);
         }

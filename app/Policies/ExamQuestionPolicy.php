@@ -15,7 +15,7 @@ class ExamQuestionPolicy
      */
     public function create(User $user)
     {
-        return $user->role === 'admin' || $user->role === 'lecturer';
+        return $user->role === 'admin' || $user->role === 'lecturer' || $user->role === 'koordinator';
     }
 
     /**
@@ -29,7 +29,7 @@ class ExamQuestionPolicy
         }
 
         // lecturer hanya bisa update soal ujian yang ada di course/blok yang dia ajar
-        if ($user->role === 'lecturer') {
+        if ($user->role === 'koordinator' || $user->role === 'lecturer') {
             return $user->courses->contains($examQuestion->exam->course_id);
         }
 
@@ -45,7 +45,7 @@ class ExamQuestionPolicy
             return true;
         }
 
-        if ($user->role === 'lecturer') {
+        if ($user->role === 'lecturer'  || $user->role === 'koordinator') {
             return $user->courses->contains($examQuestion->exam->course_id);
         }
 

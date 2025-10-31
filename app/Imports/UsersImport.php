@@ -87,6 +87,7 @@ class UsersImport implements ToModel, WithHeadingRow
                 'user_id' => $user->id,
                 'nidn' => $row['nidn'] ?? null,
                 'gender' => $row['gender'] ?? null,
+                'bagian' => $row['bagian'] ?? null,
                 'strata' => $row['strata'] ?? null,
                 'gelar' => $row['gelar'] ?? null,
                 'tipe_dosen' => $row['tipe_dosen'] ?? null,

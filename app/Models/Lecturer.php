@@ -10,17 +10,7 @@ class Lecturer extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'nidn',
-        'faculty',
-        'gender',
-        'strata',
-        'gelar',
-        'tipe_dosen',
-        'min_sks',
-        'max_sks'
-    ];
+    protected $fillable = ['user_id','bagian', 'nidn', 'faculty', 'gender', 'strata', 'gelar', 'tipe_dosen', 'min_sks', 'max_sks'];
 
     protected static function boot()
     {
@@ -31,6 +21,10 @@ class Lecturer extends Model
                 $lecturer->faculty = 'Kedokteran';
             }
         });
+    }
+    public function coordinatedCourses()
+    {
+        return $this->hasMany(CourseCoordinator::class);
     }
 
     public function user()

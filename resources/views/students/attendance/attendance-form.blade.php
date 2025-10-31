@@ -43,6 +43,8 @@
                     <input type="hidden" name="latitude" id="latitude">
                     <input type="hidden" name="longitude" id="longitude">
                     <input type="hidden" name="wifi_ssid" id="wifiSsid">
+                    <input type="hidden" name="loc_name" id="loc_name">
+                    <input type="hidden" name="distance" id="distance">
 
                     <div class="mb-3">
                         <label for="nim" class="form-label">NIM *</label>
@@ -112,19 +114,25 @@
             try {
                 // Get current location
                 const position = await getCurrentLocation();
-                document.getElementById('latitude').value = position.coords.latitude;
-                document.getElementById('longitude').value = position.coords.longitude;
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
 
-                // Try to get WiFi info (limited in browsers)
-                try {
-                    const wifiInfo = await getWifiInfo();
-                    document.getElementById('wifiSsid').value = wifiInfo.ssid;
-                } catch (wifiError) {
-                    console.log('WiFi info not available');
-                    document.getElementById('wifiSsid').value = 'unknown';
-                }
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
 
-                // Submit form
+                // Hitung jarak dengan lokasi sesi
+                const sessionLat = {{ $attendanceSession->location_lat }};
+                const sessionLng = {{ $attendanceSession->location_long }};
+                const distance = calculateDistance(lat, lng, sessionLat, sessionLng);
+                document.getElementById('distance').value = distance.toFixed(2);
+
+                // Dapatkan nama lokasi (reverse geocode)
+                const locName = await getLocationName(lat, lng);
+                document.getElementById('loc_name').value = locName;
+
+                // WiFi info (optional)
+                document.getElementById('wifiSsid').value = 'unknown';
+
                 form.submit();
 
             } catch (error) {
@@ -150,15 +158,33 @@
             });
         }
 
-        async function getWifiInfo() {
-            // WiFi information access is limited in browsers
-            // This might only work in specific environments
-            return {
-                ssid: 'unknown'
-            };
+        // Hitung jarak (meter) antara dua koordinat
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // radius bumi (meter)
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        // Ambil nama lokasi dari koordinat (gunakan Nominatim OpenStreetMap)
+        async function getLocationName(lat, lng) {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+                const data = await res.json();
+                return data.display_name || 'Unknown Location';
+            } catch (e) {
+                console.warn('Failed to get location name:', e);
+                return 'Unknown Location';
+            }
         }
     });
 </script>
-</body>
-
-</html>

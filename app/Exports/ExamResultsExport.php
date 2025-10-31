@@ -32,7 +32,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
 
         foreach ($this->exam->attempts as $attempt) {
             $userAnswers = $this->exam->answers->where('user_id', $attempt->user_id);
-            $totalAnswer = $this->exam->answers->where('answer', !null)->count();
+            $totalAnswer = $this->exam->answers->where('answer', !null)->where('user_id', $attempt->user_id)->count();
             $totalQuestions = $this->exam->questions->count();
             $correctAnswers = number_format($userAnswers->where('is_correct', true)->count());
 

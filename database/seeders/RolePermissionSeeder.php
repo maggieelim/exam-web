@@ -9,51 +9,80 @@ use Spatie\Permission\Models\Role;
 
 class RolePermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Daftar permission
+        // Semua permission akademik
         $permissions = [
+            // Courses
             'view course',
             'create course',
             'edit course',
             'delete course',
+
+            // Lecturer
+            'view lecturer',
+            'create lecturer',
+            'edit lecturer',
+            'delete lecturer',
+
+            // Students
+            'view student',
+            'create student',
+            'edit student',
+            'delete student',
+
+            // Jadwal
+            'manage schedule',
+
+            // Koordinator blok
+            'assign coordinator',
+
+            // Exam
+            'create exam',
+            'edit exam',
+            'publish exam',
+            'delete exam',
         ];
 
+        // Buat permission jika belum ada
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Role Admin (punya semua permission)
+        /*
+        |--------------------------------------------------------------------------
+        | Roles
+        |--------------------------------------------------------------------------
+        */
+
+        // === ADMIN ===
+        // Admin = Kaprodi dalam konteks sistem akademik
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->givePermissionTo(Permission::all());
+        $adminRole->syncPermissions(Permission::all());
 
-        // Role Lecturer
+        // === KOORDINATOR BLOK ===
+        $koordinatorRole = Role::firstOrCreate(['name' => 'koordinator']);
+        $koordinatorRole->syncPermissions([
+            'view course',
+            'create exam',
+            'edit exam',
+            'publish exam',
+            'delete exam',
+        ]);
+
+        // === DOSEN BIASA ===
         $lecturerRole = Role::firstOrCreate(['name' => 'lecturer']);
-        $lecturerRole->givePermissionTo([
+        $lecturerRole->syncPermissions([
             'view course',
-            'create course',
-            'edit course',
-            'delete course',
+            'view student',
         ]);
 
-        // Role Student
-        $studentRole = Role::firstOrCreate(['name' => 'student']);
-        $studentRole->givePermissionTo([
-            'view course',
-        ]);
-
-        // Membuat user super admin
-        $user = User::firstOrCreate(
-            ['email' => 'maggielim1999@gmail.com'],
-            [
-                'name' => 'Maggie',
-                'password' => bcrypt('123456'),
-            ]
-        );
-
-        $user->assignRole($adminRole);
+      
+        /*
+        |--------------------------------------------------------------------------
+        | Default User (Admin Akademik)
+        |--------------------------------------------------------------------------
+        */
+    
     }
 }

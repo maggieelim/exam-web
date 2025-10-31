@@ -6,10 +6,13 @@ use App\Exports\CourseParticipantsExport;
 use App\Exports\CoursesExport;
 use App\Imports\CoursesImport;
 use App\Models\Course;
+use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
+use App\Models\CourseSchedule;
 use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\Semester;
+use App\Models\TeachingSchedule;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -62,7 +65,7 @@ class CourseController extends Controller
         $user = auth()->user();
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
-        if ($user->hasRole('lecturer')) {
+        if ($user->hasAnyRole('lecturer')) {
             $lecturer = Lecturer::where('user_id', $user->id)->first();
             if ($lecturer) {
                 $query->whereHas('courseLecturer', function ($q) use ($lecturer, $semesterId) {
@@ -72,8 +75,17 @@ class CourseController extends Controller
                     }
                 });
             }
+        } elseif ($user->hasAnyRole('koordinator')) {
+            $lecturer = Lecturer::where('user_id', $user->id)->first();
+            if ($lecturer) {
+                $query->whereHas('coordinators', function ($q) use ($lecturer, $semesterId) {
+                    $q->where('lecturer_id', $lecturer->id);
+                    if ($semesterId) {
+                        $q->where('semester_id', $semesterId);
+                    }
+                });
+            }
         }
-
         return $query;
     }
 
@@ -106,7 +118,7 @@ class CourseController extends Controller
         $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
 
         // Base query
-        $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer']);
+        $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer', 'coordinators']);
 
         // Apply filters
         $query = $this->applyLecturerFilter($query, $semesterId);
@@ -172,7 +184,7 @@ class CourseController extends Controller
         $course = Course::where('slug', $slug)->firstOrFail();
         $semesterId = $request->query('semester_id');
 
-        $lecturers = CourseLecturer::with(['lecturer.user'])
+        $lecturers = CourseCoordinator::with(['lecturer.user'])
             ->where('course_id', $course->id)
             ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
             ->get();
@@ -265,10 +277,40 @@ class CourseController extends Controller
         $course = Course::where('slug', $slug)->firstOrFail();
         $semesterId = $request->query('semester_id');
 
-        $lecturers = User::role('lecturer')->get();
+        $semester = Semester::with('academicYear')->findOrFail($semesterId);
+        $lecturers = CourseLecturer::with('lecturer')->where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
         $selectedLecturers = CourseLecturer::where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
 
-        return view('courses.edit', compact('course', 'lecturers', 'selectedLecturers', 'semesterId'));
+        $courseSchedule = CourseSchedule::with(['course', 'semester'])
+            ->where('course_id', $course->id)
+            ->where('semester_id', $semesterId)
+            ->first();
+
+        // ✅ Tambahkan grouping seperti di method show()
+        // ✅ Jika $courseSchedule ada, ambil teachingSchedules
+        if ($courseSchedule) {
+            $teachingSchedules = TeachingSchedule::with(['activity'])
+                ->where('course_schedule_id', $courseSchedule->id)
+                ->orderBy('session_number', 'asc') // urutkan di query juga
+                ->get()
+                ->groupBy(function ($item) {
+                    $name = strtolower($item->activity->activity_name);
+                    if (Str::contains($name, 'ujian praktikum') || Str::contains($name, 'praktikum')) {
+                        return 'PRAKTIKUM';
+                    } elseif (Str::contains($name, 'ujian skill lab') || Str::contains($name, 'skill lab')) {
+                        return 'SKILL LAB';
+                    }
+                    return strtoupper($item->activity->activity_name);
+                })
+                ->map(function ($group) {
+                    // urutkan di dalam grup berdasarkan session_number
+                    return $group->sortBy('activity_id')->values();
+                });
+        } else {
+            $teachingSchedules = collect();
+        }
+
+        return view('courses.edit', compact('course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules'));
     }
 
     /**

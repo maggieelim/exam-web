@@ -156,6 +156,7 @@ class UserController extends Controller
             Lecturer::create([
                 'user_id' => $user->id,
                 'nidn' => $request['nidn'],
+                'bagian' => $request['bagian'] ?? null,
                 'faculty' => $request['faculty'] ?? null,
                 'gender' => $request['gender'],
                 'strata' => $request['strata'],
