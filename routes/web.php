@@ -3,20 +3,24 @@
 use App\Http\Controllers\AttendanceSessionsController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseLecturerController;
 use App\Http\Controllers\CourseScheduleController;
 use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamQuestionController;
 use App\Http\Controllers\ExamResultsController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
 use App\Http\Controllers\OngoingExamController;
+use App\Http\Controllers\PracticumController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\SessionsController;
+use App\Http\Controllers\SkillslabController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -136,6 +140,14 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
     Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
     Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
+    Route::get('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'createKelompok'])->name('courses.createKelompok');
+    Route::post('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'updateKelompok'])->name('courses.updateKelompok');
+    Route::post('/courses/{slug}/update-kelompok-manual', [CourseStudentController::class, 'updateKelompokManual'])
+    ->name('courses.updateKelompokManual');
+    Route::get('/courses/{course}/bentuk_group', [CourseStudentController::class, 'createGroup'])->name('courses.createGroup');
+    Route::post('/courses/{course}/bentuk_group', [GroupController::class, 'updateGroup'])->name('courses.updateGroup');
+    Route::post('/courses/{course}/updateLecturer', [CourseLecturerController::class, 'update'])->name('courses.updateLecturer');
+    Route::get('/course/{course}/addLecturer', [CourseLecturerController::class, 'edit'])->name('courses.addLecturer');
 
     // exams
     Route::get('/exams/{status?}', [ExamController::class, 'index'])

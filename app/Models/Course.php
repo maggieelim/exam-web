@@ -58,4 +58,8 @@ class Course extends Model
     {
         return $this->hasMany(CourseCoordinator::class);
     }
+    public function schedules()
+    {
+        return $this->hasMany(CourseSchedule::class, 'course_id');
+    }
 }

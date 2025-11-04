@@ -1,6 +1,6 @@
  <a href="{{ route('admin.course.create', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
      class="btn bg-gradient-secondary my-3 p-2 px-3" title="Info">
-     Buat Kelas
+     Bentuk Kelas
  </a>
 
  @foreach ($teachingSchedules as $activityName => $schedules)

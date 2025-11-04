@@ -274,43 +274,44 @@ class CourseController extends Controller
      */
     public function edit($slug, Request $request)
     {
-        $course = Course::where('slug', $slug)->firstOrFail();
+        // Ambil data mahasiswa dari controller lain
+        $studentData = app(CourseStudentController::class)->getStudentData($request, $slug);
+        $lecturerData = app(CourseLecturerController::class)->getLecturerData($request, $slug);
+
         $semesterId = $request->query('semester_id');
-
+        $course = Course::where('slug', $slug)->firstOrFail();
         $semester = Semester::with('academicYear')->findOrFail($semesterId);
-        $lecturers = CourseLecturer::with('lecturer')->where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
-        $selectedLecturers = CourseLecturer::where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
 
+        // Ambil dosen pengampu dan dosen yang sudah dipilih
+        $lecturers = CourseLecturer::with('lecturer')->where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
+
+        $selectedLecturers = $lecturers; // duplikat variabel karena query sama
+
+        // Ambil jadwal mata kuliah
         $courseSchedule = CourseSchedule::with(['course', 'semester'])
             ->where('course_id', $course->id)
             ->where('semester_id', $semesterId)
             ->first();
 
-        // ✅ Tambahkan grouping seperti di method show()
-        // ✅ Jika $courseSchedule ada, ambil teachingSchedules
+        // Ambil teaching schedules jika jadwal ada
+        $teachingSchedules = collect();
         if ($courseSchedule) {
-            $teachingSchedules = TeachingSchedule::with(['activity'])
+            $teachingSchedules = TeachingSchedule::with('activity')
                 ->where('course_schedule_id', $courseSchedule->id)
-                ->orderBy('session_number', 'asc') // urutkan di query juga
+                ->orderBy('session_number')
                 ->get()
                 ->groupBy(function ($item) {
                     $name = strtolower($item->activity->activity_name);
-                    if (Str::contains($name, 'ujian praktikum') || Str::contains($name, 'praktikum')) {
-                        return 'PRAKTIKUM';
-                    } elseif (Str::contains($name, 'ujian skill lab') || Str::contains($name, 'skill lab')) {
-                        return 'SKILL LAB';
-                    }
-                    return strtoupper($item->activity->activity_name);
+                    return match (true) {
+                        Str::contains($name, ['ujian praktikum', 'praktikum']) => 'PRAKTIKUM',
+                        Str::contains($name, ['ujian skill lab', 'skill lab']) => 'SKILL LAB',
+                        default => strtoupper($item->activity->activity_name),
+                    };
                 })
-                ->map(function ($group) {
-                    // urutkan di dalam grup berdasarkan session_number
-                    return $group->sortBy('activity_id')->values();
-                });
-        } else {
-            $teachingSchedules = collect();
+                ->map(fn($group) => $group->sortBy('activity_id')->values());
         }
 
-        return view('courses.edit', compact('course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules'));
+        return view('courses.edit', compact('lecturerData','studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules'));
     }
 
     /**

@@ -36,7 +36,7 @@
 
                             <td class="soft-info">
                                 <input type="date" name="schedules[{{ $schedule->id }}][scheduled_date]"
-                                    class="form-control text-center  " value="{{ $schedule->scheduled_date }}">
+                                    class="form-control text-center input-bg " value="{{ $schedule->scheduled_date }}">
                             </td>
 
                             <td>
@@ -50,12 +50,12 @@
 
                             <td class="soft-info">
                                 <input type="text" name="schedules[{{ $schedule->id }}][zone]"
-                                    class="form-control text-center  " value="{{ $schedule->zone }}">
+                                    class="form-control text-center input-bg " value="{{ $schedule->zone }}">
                             </td>
 
                             <td>
                                 <input type="text" name="schedules[{{ $schedule->id }}][group]"
-                                    class="form-control text-center  " value="{{ $schedule->group }}">
+                                    class="form-control text-center input-bg " value="{{ $schedule->group }}">
                             </td>
 
                             <td>
@@ -63,7 +63,7 @@
                                     class="form-control text-center  " value="{{ $schedule->topic }}">
                             </td>
                             <td class="soft-info" style="min-width: 150px">
-                                <select class="form-select  text-center"
+                                <select class="form-select  text-center input-bg"
                                     name="schedules[{{ $schedule->id }}][lecturer_id]">
                                     <option value="">-- Pilih --</option>
                                     @foreach ($lecturers as $lecturer)
@@ -77,7 +77,7 @@
 
                             <td>
                                 <input type="text" name="schedules[{{ $schedule->id }}][ruang]"
-                                    class="form-control text-center  " value="{{ $schedule->ruang }}">
+                                    class="form-control text-center " value="{{ $schedule->ruang }}">
                             </td>
                         </tr>
                     @endforeach

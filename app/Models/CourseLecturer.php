@@ -27,4 +27,14 @@ class CourseLecturer extends Model
     public function attendance(){
         return $this->hasMany(LecturerAttendanceRecords::class);
     }
+
+    public function activities(){
+        return $this->hasMany(CourseLecturerActivity::class);
+    }
+    public function hasActivity($activityName)
+    {
+        return $this->activities->contains(function ($activity) use ($activityName) {
+            return strtolower($activity->activity->activity_name) === strtolower($activityName);
+        });
+    }
 }

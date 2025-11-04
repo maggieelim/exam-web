@@ -10,7 +10,7 @@ class Lecturer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id','bagian', 'nidn', 'faculty', 'gender', 'strata', 'gelar', 'tipe_dosen', 'min_sks', 'max_sks'];
+    protected $fillable = ['user_id', 'bagian', 'nidn', 'faculty', 'gender', 'strata', 'gelar', 'tipe_dosen', 'min_sks', 'max_sks'];
 
     protected static function boot()
     {
@@ -35,5 +35,17 @@ class Lecturer extends Model
     public function courseLecturers()
     {
         return $this->hasMany(CourseLecturer::class, 'lecturer_id');
+    }
+
+    public function practicumGroups()
+    {
+        return $this->hasManyThrough(
+            PracticumGroup::class,
+            PracticumLecturer::class,
+            'lecturer_id', // FK di practicum_lecturers
+            'id', // FK di practicum_groups
+            'id', // PK di lecturers
+            'practicum_group_id', // FK di practicum_lecturers
+        );
     }
 }

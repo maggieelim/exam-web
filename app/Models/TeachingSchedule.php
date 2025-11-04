@@ -9,21 +9,7 @@ class TeachingSchedule extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'course_schedule_id',
-        'course_id',
-        'semester_id',
-        'activity_id',
-        'session_number',
-        'lecturer_id',
-        'scheduled_date',
-        'start_time',
-        'end_time',
-        'room',
-        'created_by',
-        'updated_at',
-        'zone'
-    ];
+    protected $fillable = ['course_schedule_id', 'course_id', 'semester_id', 'activity_id', 'session_number', 'lecturer_id', 'scheduled_date', 'start_time', 'end_time', 'room', 'topic', 'created_by', 'updated_at', 'zone'];
 
     /**
      * Relasi ke tabel Course (blok/mata kuliah)
@@ -83,5 +69,14 @@ class TeachingSchedule extends Model
     public function scopeForSemester($query, $semesterId)
     {
         return $query->where('semester_id', $semesterId);
+    }
+
+    public function skillslabDetails()
+    {
+        return $this->hasMany(SkillslabDetails::class);
+    }
+    public function practicumGroups()
+    {
+        return $this->hasMany(PracticumGroup::class, 'teaching_schedule_id');
     }
 }

@@ -10,12 +10,7 @@ class CourseSchedule extends Model
     use HasFactory;
     public $timestamps = false;
 
-    protected $fillable = [
-        'semester_id',
-        'course_id',
-        'year_level',
-        'created_by',
-    ];
+    protected $fillable = ['kelompok', 'semester_id', 'course_id', 'year_level', 'created_by'];
 
     // Relasi ke semester
     public function semester()
@@ -45,5 +40,9 @@ class CourseSchedule extends Model
     public function details()
     {
         return $this->hasMany(CourseScheduleDetail::class);
+    }
+    public function practicumGroups()
+    {
+        return $this->hasMany(PracticumGroup::class, 'course_schedule_id');
     }
 }

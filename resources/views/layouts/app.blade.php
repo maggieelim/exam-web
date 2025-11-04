@@ -104,6 +104,35 @@
                 });
             });
         });
+
+        document.querySelectorAll('.input-bg').forEach(function(input) {
+            const td = input.closest('td');
+            const original = input.dataset.original;
+
+            // Tentukan event listener yang sesuai
+            const eventType = input.type === 'checkbox' ? 'change' : 'input';
+
+            input.addEventListener(eventType, function() {
+                let isChanged = false;
+
+                if (input.type === 'checkbox') {
+                    // Untuk checkbox, gunakan checked sebagai pembanding
+                    const originalChecked = original === 'true' || original === '1';
+                    isChanged = input.checked !== originalChecked;
+                } else {
+                    // Untuk input biasa (text, select, dll)
+                    const current = input.value.trim();
+                    isChanged = current !== original;
+                }
+
+                // Tambah atau hapus warna
+                if (isChanged) {
+                    td.classList.add('soft-edit');
+                } else {
+                    td.classList.remove('soft-edit');
+                }
+            });
+        });
     </script>
 
 </body>
