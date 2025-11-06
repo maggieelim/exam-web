@@ -8,6 +8,7 @@ use App\Imports\CoursesImport;
 use App\Models\Course;
 use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
+use App\Models\CourseLecturerActivity;
 use App\Models\CourseSchedule;
 use App\Models\CourseStudent;
 use App\Models\Lecturer;
@@ -274,7 +275,6 @@ class CourseController extends Controller
      */
     public function edit($slug, Request $request)
     {
-        // Ambil data mahasiswa dari controller lain
         $studentData = app(CourseStudentController::class)->getStudentData($request, $slug);
         $lecturerData = app(CourseLecturerController::class)->getLecturerData($request, $slug);
 
@@ -283,7 +283,7 @@ class CourseController extends Controller
         $semester = Semester::with('academicYear')->findOrFail($semesterId);
 
         // Ambil dosen pengampu dan dosen yang sudah dipilih
-        $lecturers = CourseLecturer::with('lecturer')->where('course_id', $course->id)->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))->get();
+        $lecturers = Lecturer::all();
 
         $selectedLecturers = $lecturers; // duplikat variabel karena query sama
 
@@ -310,8 +310,7 @@ class CourseController extends Controller
                 })
                 ->map(fn($group) => $group->sortBy('activity_id')->values());
         }
-
-        return view('courses.edit', compact('lecturerData','studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules'));
+        return view('courses.edit', compact('lecturerData', 'studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules'));
     }
 
     /**

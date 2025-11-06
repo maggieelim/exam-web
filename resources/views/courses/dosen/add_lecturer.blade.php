@@ -3,7 +3,13 @@
 @section('content')
     <div class="card">
         <div class="card-header mb-0 pb-0">
-            <h5 class="text-uppercase">Penjadwalan Dosen</h5>
+            <div class="mt-3 d-flex justify-content-between">
+                <h5 class="text-uppercase">Penjadwalan Dosen</h5>
+                <a class="btn btn-sm btn-secondary"
+                    href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}#dosen">
+                    Back
+                </a>
+            </div>
             <div class="row">
                 <input type="hidden" name="semester_id" value="{{ $semester->id }}">
                 <input type="hidden" name="course_id" value="{{ $course->id }}">
@@ -17,8 +23,10 @@
                 <div class = "col-md-4 col-12">
                     <p><strong>Blok:</strong> {{ $course->name }}</p>
                 </div>
-                <div class="col-md-4 col-12 d-flex gap-2">
-                    <p><strong>Tugas:</strong></p> <select name="activity_id" id="activity_id" class="form-control">
+                <div class="col-md-4 d-flex align-items-center col-12">
+                    <p class="me-2 mb-0"><strong>Tugas:</strong></p>
+                    <select name="activity_id" id="activity_id" class="form-select form-select-sm w-auto"
+                        onchange="updateSelectedActivity(this.value)">
                         <option value=""></option>
                         @foreach ($activity as $act)
                             <option value="{{ $act->id }}" {{ old('activity_id') == $act->id ? 'selected' : '' }}>
@@ -27,13 +35,6 @@
                         @endforeach
                     </select>
                 </div>
-
-            </div>
-            <div class="mt-3 d-flex gap-2">
-                <a class="btn btn-sm btn-secondary"
-                    href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}#dosen">
-                    Back
-                </a>
             </div>
         </div>
 
@@ -74,9 +75,10 @@
                 </form>
             </div>
             <div class="table-responsive p-0">
-                <form id="kelompokForm" action="{{ route('courses.updateKelompokManual', $course->slug) }}" method="POST">
+                <form id="kelompokForm" action="{{ route('courses.assignLecturer', $course->slug) }}" method="POST">
                     @csrf
                     <input type="hidden" name="semester_id" value="{{ $semesterId }}">
+                    <input type="hidden" id="selectedActivity" name="selected_activity" value="">
 
                     <table class="compact-table table-bordered">
                         <thead class="text-center align-middle">
@@ -94,7 +96,8 @@
                         <tbody>
                             @foreach ($lecturers as $lecturer)
                                 <tr>
-                                    <td class="text-center"><input type="checkbox"></td>
+                                    <td class="text-center"><input name="lecturers[]" value="{{ $lecturer->id }}"
+                                            type="checkbox"></td>
                                     <td>{{ $lecturer->user->name ?? '-' }}</td>
                                     <td>{{ $lecturer->bagian ?? '-' }}</td>
                                     <td>{{ $lecturer->strata ?? '-' }}</td>
@@ -116,6 +119,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const activitySelect = document.querySelector('#activity_id');
+            const selectedActivityInput = document.querySelector('#selectedActivity');
+
+            // Saat dropdown berubah, update hidden input
+            activitySelect.addEventListener('change', () => {
+                selectedActivityInput.value = activitySelect.value;
+            });
+
+            // Jika ingin memastikan nilai tetap tersimpan setelah reload (misalnya pakai old input)
+            selectedActivityInput.value = activitySelect.value;
+
+            // Toggle grup header jika ada
             document.querySelectorAll('.group-header').forEach(header => {
                 header.addEventListener('click', () => {
                     header.classList.toggle('collapsed');

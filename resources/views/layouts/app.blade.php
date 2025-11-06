@@ -87,6 +87,8 @@
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="{{ asset('js/notifications.js') }}"></script>
+    <script src="{{ asset('js/schedule-ajax.js') }}"></script>
 
     <!-- Github buttons -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
@@ -134,7 +136,6 @@
             });
         });
     </script>
-
 </body>
 
 </html>

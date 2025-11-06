@@ -15,7 +15,21 @@ class CourseLecturerActivity extends Model
         return $this->belongsTo(Activity::class);
     }
 
-    public function lecturer(){
+   public function courseLecturer()
+    {
         return $this->belongsTo(CourseLecturer::class);
+    }
+
+    public function lecturer()
+    {
+        // lewat CourseLecturer → Lecturer
+        return $this->hasOneThrough(
+            Lecturer::class,
+            CourseLecturer::class,
+            'id', // Foreign key di CourseLecturer (primary key)
+            'id', // Foreign key di Lecturer (primary key)
+            'course_lecturer_id', // Foreign key di CourseLecturerActivity
+            'lecturer_id' // Foreign key di CourseLecturer
+        );
     }
 }

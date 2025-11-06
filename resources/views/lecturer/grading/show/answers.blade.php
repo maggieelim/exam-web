@@ -218,13 +218,6 @@
 </style>
 
 <script>
-    // ==== Fungsi notifikasi sederhana ====
-    function showNotification(message, type = 'success') {
-        alert(`${type.toUpperCase()}: ${message}`);
-        // Jika pakai Toastr, bisa diganti dengan:
-        // toastr[type](message);
-    }
-
     // ==== Event Delegation untuk tombol Anulir ====
     document.addEventListener('click', function(e) {
         const target = e.target.closest('.anulir-btn');

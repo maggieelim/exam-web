@@ -97,7 +97,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/course', [CourseScheduleController::class, 'index'])->name('course.index');
         Route::get('/course/schedule/{schedule}', [CourseScheduleController::class, 'show'])->name('course.show');
         Route::post('/course/schedule/{schedule}/update-schedules', [CourseScheduleController::class, 'updateSchedules'])->name('course.updateSchedules');
-
+        Route::delete('/course/schedules/{id}', [CourseScheduleController::class, 'destroy'])->name('course.destroySchedules');
     });
 
 Route::middleware(['auth', 'role:lecturer,koordinator,admin'])
@@ -142,12 +142,12 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
     Route::get('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'createKelompok'])->name('courses.createKelompok');
     Route::post('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'updateKelompok'])->name('courses.updateKelompok');
-    Route::post('/courses/{slug}/update-kelompok-manual', [CourseStudentController::class, 'updateKelompokManual'])
-    ->name('courses.updateKelompokManual');
+    Route::post('/courses/{slug}/update-kelompok-manual', [CourseStudentController::class, 'updateKelompokManual'])->name('courses.updateKelompokManual');
     Route::get('/courses/{course}/bentuk_group', [CourseStudentController::class, 'createGroup'])->name('courses.createGroup');
     Route::post('/courses/{course}/bentuk_group', [GroupController::class, 'updateGroup'])->name('courses.updateGroup');
     Route::post('/courses/{course}/updateLecturer', [CourseLecturerController::class, 'update'])->name('courses.updateLecturer');
     Route::get('/course/{course}/addLecturer', [CourseLecturerController::class, 'edit'])->name('courses.addLecturer');
+    Route::post('/course/{course}/assignLecturer', [CourseLecturerController::class, 'addLecturer'])->name('courses.assignLecturer');
 
     // exams
     Route::get('/exams/{status?}', [ExamController::class, 'index'])

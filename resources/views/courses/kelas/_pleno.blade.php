@@ -1,16 +1,18 @@
-<div class="card my-2 border">
+<div class="card mb-4">
     <div class="card-header p-2 bg-secondary text-white d-flex justify-content-between align-items-center">
         <h6 class="mb-0 text-uppercase text-white">PLENO</h6>
     </div>
 
     <div class="card-body p-0">
-        <form action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}" method="POST">
+        <form id="plenoForm" class="schedule-form"
+            action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}" method="POST">
             @csrf
             <div class="table-responsive">
                 <table class="compact-table table-bordered">
                     <thead class=" text-center">
                         <tr>
                             <th>#</th>
+                            <th></th>
                             <th>Kelas</th>
                             <th>Tanggal</th>
                             <th>Mulai</th>
@@ -24,8 +26,16 @@
                         @foreach ($schedules as $index => $schedule)
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
-
-                                {{-- contoh: PR01, PR02, UP1, UP2 --}}
+                                @if ($schedule->zone !== null)
+                                    <td class="text-center fw-semibold">
+                                        <a href="#" class="delete-schedule text-danger text-decoration-underline"
+                                            data-id="{{ $schedule->id }}"> DEL</a>
+                                    </td>
+                                @else
+                                    <td class="text-center fw-semibold">
+                                        <a class="delete-schedule text-danger">DEL</a>
+                                    </td>
+                                @endif
                                 <td class="text-center fw-semibold">
                                     {{ $schedule->class_code ?? strtoupper(substr($schedule->activity->code ?? 'P', 0, 2)) . sprintf('%02d', $schedule->session_number) }}
                                 </td>
@@ -35,30 +45,29 @@
 
                                 <td class="soft-info">
                                     <input type="date" name="schedules[{{ $schedule->id }}][scheduled_date]"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
+                                        class="form-control text-center input-bg"
                                         value="{{ $schedule->scheduled_date }}">
                                 </td>
 
                                 <td>
-                                    <input readonly class="form-control text-center border-0 shadow-none bg-transparent"
-                                        type="text"
+                                    <input readonly class="form-control text-center" type="text"
+                                        id="start_time_{{ $schedule->id }}"
                                         value="{{ $schedule->start_time ? date('H:i', strtotime($schedule->start_time)) : '' }}">
                                 </td>
                                 <td>
-                                    <input readonly class="form-control text-center border-0 shadow-none bg-transparent"
-                                        type="text"
+                                    <input readonly class="form-control text-center" type="text"
+                                        id="end_time_{{ $schedule->id }}"
                                         value="{{ $schedule->end_time ? date('H:i', strtotime($schedule->end_time)) : '' }}">
                                 </td>
 
                                 <td class="soft-info">
                                     <input type="text" name="schedules[{{ $schedule->id }}][zone]"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
-                                        value="{{ $schedule->zone }}">
+                                        class="form-control text-center input-bg " value="{{ $schedule->zone }}">
                                 </td>
 
                                 <td>
-                                    <input type="text" name="schedules[{{ $schedule->id }}][group]"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
+                                    <input readonly type="text" name="schedules[{{ $schedule->id }}][group]"
+                                        id="group_{{ $schedule->id }}" class="form-control text-center input-bg"
                                         value="{{ $schedule->group }}">
                                 </td>
                             </tr>

@@ -8,7 +8,7 @@ class CourseLecturer extends Model
 {
     protected $table = 'course_lecturer'; // atau 'course_lecturer' sesuai database
 
-    protected $fillable = ["lecturer_id", "course_id", "created_at", "updated_at"];
+    protected $fillable = ["semester_id","lecturer_id", "course_id", "created_at", "updated_at"];
 
     public function semester()
     {

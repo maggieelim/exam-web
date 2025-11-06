@@ -4,13 +4,15 @@
     </div>
 
     <div class="card-body p-0">
-        <form action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}" method="POST">
+        <form id="practicumForm" class="schedule-form"
+            action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}" method="POST">
             @csrf
             <div class="table-responsive">
                 <table class="compact-table table-bordered">
                     <thead class=" text-center">
                         <tr>
                             <th>#</th>
+                            <th></th>
                             <th>Kelas</th>
                             <th>Tanggal</th>
                             <th>Mulai</th>
@@ -21,55 +23,86 @@
                         </tr>
                     </thead>
 
-                    <tbody>
-                        @foreach ($schedules as $index => $schedule)
-                            <tr>
-                                <td class="text-center">{{ $index + 1 }}</td>
+                    <tbody id="schedule-tbody">
+                        @php
+                            $groupedSchedules = $schedules
+                                ->groupBy(function ($item) {
+                                    return strtolower($item->topic ?? '');
+                                })
+                                ->sortKeys();
+                        @endphp
 
-                                {{-- contoh: PR01, PR02, UP1, UP2 --}}
-                                <td class="text-center fw-semibold">
-                                    {{ $schedule->class_code ?? strtoupper(substr($schedule->activity->code ?? 'PR', 0, 2)) . sprintf('%02d', $schedule->session_number) }}
+                        @foreach ($groupedSchedules as $topic => $scheduleGroup)
+                            {{-- Header per topik --}}
+                            <tr class="topic-group" data-topic="{{ $topic }}">
+                                <td colspan="9" class="group-header" data-bs-toggle="collapse"
+                                    data-bs-target="#topic-{{ Str::slug($topic) }}">
+                                    <i class="fas fa-caret-down collapse-icon me-2"></i>
+                                    <strong> Topik: <span class="topic-display">{{ $topic }}</span></strong>
                                 </td>
-
-                                <input type="hidden" name="schedules[{{ $schedule->id }}][id]"
-                                    value="{{ $schedule->id }}">
-
-                                <td class="soft-info">
-                                    <input type="date" name="schedules[{{ $schedule->id }}][scheduled_date]"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
-                                        value="{{ $schedule->scheduled_date }}">
-                                </td>
-
-                                <td>
-                                    <input readonly class="form-control text-center border-0 shadow-none bg-transparent"
-                                        type="text"
-                                        value="{{ $schedule->start_time ? date('H:i', strtotime($schedule->start_time)) : '' }}">
-                                </td>
-                                <td>
-                                    <input readonly class="form-control text-center border-0 shadow-none bg-transparent"
-                                        type="text"
-                                        value="{{ $schedule->end_time ? date('H:i', strtotime($schedule->end_time)) : '' }}">
-                                </td>
-
-                                <td class="soft-info">
-                                    <input type="text" name="schedules[{{ $schedule->id }}][zone]"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
-                                        value="{{ $schedule->zone }}">
-                                </td>
-
-                                <td class="soft-info">
-                                    <input type="text" name="schedules[{{ $schedule->id }}][group]"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
-                                        value="{{ $schedule->group }}">
-                                </td>
-
-                                <td class="soft-info">
-                                    <input type="text" name="schedules[{{ $schedule->id }}][topic]}"
-                                        class="form-control text-center border-0 shadow-none bg-transparent"
-                                        value="{{ $schedule->topic }}">
-                                </td>
-
                             </tr>
+
+                            {{-- Isi per jadwal dalam topik --}}
+                            @foreach ($scheduleGroup as $index => $schedule)
+                                <tr class="collapse show schedule-row" id="topic-{{ Str::slug($topic) }}"
+                                    data-schedule-id="{{ $schedule->id }}" data-original-topic="{{ $topic }}">
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    @if ($schedule->zone !== null)
+                                        <td class="text-center fw-semibold">
+                                            <a href="#"
+                                                class="delete-schedule text-danger text-decoration-underline"
+                                                data-id="{{ $schedule->id }}"> DEL</a>
+                                        </td>
+                                    @else
+                                        <td class="text-center fw-semibold">
+                                            <a class="delete-schedule text-danger">DEL</a>
+                                        </td>
+                                    @endif
+                                    {{-- contoh kode kelas --}}
+                                    <td class="text-center fw-semibold">
+                                        {{ $schedule->class_code ?? strtoupper(substr($schedule->activity->code ?? 'PR', 0, 2)) . sprintf('%02d', $schedule->session_number) }}
+                                    </td>
+
+                                    <input type="hidden" name="schedules[{{ $schedule->id }}][id]"
+                                        value="{{ $schedule->id }}">
+
+                                    <td class="soft-info">
+                                        <input type="date" name="schedules[{{ $schedule->id }}][scheduled_date]"
+                                            class="form-control text-center border-0 shadow-none bg-transparent input-bg"
+                                            value="{{ $schedule->scheduled_date }}">
+                                    </td>
+
+                                    <td>
+                                        <input readonly class="form-control text-center" type="text"
+                                            id="start_time_{{ $schedule->id }}"
+                                            value="{{ $schedule->start_time ? date('H:i', strtotime($schedule->start_time)) : '' }}">
+                                    </td>
+
+                                    <td>
+                                        <input readonly class="form-control text-center" type="text"
+                                            id="end_time_{{ $schedule->id }}"
+                                            value="{{ $schedule->end_time ? date('H:i', strtotime($schedule->end_time)) : '' }}">
+                                    </td>
+
+                                    <td class="soft-info">
+                                        <input type="text" name="schedules[{{ $schedule->id }}][zone]"
+                                            class="form-control text-center border-0 shadow-none bg-transparent input-bg"
+                                            value="{{ $schedule->zone }}">
+                                    </td>
+
+                                    <td>
+                                        <input type="text" name="schedules[{{ $schedule->id }}][group]"
+                                            id="group_{{ $schedule->id }}" class="form-control text-center input-bg"
+                                            value="{{ $schedule->group }}">
+                                    </td>
+
+                                    <td class="soft-info">
+                                        <input type="text" name="schedules[{{ $schedule->id }}][topic]"
+                                            class="form-control text-center input-bg topic-input"
+                                            value="{{ $schedule->topic }}" data-schedule-id="{{ $schedule->id }}">
+                                    </td>
+                                </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>
@@ -88,11 +121,7 @@
                         Cancel changes
                     </a>
                 </div>
-
             </div>
         </form>
-
-        {{-- catatan kecil di bawah tabel --}}
-
     </div>
 </div>

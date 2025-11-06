@@ -8,6 +8,7 @@ use App\Models\CourseLecturer;
 use App\Models\CourseLecturerActivity;
 use App\Models\Lecturer;
 use App\Models\Semester;
+use App\Models\TeachingSchedule;
 use DB;
 use Illuminate\Http\Request;
 
@@ -20,7 +21,7 @@ class CourseLecturerController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
 
-        $query = CourseLecturer::with('lecturer.user')->where('course_id', $course->id)->where('semester_id', $semesterId);
+        $query = CourseLecturer::with('lecturer.user', 'activities.activity')->where('course_id', $course->id)->where('semester_id', $semesterId);
         if ($request->filled('bagian')) {
             $query->whereHas('lecturer', function ($q) use ($request) {
                 $q->where('bagian', 'like', '%' . $request->bagian . '%');
@@ -115,33 +116,139 @@ class CourseLecturerController extends Controller
      */
     public function update(Request $request, string $slug)
     {
-        $course = Course::where('slug', $slug)->firstOrFail();
+        try {
+            \Log::info('Update lecturer started', ['slug' => $slug, 'data' => $request->all()]);
 
-        DB::transaction(function () use ($request, $course) {
-            foreach ($request->input('lecturers', []) as $lecturerId => $activities) {
-                // Hapus aktivitas lama
-                CourseLecturerActivity::where('course_lecturer_id', $lecturerId)->delete();
+            $course = Course::where('slug', $slug)->firstOrFail();
 
-                // Simpan aktivitas baru berdasarkan checkbox yang dicentang
-                foreach ($activities as $activityName => $isChecked) {
-                    if ($isChecked) {
-                        $activity = Activity::where('activity_name', ucfirst($activityName))->first();
-                        if ($activity) {
-                            CourseLecturerActivity::create([
-                                'course_lecturer_id' => $lecturerId,
-                                'activity_id' => $activity->id,
-                            ]);
+            DB::transaction(function () use ($request, $course) {
+                $lecturersData = $request->input('lecturers', []);
+
+                \Log::info('Lecturers data to process', ['count' => count($lecturersData)]);
+
+                foreach ($lecturersData as $lecturerId => $activities) {
+                    \Log::info('Processing lecturer', [
+                        'course_lecturer_id' => $lecturerId,
+                        'activities' => $activities,
+                    ]);
+
+                    // Cek apakah course_lecturer_id valid
+                    $courseLecturer = \App\Models\CourseLecturer::find($lecturerId);
+                    if (!$courseLecturer) {
+                        \Log::warning('Invalid course_lecturer_id', ['id' => $lecturerId]);
+                        continue;
+                    }
+
+                    // Ambil activity lama
+                    $oldActivities = CourseLecturerActivity::where('course_lecturer_id', $lecturerId)->pluck('activity_id')->toArray();
+
+                    // Hapus activity lama
+                    CourseLecturerActivity::where('course_lecturer_id', $lecturerId)->delete();
+
+                    $newActivityIds = [];
+
+                    // Simpan activity baru yang dicentang
+                    foreach ($activities as $activityName => $isChecked) {
+                        if ($isChecked == '1') {
+                            // Pastikan ini string '1'
+                            $activity = Activity::where('activity_name', ucfirst($activityName))->first();
+                            if ($activity) {
+                                CourseLecturerActivity::create([
+                                    'course_lecturer_id' => $lecturerId,
+                                    'activity_id' => $activity->id,
+                                ]);
+                                $newActivityIds[] = $activity->id;
+                                \Log::info('Activity created', [
+                                    'course_lecturer_id' => $lecturerId,
+                                    'activity' => $activityName,
+                                    'activity_id' => $activity->id,
+                                ]);
+                            }
                         }
                     }
+
+                    // Update teaching schedules jika perlu
+                    $realLecturerId = $courseLecturer->lecturer_id;
+                    $removedActivityIds = array_diff($oldActivities, $newActivityIds);
+
+                    if (!empty($removedActivityIds) && $realLecturerId) {
+                        TeachingSchedule::whereIn('activity_id', $removedActivityIds)
+                            ->where('lecturer_id', $realLecturerId)
+                            ->update(['lecturer_id' => null]);
+                    }
                 }
+            });
+
+            \Log::info('Update completed successfully');
+
+            // Return JSON response yang konsisten
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data dosen berhasil diperbarui.',
+                ]);
+            }
+
+            return redirect()
+                ->to(url()->previous() . '#dosen')
+                ->with('success', 'Data dosen berhasil diperbarui.');
+        } catch (\Exception $e) {
+            \Log::error('Error updating lecturer data', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
+                    ],
+                    500,
+                );
+            }
+
+            return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+        }
+    }
+
+    public function addLecturer(Request $request, string $slug)
+    {
+        $validated = $request->validate(
+            [
+                'selected_activity' => 'required',
+                'lecturers' => 'required|array',
+                'lecturers.*' => 'exists:lecturers,id',
+            ],
+            [
+                'selected_activity.required' => 'Silakan pilih tugas terlebih dahulu.',
+                'lecturers.required' => 'Silakan pilih minimal satu dosen untuk ditugaskan.',
+                'lecturers.*.exists' => 'Terdapat dosen yang tidak valid dalam pilihan.',
+            ],
+        );
+
+        $course = Course::where('slug', $slug)->firstOrFail();
+        $semesterId = $request->input('semester_id');
+        $activity = $request->input('selected_activity');
+        DB::transaction(function () use ($request, $course, $semesterId, $activity) {
+            foreach ($request->input('lecturers', []) as $lecturerId) {
+                $courseLecturer = CourseLecturer::updateOrCreate([
+                    'course_id' => $course->id,
+                    'lecturer_id' => $lecturerId,
+                    'semester_id' => $semesterId,
+                ]);
+
+                CourseLecturerActivity::updateOrCreate([
+                    'course_lecturer_id' => $courseLecturer->id,
+                    'activity_id' => $activity,
+                ]);
             }
         });
 
         return redirect()
             ->to(url()->previous() . '#dosen')
-            ->with('success', 'Data dosen berhasil diperbarui.');
+            ->with('success', 'Dosen berhasil ditambahkan.');
     }
-
     /**
      * Remove the specified resource from storage.
      */

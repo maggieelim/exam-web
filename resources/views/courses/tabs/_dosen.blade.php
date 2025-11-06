@@ -82,7 +82,7 @@
                                 class="group-checkbox input-bg">
                         </td>
                         <td class="text-center">
-                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][skillslab]" value="1"
+                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][skill lab]" value="1"
                                 {{ $lecturer->hasActivity('Skill Lab') ? 'checked' : '' }}
                                 class="group-checkbox input-bg">
                         </td>
@@ -94,4 +94,80 @@
             <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
         </div>
     </form>
+    <div id="alert-container" class="mt-3"></div>
+
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("lecturerForm");
+        const alertContainer = document.getElementById("alert-container");
+
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+
+            // Show loading state
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitButton.disabled = true;
+
+            fetch(form.action, {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response received:', data);
+
+                    if (data.success) {
+                        showNotification(data.message, "success");
+
+                        // Reset perubahan visual
+                        document.querySelectorAll('.soft-edit').forEach(td => {
+                            td.classList.remove('soft-edit');
+                        });
+
+                        // Update data-original
+                        document.querySelectorAll('.input-bg').forEach(input => {
+                            if (input.type === 'checkbox') {
+                                input.dataset.original = input.checked ? 'true' : 'false';
+                            }
+                        });
+                    } else {
+                        showNotification(data.message || "Gagal menyimpan data", "danger");
+                    }
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    showNotification("Terjadi kesalahan saat memperbarui data: " + err.message,
+                        "danger");
+                })
+                .finally(() => {
+                    // Restore button
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                });
+        });
+
+
+
+        // Tambahkan event listener untuk debug perubahan checkbox
+        document.querySelectorAll('.input-bg[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                console.log('Checkbox changed:', this.name, this.checked);
+            });
+        });
+    });
+</script>

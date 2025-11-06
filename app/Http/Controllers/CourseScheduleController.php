@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Helpers\ZoneTimeHelper;
 use App\Models\Activity;
 use App\Models\Course;
+use App\Models\CourseLecturer;
+use App\Models\CourseLecturerActivity;
 use App\Models\CourseSchedule;
 use App\Models\CourseScheduleDetail;
 use App\Models\Exam;
-use App\Models\Lecturer;
 use App\Models\Semester;
+use App\Models\SkillslabDetails;
 use App\Models\TeachingSchedule;
+use App\Rules\ValidZone;
 use DB;
 use Illuminate\Http\Request;
 use Str;
@@ -20,14 +23,7 @@ class CourseScheduleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $courseSchedules = CourseSchedule::with(['course', 'semester.academicYear', 'creator'])
-            ->latest()
-            ->paginate(10);
-
-        return view('courses.schedule.index', compact('courseSchedules'));
-    }
+    public function index() {}
 
     /**
      * Show the form for creating a new resource.
@@ -168,70 +164,20 @@ class CourseScheduleController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        $courseSchedule = CourseSchedule::with(['course', 'semester'])->findOrFail($id);
-
-        $teachingSchedules = TeachingSchedule::with(['activity', 'lecturer'])
-            ->where('course_id', $courseSchedule->course_id)
-            ->where('semester_id', $courseSchedule->semester_id)
-            ->orderBy('activity_id')
-            ->orderBy('session_number')
-            ->get()
-            ->groupBy(function ($item) {
-                $name = strtolower($item->activity->activity_name);
-                // ✅ Gabungkan kategori sejenis
-                if (Str::contains($name, 'ujian praktikum') || Str::contains($name, 'praktikum')) {
-                    return 'PRAKTIKUM';
-                } elseif (Str::contains($name, 'ujian skill lab') || Str::contains($name, 'skill lab')) {
-                    return 'SKILL LAB';
-                }
-                // Default: group berdasarkan nama asli
-                return strtoupper($item->activity->activity_name);
-            });
-
-        $lecturers = Lecturer::with('user')->get();
-
-        return view('courses.schedule.show', compact('courseSchedule', 'teachingSchedules', 'lecturers'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
     public function updateSchedules(Request $request, $courseScheduleId)
     {
         $request->validate([
             'schedules' => 'required|array',
             'schedules.*.id' => 'required|exists:teaching_schedules,id',
             'schedules.*.scheduled_date' => 'nullable|date',
-
             'schedules.*.room' => 'nullable|string|max:50',
-            // Field khusus untuk activity T/P
-            'schedules.*.zone' => 'nullable|string|max:20',
+            'schedules.*.zone' => ['nullable', 'string', 'max:20', new ValidZone()],
             'schedules.*.group' => 'nullable|string|max:20',
             'schedules.*.topic' => 'nullable|string|max:255',
             'schedules.*.lecturer_id' => 'nullable|exists:lecturers,id',
-            // Field khusus untuk activity U
             'schedules.*.exam_type' => 'nullable|string|in:UTS,UAS,QUIZ,TUGAS',
             'schedules.*.supervisor_id' => 'nullable|exists:lecturers,id',
             'schedules.*.notes' => 'nullable|string|max:500',
-            // Field khusus untuk activity lainnya
             'schedules.*.location' => 'nullable|string|max:100',
             'schedules.*.instructor_id' => 'nullable|exists:lecturers,id',
             'schedules.*.equipment' => 'nullable|string|max:255',
@@ -239,59 +185,342 @@ class CourseScheduleController extends Controller
 
         DB::beginTransaction();
         try {
+            $updatedSchedules = [];
+
             foreach ($request->schedules as $scheduleData) {
                 $schedule = TeachingSchedule::find($scheduleData['id']);
 
                 if ($schedule) {
-                    // Update field dasar
-                    [$start, $end] = ZoneTimeHelper::getTimes($scheduleData['zone'] ?? null);
-                    $schedule->update([
-                        'scheduled_date' => $scheduleData['scheduled_date'] ?? null,
-                        'start_time' => $start ?? null,
-                        'end_time' => $end ?? null,
-                        'room' => $scheduleData['room'] ?? null,
-                        'zone' => $scheduleData['zone'] ?? null,
-                    ]);
-
-                    // Update field khusus berdasarkan activity
                     $activityCode = strtolower($schedule->activity->code ?? '');
 
-                    if (in_array($activityCode, ['t', 'p', 'k'])) {
-                        $schedule->update([
-                            'group' => $scheduleData['group'] ?? null,
-                            'topic' => $scheduleData['topic'] ?? null,
-                            'lecturer_id' => $scheduleData['lecturer_id'] ?? null,
-                        ]);
-                    } elseif ($activityCode === 'u') {
-                        $schedule->update([
-                            'exam_type' => $scheduleData['exam_type'] ?? null,
-                            'supervisor_id' => $scheduleData['supervisor_id'] ?? null,
-                            'notes' => $scheduleData['notes'] ?? null,
-                        ]);
-                    } else {
-                        $schedule->update([
-                            'location' => $scheduleData['location'] ?? null,
-                            'instructor_id' => $scheduleData['instructor_id'] ?? null,
-                            'equipment' => $scheduleData['equipment'] ?? null,
-                        ]);
+                    switch ($activityCode) {
+                        case 'k': // Kuliah
+                            $this->updateKuliah($schedule, $scheduleData);
+                            break;
+                        case 'pr':
+                        case 'up':
+                            $this->updatePraktikum($schedule, $scheduleData);
+                            break;
+                        case 'usl':
+                            $this->updateUjianSkillslab($schedule, $scheduleData);
+                            break;
+                        case 'sl':
+                            $this->updateSkillslab($schedule, $scheduleData);
+                            break;
+                        case 't':
+                            $this->updatePemicu($schedule, $scheduleData);
+                            break;
+                        case 'p':
+                            $this->updatePleno($schedule, $scheduleData);
+                            break;
+                        case 'u': // Ujian
+                            $this->updateUjian($schedule, $scheduleData);
+                            break;
+                        default:
+                            // Lainnya
+                            $this->updateKuliah($schedule, $scheduleData);
+                            break;
                     }
+
+                    $updatedSchedules[] = $schedule->load('activity', 'lecturer.user');
                 }
             }
 
             DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Jadwal berhasil diperbarui.',
+                    'updated_schedules' => $updatedSchedules,
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Jadwal berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+
+            \Log::error('Error updating schedules', [
+                'error' => $e->getMessage(),
+                'course_schedule_id' => $courseScheduleId,
+                'data' => $request->all(),
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Gagal memperbarui jadwal: ' . $e->getMessage(),
+                    ],
+                    500,
+                );
+            }
+
             return redirect()
                 ->back()
                 ->withErrors(['error' => 'Gagal memperbarui jadwal: ' . $e->getMessage()]);
         }
     }
+
+    private function updateKuliah($schedule, $data)
+    {
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+
+        // Siapkan data untuk update
+        $updateData = [
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'start_time' => $start ?? null,
+            'end_time' => $end ?? null,
+            'room' => $data['room'] ?? null,
+            'zone' => $data['zone'] ?? null,
+            'topic' => $data['topic'] ?? null,
+            'lecturer_id' => $data['lecturer_id'] ?? null,
+        ];
+
+        if (!empty($data['zone'])) {
+            $updateData['group'] = 'AB';
+        }
+
+        // Update schedule
+        $schedule->update($updateData);
+        $schedule->refresh();
+
+        // Jika ada lecturer_id yang dipilih, cek dan tambahkan ke course_lecturer dan course_lecturer_activity
+        if (!empty($data['lecturer_id'])) {
+            $this->addLecturerIfNotExists($schedule, $data['lecturer_id']);
+        }
+    }
+    private function updatePleno($schedule, $data)
+    {
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+
+        // Siapkan data untuk update
+        $updateData = [
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'start_time' => $start ?? null,
+            'end_time' => $end ?? null,
+            'zone' => $data['zone'] ?? null,
+        ];
+
+        if (!empty($data['zone'])) {
+            $updateData['group'] = 'AB';
+        }
+
+        // Update schedule
+        $schedule->update($updateData);
+        $schedule->refresh();
+    }
+    private function updatePraktikum($schedule, $data)
+    {
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+        if (!empty($data['group'])) {
+            $group = strtoupper($data['group']);
+        } elseif (!empty($data['zone'])) {
+            $group = 'AB';
+        } else {
+            $group = null;
+        }
+        $updateData = [
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'start_time' => $start ?? null,
+            'end_time' => $end ?? null,
+            'zone' => $data['zone'] ?? null,
+            'group' => $group,
+            'topic' => isset($data['topic']) ? strtolower($data['topic']) : null,
+        ];
+
+        // Update schedule
+        $schedule->update($updateData);
+        $schedule->refresh();
+    }
+
+    private function updateSkillslab($schedule, $data)
+    {
+        $groups = SkillslabDetails::where('course_schedule_id', $schedule->course_schedule_id)->select('group_code')->distinct()->orderBy('group_code')->get()->pluck('group_code');
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+
+        $currentSession = $schedule->session_number;
+        $zoneIsFilled = !empty($data['zone']);
+        $groupIsFilled = !empty($data['group']);
+
+        if ($zoneIsFilled && !$groupIsFilled) {
+            foreach ($groups as $index => $groupCode) {
+                $sessionNumber = $currentSession + $index;
+
+                $existingSchedule = TeachingSchedule::where([
+                    'course_schedule_id' => $schedule->course_schedule_id,
+                    'course_id' => $schedule->course_id,
+                    'semester_id' => $schedule->semester_id,
+                    'activity_id' => $schedule->activity_id,
+                    'session_number' => $sessionNumber,
+                ])->first();
+
+                $updateData = [
+                    'scheduled_date' => $data['scheduled_date'] ?? null,
+                    'start_time' => $start ?? null,
+                    'end_time' => $end ?? null,
+                    'zone' => $data['zone'] ?? null,
+                    'group' => $groupCode,
+                    'topic' => isset($data['topic']) ? strtolower($data['topic']) : null,
+                ];
+
+                if ($existingSchedule) {
+                    $existingSchedule->update($updateData);
+                } else {
+                    TeachingSchedule::create(
+                        array_merge(
+                            [
+                                'course_schedule_id' => $schedule->course_schedule_id,
+                                'course_id' => $schedule->course_id,
+                                'semester_id' => $schedule->semester_id,
+                                'activity_id' => $schedule->activity_id,
+                                'session_number' => $sessionNumber,
+                                'created_by' => auth()->id(),
+                            ],
+                            $updateData,
+                        ),
+                    );
+                }
+            }
+        } elseif ($zoneIsFilled && $groupIsFilled) {
+            $updateData = [
+                'scheduled_date' => $data['scheduled_date'] ?? null,
+                'start_time' => $start ?? null,
+                'end_time' => $end ?? null,
+                'zone' => $data['zone'] ?? null,
+                'group' => $data['group'],
+                'topic' => isset($data['topic']) ? strtolower($data['topic']) : null,
+            ];
+            $schedule->update($updateData);
+        }
+        $schedule->refresh();
+    }
+    private function updateUjianSkillslab($schedule, $data)
+    {
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+
+        // Siapkan data untuk update
+        $updateData = [
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'start_time' => $start ?? null,
+            'end_time' => $end ?? null,
+            'room' => $data['room'] ?? null,
+            'zone' => $data['zone'] ?? null,
+            'topic' => $data['topic'] ?? null,
+        ];
+
+        if (!empty($data['zone'])) {
+            $updateData['group'] = 'AB';
+        }
+
+        // Update schedule
+        $schedule->update($updateData);
+        $schedule->refresh();
+    }
+
+    private function updatePemicu($schedule, $data)
+    {
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+        if (!empty($data['group'])) {
+            $group = strtoupper($data['group']);
+        } elseif (!empty($data['zone'])) {
+            $group = 'AB';
+        } else {
+            $group = null;
+        }
+        // Siapkan data untuk update
+        $updateData = [
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'start_time' => $start ?? null,
+            'end_time' => $end ?? null,
+            'zone' => $data['zone'] ?? null,
+            'group' => $group,
+        ];
+
+        // Update schedule
+        $schedule->update($updateData);
+        $schedule->refresh();
+    }
+
+    private function updateUjian($schedule, $data)
+    {
+        [$start, $end] = ZoneTimeHelper::getTimes($data['zone'] ?? null);
+        if (!empty($data['group'])) {
+            $group = strtoupper($data['group']);
+        } elseif (!empty($data['zone'])) {
+            $group = 'AB';
+        } else {
+            $group = null;
+        }
+        $schedule->update([
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'start_time' => $start ?? null,
+            'end_time' => $end ?? null,
+            'zone' => $data['zone'] ?? null,
+            'group' => $group,
+            'topic' => $data['topic'] ?? null,
+            'room' => $data['room'] ?? null,
+        ]);
+    }
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        //
+        $schedule = TeachingSchedule::findOrFail($id);
+
+        $schedule->update([
+            'scheduled_date' => null,
+            'start_time' => null,
+            'end_time' => null,
+            'room' => null,
+            'zone' => null,
+            'group' => null,
+            'topic' => null,
+            'lecturer_id' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Schedule berhasil dikosongkan.',
+        ]);
+    }
+    private function addLecturerIfNotExists($schedule, $lecturerId)
+    {
+        $courseSchedule = $schedule->courseSchedule;
+        if (!$courseSchedule) {
+            return;
+        }
+
+        $courseId = $courseSchedule->course_id;
+        $semesterId = $courseSchedule->semester_id;
+        $activityId = $schedule->activity_id;
+
+        $courseLecturer = CourseLecturer::where([
+            'course_id' => $courseId,
+            'lecturer_id' => $lecturerId,
+            'semester_id' => $semesterId,
+        ])->first();
+
+        if (!$courseLecturer) {
+            $courseLecturer = CourseLecturer::create([
+                'course_id' => $courseId,
+                'lecturer_id' => $lecturerId,
+                'semester_id' => $semesterId,
+            ]);
+        }
+
+        $courseLecturerActivity = CourseLecturerActivity::where([
+            'course_lecturer_id' => $courseLecturer->id,
+            'activity_id' => $activityId,
+        ])->first();
+
+        if (!$courseLecturerActivity) {
+            CourseLecturerActivity::create([
+                'course_lecturer_id' => $courseLecturer->id,
+                'activity_id' => $activityId,
+            ]);
+        }
     }
 }

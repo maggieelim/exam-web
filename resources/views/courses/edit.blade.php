@@ -59,6 +59,11 @@
             const courseTabs = document.getElementById('courseTabs');
             const tabLinks = courseTabs.querySelectorAll('a[data-bs-toggle="tab"]');
 
+            function showAlert(message) {
+                document.getElementById('alertModalBody').textContent = message;
+                const alertModal = new bootstrap.Modal(document.getElementById('alertModal'));
+                alertModal.show();
+            }
             // Fungsi untuk mengaktifkan tab
             function activateTab(tabElement) {
                 // Hapus class active dari semua tab dan pane
