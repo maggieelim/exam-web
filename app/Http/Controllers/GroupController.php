@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\CourseStudent;
+use App\Models\PracticumDetails;
 use App\Models\PracticumGroup;
 use App\Models\PracticumGroupMember;
 use App\Models\SkillslabDetails;

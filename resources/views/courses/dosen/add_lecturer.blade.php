@@ -46,7 +46,7 @@
                 </button>
             </div>
             <div class="collapse" id="filterCollapse">
-                <form method="GET" action="{{ route('courses.addLecturer', [$course->slug, $semester->id]) }}">
+                <form method="GET" action="{{ route('admin.courses.addLecturer', [$course->slug, $semester->id]) }}">
                     <div class="mx-3 my-2 py-2">
                         <div class="row g-2">
                             <!-- Input Blok -->
@@ -66,7 +66,7 @@
 
                             <!-- Buttons -->
                             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route('courses.addLecturer', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                <a href="{{ route('admin.courses.addLecturer', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                     class="btn btn-light btn-sm">Reset</a>
                                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                             </div>
@@ -75,7 +75,7 @@
                 </form>
             </div>
             <div class="table-responsive p-0">
-                <form id="kelompokForm" action="{{ route('courses.assignLecturer', $course->slug) }}" method="POST">
+                <form id="kelompokForm" action="{{ route('admin.courses.assignLecturer', $course->slug) }}" method="POST">
                     @csrf
                     <input type="hidden" name="semester_id" value="{{ $semesterId }}">
                     <input type="hidden" id="selectedActivity" name="selected_activity" value="">

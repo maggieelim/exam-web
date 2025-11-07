@@ -4,7 +4,7 @@
     <div class="card">
         <div class="card-header mb-0 pb-0">
             <h5 class="text-uppercase">Bentuk Kelompok</h5>
-            <form id="kelompokForm" action="{{ route('courses.updateKelompok', [$course->slug, $semester->id]) }}"
+            <form id="kelompokForm" action="{{ route('admin.courses.updateKelompok', [$course->slug, $semester->id]) }}"
                 method="POST">
                 @csrf
                 <div class="row">
@@ -49,7 +49,7 @@
                 </button>
             </div>
             <div class="collapse" id="filterCollapse">
-                <form method="GET" action="{{ route('courses.createKelompok', [$course->slug, $semester->id]) }}">
+                <form method="GET" action="{{ route('admin.courses.createKelompok', [$course->slug, $semester->id]) }}">
                     <div class="mx-3 my-2 py-2">
                         <div class="row g-2">
                             <!-- Input Blok -->
@@ -70,7 +70,7 @@
 
                             <!-- Buttons -->
                             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route('courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                <a href="{{ route('admin.courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                     class="btn btn-light btn-sm">Reset</a>
                                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                             </div>
@@ -79,7 +79,8 @@
                 </form>
             </div>
             <div class="table-responsive p-0">
-                <form id="kelompokForm" action="{{ route('courses.updateKelompokManual', $course->slug) }}" method="POST">
+                <form id="kelompokForm" action="{{ route('admin.courses.updateKelompokManual', $course->slug) }}"
+                    method="POST">
                     @csrf
                     <input type="hidden" name="semester_id" value="{{ $semesterId }}">
 
@@ -113,7 +114,7 @@
                                         <td style="width: 40px;">
                                             <button type="button"
                                                 class="btn btn-link text-danger text-decoration-underline p-0 m-0"
-                                                onclick="deleteStudent('{{ route('courses.student.destroy', [$course->slug, $studentUser->id]) }}', '{{ $studentUser->student->user->name }}')">
+                                                onclick="deleteStudent('{{ route('admin.courses.student.destroy', [$course->slug, $studentUser->id]) }}', '{{ $studentUser->student->user->name }}')">
                                                 Del
                                             </button>
 

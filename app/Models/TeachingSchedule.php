@@ -75,6 +75,18 @@ class TeachingSchedule extends Model
     {
         return $this->hasMany(SkillslabDetails::class);
     }
+    public function practicumDetails()
+    {
+        return $this->hasMany(PracticumDetails::class);
+    }
+    public function pemicuDetails()
+    {
+        return $this->hasMany(PemicuDetails::class);
+    }
+    public function plenoDetails()
+    {
+        return $this->hasMany(PlenoDetails::class);
+    }
     public function practicumGroups()
     {
         return $this->hasMany(PracticumGroup::class, 'teaching_schedule_id');

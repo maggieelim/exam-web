@@ -4,7 +4,7 @@
         <i class="fas fa-filter"></i> Filter
     </button>
     <a class="btn bg-gradient-primary btn-sm"
-        href="{{ route('courses.addLecturer', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+        href="{{ route('admin.courses.addLecturer', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
         Pilih Dosen
     </a>
 </div>
@@ -40,7 +40,7 @@
 </div>
 
 <div class="table-responsive p-0">
-    <form id="lecturerForm" action="{{ route('courses.updateLecturer', $course->slug) }}" method="POST">
+    <form id="lecturerForm" action="{{ route('admin.courses.updateLecturer', $course->slug) }}" method="POST">
         @csrf
         <table class="compact-table table-bordered">
             <thead class="text-center align-middle">

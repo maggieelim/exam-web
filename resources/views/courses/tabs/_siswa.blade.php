@@ -8,11 +8,11 @@
         +&nbsp; Siswa
     </button>
     <a class="btn bg-gradient-primary btn-sm"
-        href="{{ route('courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+        href="{{ route('admin.courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
         Bentuk Kelompok
     </a>
     <a class="btn bg-gradient-primary btn-sm"
-        href="{{ route('courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+        href="{{ route('admin.courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
         Bentuk Grup
     </a>
 </div>
@@ -93,7 +93,8 @@
 <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="{{ route('courses.addStudent', $course->id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.courses.addStudent', $course->id) }}" method="POST"
+                enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="semester_id" value="{{ $semesterId }}">
 

@@ -20,7 +20,7 @@
 
     <!-- Collapse Form -->
     <div class="collapse" id="filterCollapse">
-        <form method="GET" action="{{ route('courses.editStudent', [$course->slug]) }}">
+        <form method="GET" action="{{ route('admin.courses.editStudent', [$course->slug]) }}">
             <div class="row g-2">
                 <!-- Input Blok -->
                 <div class="col-md-6">
@@ -36,7 +36,8 @@
 
                 <!-- Buttons -->
                 <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                    <a href="{{ route('courses.editStudent', [$course->slug]) }}" class="btn btn-light btn-sm">Reset</a>
+                    <a href="{{ route('admin.courses.editStudent', [$course->slug]) }}"
+                        class="btn btn-light btn-sm">Reset</a>
                     <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                 </div>
             </div>
@@ -52,7 +53,7 @@
                             <h5 class="font-weight-bolder mb-0 text-truncate pe-2">
                                 {{ $studentUser->student->user->name }}
                             </h5>
-                            <form action="{{ route('courses.student.destroy', [$course->slug, $studentUser->id]) }}"
+                            <form action="{{ route('admin.courses.student.destroy', [$course->slug, $studentUser->id]) }}"
                                 method="POST" onsubmit="return confirm('Yakin ingin menghapus mahasiswa ini dari course?')"
                                 class="d-inline">
                                 @csrf
@@ -105,7 +106,8 @@
     <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ route('courses.addStudent', $course->id) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.courses.addStudent', $course->id) }}" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="semester_id" value="{{ $semesterId }}">
 

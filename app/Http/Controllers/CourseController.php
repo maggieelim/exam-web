@@ -15,6 +15,7 @@ use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
 use App\Models\User;
+use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -275,19 +276,17 @@ class CourseController extends Controller
      */
     public function edit($slug, Request $request)
     {
+        $scheduleService = app(ScheduleConflictService::class);
         $studentData = app(CourseStudentController::class)->getStudentData($request, $slug);
         $lecturerData = app(CourseLecturerController::class)->getLecturerData($request, $slug);
+        $practicumData = app(CoursePracticumController::class)->getPracticumData($request, $slug);
+        $pemicuData = app(CoursePemicuController::class)->getPemicuData($request, $slug);
+        $plenoData = app(CoursePlenoController::class)->getPlenoData($request, $slug);
 
         $semesterId = $request->query('semester_id');
         $course = Course::where('slug', $slug)->firstOrFail();
         $semester = Semester::with('academicYear')->findOrFail($semesterId);
 
-        // Ambil dosen pengampu dan dosen yang sudah dipilih
-        $lecturers = Lecturer::all();
-
-        $selectedLecturers = $lecturers; // duplikat variabel karena query sama
-
-        // Ambil jadwal mata kuliah
         $courseSchedule = CourseSchedule::with(['course', 'semester'])
             ->where('course_id', $course->id)
             ->where('semester_id', $semesterId)
@@ -310,7 +309,30 @@ class CourseController extends Controller
                 })
                 ->map(fn($group) => $group->sortBy('activity_id')->values());
         }
-        return view('courses.edit', compact('lecturerData', 'studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules'));
+
+        $lecturers = Lecturer::with('user')->get();
+        $availableLecturersPerSchedule = [];
+
+        if ($courseSchedule) {
+            $allSchedules = TeachingSchedule::where('course_schedule_id', $courseSchedule->id)
+                ->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
+                ->get();
+
+            foreach ($allSchedules as $schedule) {
+                $availableLecturersPerSchedule[$schedule->id] = $scheduleService->getAvailableLecturers(
+                    $lecturers,
+                    $schedule->scheduled_date,
+                    $schedule->start_time,
+                    $schedule->end_time,
+                    $schedule->id, // exclude current schedule
+                    $semesterId,
+                );
+            }
+        }
+
+        $selectedLecturers = $lecturers; // duplikat variabel karena query sama
+
+        return view('courses.edit', compact('plenoData', 'pemicuData', 'practicumData', 'lecturerData', 'studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules', 'availableLecturersPerSchedule'));
     }
 
     /**

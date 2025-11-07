@@ -15,4 +15,8 @@ class SkillslabDetails extends Model
     {
         return $this->belongsTo(TeachingSchedule::class);
     }
+    public function lecturer()
+{
+    return $this->belongsTo(Lecturer::class);
+}
 }

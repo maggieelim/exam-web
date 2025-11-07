@@ -77,12 +77,19 @@
                                     class="form-control text-center input-bg" value="{{ $schedule->topic }}">
                             </td>
                             <td class="soft-info" style="min-width: 150px">
-                                <select class="form-select text-center input-bg"
-                                    name="schedules[{{ $schedule->id }}][lecturer_id]">
+                                <select class="form-select text-center input-bg lecturer-select"
+                                    name="schedules[{{ $schedule->id }}][lecturer_id]"
+                                    data-schedule-id="{{ $schedule->id }}">
                                     <option value="">-- Pilih --</option>
-                                    @foreach ($lecturers as $lecturer)
+                                    @php
+                                        $availableLecturers =
+                                            $availableLecturersPerSchedule[$schedule->id] ?? collect();
+                                        $currentLecturerId = $schedule->lecturer_id;
+                                    @endphp
+
+                                    @foreach ($availableLecturers as $lecturer)
                                         <option value="{{ $lecturer->id }}"
-                                            {{ $schedule->lecturer_id == $lecturer->id ? 'selected' : '' }}>
+                                            {{ $currentLecturerId == $lecturer->id ? 'selected' : '' }}>
                                             {{ $lecturer->user->name }}
                                         </option>
                                     @endforeach

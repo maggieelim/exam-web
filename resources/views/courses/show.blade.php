@@ -46,7 +46,7 @@
         <div class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
             <h5>List Students</h5>
             <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
-                <a href="{{ route('courses.editStudent', [$course->slug, 'semester_id' => $semesterId]) }}"
+                <a href="{{ route('admin.courses.editStudent', [$course->slug, 'semester_id' => $semesterId]) }}"
                     class="btn btn-warning">
                     <i class="fas fa-edit"></i>
                 </a>

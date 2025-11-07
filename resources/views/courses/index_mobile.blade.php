@@ -111,7 +111,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
-                                                    href="{{ route('courses.editStudent', ['slug' => $course->slug, 'semester_id' => $semesterId]) }}">
+                                                    href="{{ route('admin.courses.editStudent', ['slug' => $course->slug, 'semester_id' => $semesterId]) }}">
                                                     <i class="fas fa-users me-2"></i> Kelola Peserta Blok
                                                 </a>
                                             </li>

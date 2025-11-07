@@ -4,6 +4,9 @@ use App\Http\Controllers\AttendanceSessionsController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseLecturerController;
+use App\Http\Controllers\CoursePemicuController;
+use App\Http\Controllers\CoursePlenoController;
+use App\Http\Controllers\CoursePracticumController;
 use App\Http\Controllers\CourseScheduleController;
 use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamAttemptController;
@@ -92,12 +95,29 @@ Route::middleware(['auth', 'role:admin'])
                 Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
             });
         Route::resource('semester', SemesterController::class);
+
+        Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
+        Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
+        Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
+        Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
+        Route::get('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'createKelompok'])->name('courses.createKelompok');
+        Route::post('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'updateKelompok'])->name('courses.updateKelompok');
+        Route::post('/courses/{slug}/update-kelompok-manual', [CourseStudentController::class, 'updateKelompokManual'])->name('courses.updateKelompokManual');
+        Route::get('/courses/{course}/bentuk_group', [CourseStudentController::class, 'createGroup'])->name('courses.createGroup');
+        Route::post('/courses/{course}/bentuk_group', [GroupController::class, 'updateGroup'])->name('courses.updateGroup');
+        Route::post('/courses/{course}/updateLecturer', [CourseLecturerController::class, 'update'])->name('courses.updateLecturer');
+        Route::get('/course/{course}/addLecturer', [CourseLecturerController::class, 'edit'])->name('courses.addLecturer');
+        Route::post('/course/{course}/assignLecturer', [CourseLecturerController::class, 'addLecturer'])->name('courses.assignLecturer');
+
         Route::get('/course/{course}/schedule/create', [CourseScheduleController::class, 'create'])->name('course.create');
         Route::post('/course/{course}/schedule', [CourseScheduleController::class, 'store'])->name('course.store');
         Route::get('/course', [CourseScheduleController::class, 'index'])->name('course.index');
         Route::get('/course/schedule/{schedule}', [CourseScheduleController::class, 'show'])->name('course.show');
         Route::post('/course/schedule/{schedule}/update-schedules', [CourseScheduleController::class, 'updateSchedules'])->name('course.updateSchedules');
         Route::delete('/course/schedules/{id}', [CourseScheduleController::class, 'destroy'])->name('course.destroySchedules');
+        Route::post('/course/schedule/praktikum', [CoursePracticumController::class, 'update'])->name('course.assignPracticum');
+        Route::post('/course/schedule/pemicu', [CoursePemicuController::class, 'update'])->name('course.assignPemicu');
+        Route::post('/course/schedule/pleno', [CoursePlenoController::class, 'update'])->name('course.assignPleno');
     });
 
 Route::middleware(['auth', 'role:lecturer,koordinator,admin'])
@@ -135,19 +155,6 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     Route::post('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
-
-    Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
-    Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
-    Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
-    Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
-    Route::get('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'createKelompok'])->name('courses.createKelompok');
-    Route::post('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'updateKelompok'])->name('courses.updateKelompok');
-    Route::post('/courses/{slug}/update-kelompok-manual', [CourseStudentController::class, 'updateKelompokManual'])->name('courses.updateKelompokManual');
-    Route::get('/courses/{course}/bentuk_group', [CourseStudentController::class, 'createGroup'])->name('courses.createGroup');
-    Route::post('/courses/{course}/bentuk_group', [GroupController::class, 'updateGroup'])->name('courses.updateGroup');
-    Route::post('/courses/{course}/updateLecturer', [CourseLecturerController::class, 'update'])->name('courses.updateLecturer');
-    Route::get('/course/{course}/addLecturer', [CourseLecturerController::class, 'edit'])->name('courses.addLecturer');
-    Route::post('/course/{course}/assignLecturer', [CourseLecturerController::class, 'addLecturer'])->name('courses.assignLecturer');
 
     // exams
     Route::get('/exams/{status?}', [ExamController::class, 'index'])
