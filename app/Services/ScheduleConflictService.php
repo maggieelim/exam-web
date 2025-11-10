@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PemicuDetails;
+use App\Models\PlenoDetails;
 use App\Models\TeachingSchedule;
 use App\Models\PracticumDetails;
 use App\Models\SkillslabDetails;
@@ -21,8 +22,9 @@ class ScheduleConflictService
         $practicumConflict = $this->hasPracticumConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $pemicuConflict = $this->hasPemicuConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $skillslabConflict = $this->hasSkillslabConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
+        $plenoConflict = $this->hasPlenoConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
 
-        return $teachingConflict || $practicumConflict || $skillslabConflict || $pemicuConflict; 
+        return $teachingConflict || $practicumConflict || $skillslabConflict || $pemicuConflict || $plenoConflict; 
     }
 
     private function hasTeachingScheduleConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
@@ -116,6 +118,29 @@ class ScheduleConflictService
         return $query->exists();
     }
 
+    private function hasPlenoConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
+    {
+        $query = PlenoDetails::where('lecturer_id', $lecturerId)->whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
+            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
+                ->where('scheduled_date', $date)
+                ->where(function ($innerQ) use ($startTime, $endTime) {
+                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
+                });
+        });
+
+        if ($excludeScheduleId) {
+            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
+        }
+
+        if ($semesterId) {
+            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            });
+        }
+
+        return $query->exists();
+    }
+
     public function getConflictingLecturers($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
     {
         if (!$date || !$startTime || !$endTime) {
@@ -139,13 +164,14 @@ class ScheduleConflictService
         // Get conflicts from skillslab_details
         $skillslabConflicts = $this->getSkillslabConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $conflictingLecturers = $conflictingLecturers->merge($skillslabConflicts);
+        
+        // Get conflicts from pleno_details
+        $plenoConflicts = $this->getPlenoConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
+        $conflictingLecturers = $conflictingLecturers->merge($plenoConflicts);
 
         return $conflictingLecturers->filter()->unique();
     }
 
-    /**
-     * Get conflicts from teaching_schedules table
-     */
     private function getTeachingScheduleConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
     {
         $query = TeachingSchedule::whereNotNull(['scheduled_date', 'start_time', 'end_time'])
@@ -167,9 +193,6 @@ class ScheduleConflictService
         return $query->pluck('lecturer_id')->filter();
     }
 
-    /**
-     * Get conflicts from practicum_details table
-     */
     private function getPracticumConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
     {
         $query = PracticumDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
@@ -216,9 +239,6 @@ class ScheduleConflictService
         return $query->pluck('lecturer_id')->filter();
     }
 
-    /**
-     * Get conflicts from skillslab_details table
-     */
     private function getSkillslabConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
     {
         $query = SkillslabDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
@@ -242,9 +262,29 @@ class ScheduleConflictService
         return $query->pluck('lecturer_id')->filter();
     }
 
-    /**
-     * Filter available lecturers for a schedule
-     */
+    private function getPlenoConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
+    {
+        $query = PlenoDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
+            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
+                ->where('scheduled_date', $date)
+                ->where(function ($innerQ) use ($startTime, $endTime) {
+                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
+                });
+        });
+
+        if ($excludeScheduleId) {
+            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
+        }
+
+        if ($semesterId) {
+            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            });
+        }
+
+        return $query->pluck('lecturer_id')->filter();
+    }
+
     public function getAvailableLecturers($lecturers, $scheduleDate, $scheduleStartTime, $scheduleEndTime, $excludeScheduleId = null, $semesterId = null)
     {
         if (!$scheduleDate || !$scheduleStartTime || !$scheduleEndTime) {
@@ -275,6 +315,11 @@ class ScheduleConflictService
                 // Also check if lecturer is assigned in skillslab_details for this schedule
                 $currentSkillslab = SkillslabDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
                 if ($currentSkillslab) {
+                    return true;
+                }
+               
+                $currentPleno = PlenoDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
+                if ($currentPleno) {
                     return true;
                 }
             }

@@ -8,6 +8,7 @@ use App\Http\Controllers\CoursePemicuController;
 use App\Http\Controllers\CoursePlenoController;
 use App\Http\Controllers\CoursePracticumController;
 use App\Http\Controllers\CourseScheduleController;
+use App\Http\Controllers\CourseSkillsLabController;
 use App\Http\Controllers\CourseStudentController;
 use App\Http\Controllers\ExamAttemptController;
 use App\Http\Controllers\ExamController;
@@ -118,6 +119,9 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/course/schedule/praktikum', [CoursePracticumController::class, 'update'])->name('course.assignPracticum');
         Route::post('/course/schedule/pemicu', [CoursePemicuController::class, 'update'])->name('course.assignPemicu');
         Route::post('/course/schedule/pleno', [CoursePlenoController::class, 'update'])->name('course.assignPleno');
+        Route::post('/course/schedule/skillLab', [CourseSkillsLabController::class, 'update'])->name('course.assignSkillLab');
+        Route::get('/course/{course}/get-lecturers', [CourseLecturerController::class, 'getLecturersByActivity'])
+    ->name('courses.get-lecturers-by-activity');
     });
 
 Route::middleware(['auth', 'role:lecturer,koordinator,admin'])

@@ -96,8 +96,11 @@ class CourseLecturerController extends Controller
         $activity = Activity::where('category', 'teaching')->get();
         $course = Course::where('slug', $slug)->firstOrFail();
         $semesterId = $request->query('semester_id');
-        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+        $semester = Semester::with('academicYear')->findOrFail($semesterId);
+
+        // Ambil semua dosen
         $query = Lecturer::with('user');
+
         if ($request->filled('bagian')) {
             $query->where('bagian', 'like', '%' . $request->bagian . '%');
         }
@@ -107,8 +110,83 @@ class CourseLecturerController extends Controller
                 $q->where('name', 'like', '%' . $request->name . '%');
             });
         }
+
         $lecturers = $query->get();
-        return view('courses.dosen.add_lecturer', compact('course', 'lecturers', 'semester', 'semesterId', 'activity'));
+
+        // Ambil dosen yang sudah ditugaskan di aktivitas tertentu
+        $activityId = $request->query('activity_id');
+        $assignedLecturers = [];
+
+        if ($activityId) {
+            $assignedLecturers = DB::table('teaching_schedules')->where('course_id', $course->id)->where('semester_id', $semesterId)->where('activity_id', $activityId)->pluck('lecturer_id')->toArray();
+        }
+
+        return view('courses.dosen.add_lecturer', compact('course', 'lecturers', 'semester', 'semesterId', 'activity', 'assignedLecturers'));
+    }
+
+    public function getLecturersByActivity(Request $request, string $slug)
+    {
+        try {
+            $semesterId = $request->query('semester_id');
+            $activityId = $request->query('activity_id');
+            $course = Course::where('slug', $slug)->firstOrFail();
+
+            // Ambil semua dosen dengan filter
+            $query = Lecturer::with('user');
+
+            if ($request->filled('bagian')) {
+                $query->where('bagian', 'like', '%' . $request->bagian . '%');
+            }
+
+            if ($request->filled('name')) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->name . '%');
+                });
+            }
+
+            $lecturers = $query->get();
+
+            // Ambil dosen yang sudah ditugaskan untuk aktivitas tertentu
+            $assignedLecturers = [];
+            if ($activityId) {
+                $assignedLecturers = CourseLecturer::where('course_id', $course->id)
+                    ->where('semester_id', $semesterId)
+                    ->whereHas('activities', function ($q) use ($activityId) {
+                        $q->where('activity_id', $activityId);
+                    })
+                    ->pluck('lecturer_id')
+                    ->toArray();
+            }
+
+            // Format data untuk response
+            $formattedLecturers = $lecturers->map(function ($lecturer) use ($assignedLecturers) {
+                return [
+                    'id' => $lecturer->id,
+                    'user' => [
+                        'name' => $lecturer->user->name ?? null,
+                    ],
+                    'bagian' => $lecturer->bagian,
+                    'strata' => $lecturer->strata,
+                    'gelar' => $lecturer->gelar,
+                    'tipe_dosen' => $lecturer->tipe_dosen,
+                    'nidn' => $lecturer->nidn,
+                    'assigned' => in_array($lecturer->id, $assignedLecturers),
+                ];
+            });
+
+            return response()->json([
+                'lecturers' => $formattedLecturers,
+                'success' => true,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'error' => 'Failed to load lecturers',
+                    'success' => false,
+                ],
+                500,
+            );
+        }
     }
 
     /**
@@ -133,7 +211,7 @@ class CourseLecturerController extends Controller
                     ]);
 
                     // Cek apakah course_lecturer_id valid
-                    $courseLecturer = \App\Models\CourseLecturer::find($lecturerId);
+                    $courseLecturer = CourseLecturer::find($lecturerId);
                     if (!$courseLecturer) {
                         \Log::warning('Invalid course_lecturer_id', ['id' => $lecturerId]);
                         continue;

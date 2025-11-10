@@ -282,6 +282,7 @@ class CourseController extends Controller
         $practicumData = app(CoursePracticumController::class)->getPracticumData($request, $slug);
         $pemicuData = app(CoursePemicuController::class)->getPemicuData($request, $slug);
         $plenoData = app(CoursePlenoController::class)->getPlenoData($request, $slug);
+        $skillLabData = app(CourseSkillsLabController::class)->getSkillsLabData($request, $slug);
 
         $semesterId = $request->query('semester_id');
         $course = Course::where('slug', $slug)->firstOrFail();
@@ -332,7 +333,7 @@ class CourseController extends Controller
 
         $selectedLecturers = $lecturers; // duplikat variabel karena query sama
 
-        return view('courses.edit', compact('plenoData', 'pemicuData', 'practicumData', 'lecturerData', 'studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules', 'availableLecturersPerSchedule'));
+        return view('courses.edit', compact('skillLabData','plenoData', 'pemicuData', 'practicumData', 'lecturerData', 'studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules', 'availableLecturersPerSchedule'));
     }
 
     /**

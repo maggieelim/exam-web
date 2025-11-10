@@ -32,7 +32,7 @@
         </div>
 
         <div class="card-body mt-0 pt-0">
-            <form id="groupForm" action="{{ route('courses.updateGroup', $course->slug) }}" method="POST">
+            <form id="groupForm" action="{{ route('admin.courses.updateGroup', $course->slug) }}" method="POST">
                 @csrf
                 <div class="table-responsive p-0">
 

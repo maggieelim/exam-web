@@ -68,9 +68,10 @@
                                     <select class="form-select text-center input-bg kelompok-select"
                                         name="assignments[{{ $lecturer->lecturer_id }}][{{ $tutor->id }}][kelompok]"
                                         data-lecturer-id="{{ $lecturer->lecturer_id }}"
-                                        data-tutor-id="{{ $tutor->id }}" {{ $isDisabled ? 'disabled' : '' }}>
+                                        data-tutor-id="{{ $tutor->id }}" data-scope-id="{{ $tutor->id }}"
+                                        {{ $isDisabled ? 'disabled' : '' }}>
                                         <option value=""></option>
-                                        @foreach ($pemicuData->kelompok as $kel)
+                                        @foreach ($pemicuData->kelompok ?? [] as $kel)
                                             <option value="{{ $kel }}"
                                                 {{ $currentKelompok == $kel ? 'selected' : '' }}>
                                                 {{ $kel }}

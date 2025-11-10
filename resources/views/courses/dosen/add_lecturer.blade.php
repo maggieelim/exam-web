@@ -11,8 +11,9 @@
                 </a>
             </div>
             <div class="row">
-                <input type="hidden" name="semester_id" value="{{ $semester->id }}">
-                <input type="hidden" name="course_id" value="{{ $course->id }}">
+                <input type="hidden" name="semester_id" id="semester_id" value="{{ $semester->id }}">
+                <input type="hidden" name="course_id" id="course_id" value="{{ $course->id }}">
+                <input type="hidden" name="course_slug" id="course_slug" value="{{ $course->slug }}">
 
                 <div class = "col-md-4 col-12">
                     <p><strong>Tahun Ajaran:</strong> {{ $semester->academicYear->year_name }}</p>
@@ -25,9 +26,9 @@
                 </div>
                 <div class="col-md-4 d-flex align-items-center col-12">
                     <p class="me-2 mb-0"><strong>Tugas:</strong></p>
-                    <select name="activity_id" id="activity_id" class="form-select form-select-sm w-auto"
-                        onchange="updateSelectedActivity(this.value)">
-                        <option value=""></option>
+                    <select name="activity_id" id="activity_id" class="form-select form-select-sm w-50"
+                        onchange="updateLecturersByActivity(this.value)">
+                        <option value="">Pilih Tugas</option>
                         @foreach ($activity as $act)
                             <option value="{{ $act->id }}" {{ old('activity_id') == $act->id ? 'selected' : '' }}>
                                 {{ $act->activity_name }}
@@ -74,9 +75,9 @@
                     </div>
                 </form>
             </div>
-            <div class="table-responsive p-0">
-                <form id="kelompokForm" action="{{ route('admin.courses.assignLecturer', $course->slug) }}" method="POST">
-                    @csrf
+            <form id="kelompokForm" action="{{ route('admin.courses.assignLecturer', $course->slug) }}" method="POST">
+                @csrf
+                <div class="table-responsive p-0">
                     <input type="hidden" name="semester_id" value="{{ $semesterId }}">
                     <input type="hidden" id="selectedActivity" name="selected_activity" value="">
 
@@ -93,11 +94,13 @@
                             </tr>
                         </thead>
 
-                        <tbody>
+                        <tbody id="lecturers-tbody">
                             @foreach ($lecturers as $lecturer)
                                 <tr>
-                                    <td class="text-center"><input name="lecturers[]" value="{{ $lecturer->id }}"
-                                            type="checkbox"></td>
+                                    <td class="text-center">
+                                        <input name="lecturers[]" value="{{ $lecturer->id }}" type="checkbox"
+                                            {{ in_array($lecturer->id, $assignedLecturers) ? 'checked' : '' }}>
+                                    </td>
                                     <td>{{ $lecturer->user->name ?? '-' }}</td>
                                     <td>{{ $lecturer->bagian ?? '-' }}</td>
                                     <td>{{ $lecturer->strata ?? '-' }}</td>
@@ -108,12 +111,11 @@
                             @endforeach
                         </tbody>
                     </table>
-
-                    <div class="mt-3 d-flex justify-content-end">
-                        <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="mt-3 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -129,31 +131,54 @@
 
             // Jika ingin memastikan nilai tetap tersimpan setelah reload (misalnya pakai old input)
             selectedActivityInput.value = activitySelect.value;
-
-            // Toggle grup header jika ada
-            document.querySelectorAll('.group-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    header.classList.toggle('collapsed');
-                });
-            });
         });
 
-        function deleteStudent(url, name) {
-            if (confirm(`Yakin ingin menghapus mahasiswa ${name} dari course?`)) {
-                fetch(url, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json',
-                        },
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        location.reload();
-                    })
-                    .catch(() => alert('Terjadi kesalahan saat menghapus.'));
-            }
+        function updateLecturersByActivity(activityId) {
+            const semesterId = document.getElementById('semester_id').value;
+            const courseId = document.getElementById('course_id').value;
+            const courseSlug = document.getElementById('course_slug').value;
+            const tbody = document.getElementById('lecturers-tbody');
+
+            // Show loading
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
+
+            // Update hidden input
+            document.getElementById('selectedActivity').value = activityId;
+
+            // AJAX request to get lecturers data based on activity
+            fetch(`/admin/course/${courseSlug}/get-lecturers?semester_id=${semesterId}&activity_id=${activityId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Clear tbody
+                    tbody.innerHTML = '';
+
+                    // Populate with new data
+                    data.lecturers.forEach(lecturer => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="text-center">
+                                <input name="lecturers[]" value="${lecturer.id}" type="checkbox" ${lecturer.assigned ? 'checked' : ''}>
+                            </td>
+                            <td>${lecturer.user.name || '-'}</td>
+                            <td>${lecturer.bagian || '-'}</td>
+                            <td>${lecturer.strata || '-'}</td>
+                            <td>${lecturer.gelar || '-'}</td>
+                            <td>${lecturer.tipe_dosen || '-'}</td>
+                            <td>${lecturer.nidn || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    tbody.innerHTML =
+                        '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+                });
         }
     </script>
 @endsection
