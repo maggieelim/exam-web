@@ -16,9 +16,9 @@
 <!DOCTYPE html>
 
 @if (\Request::is('rtl'))
-    <html dir="rtl" lang="ar">
+<html dir="rtl" lang="ar">
 @else
-    <html lang="en">
+<html lang="en">
 @endif
 
 <head>
@@ -26,7 +26,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     @if (env('IS_DEMO'))
-        <x-demo-metas></x-demo-metas>
+    <x-demo-metas></x-demo-metas>
     @endif
 
     <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('assets/img/UNTAR.png') }}">
@@ -53,6 +53,44 @@
 
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+
+            if (!calendarEl) return; // kalau halaman tidak punya #calendar, jangan lanjut
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                themeSystem: 'standard',
+                nowIndicator: true,
+                allDaySlot: false, // hilangkan bar "All Day"
+                slotMinTime: "07:00:00", // mulai jam 7 pagi
+                slotMaxTime: "17:00:00", // selesai jam 5 so
+                events: '{{ route('attendances.json') }}', // ambil dari backend Laravel
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault(); // mencegah buka tab baru
+
+                    if (info.event.url) {
+                        window.location.href = info.event.url; // 👈 redirect ke halaman detail
+                    }
+                },
+                eventTimeFormat: { // tampilkan jam di dalam kalender
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: false
+                },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                height: 'auto'
+            });
+
+            calendar.render();
+        });
+    </script>
 
 </head>
 
@@ -60,19 +98,25 @@
     class="g-sidenav-show  bg-gray-100 {{ \Request::is('rtl') ? 'rtl' : (Request::is('virtual-reality') ? 'virtual-reality' : '') }} ">
 
     @auth
-        @yield('auth')
+    @yield('auth')
     @endauth
     @guest
-        @yield('guest')
+    @yield('guest')
     @endguest
 
     <!--   Core JS Files   -->
     <script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
     <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/fullcalendar.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/chartjs.min.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     @stack('rtl')
     @stack('dashboard')
     @include('components.message')

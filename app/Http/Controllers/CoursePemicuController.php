@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PemicuExport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\CourseStudent;
 use App\Models\PemicuDetails;
+use App\Models\Semester;
 use App\Models\TeachingSchedule;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CoursePemicuController extends Controller
 {
@@ -139,5 +142,15 @@ class CoursePemicuController extends Controller
                 500,
             );
         }
+    }
+
+    public function downloadExcel($courseSlug, $semesterId)
+    {
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
+        $courseId = $course->id;
+        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+        $yearName = str_replace('/', '-', $semester->academicYear->year_name);
+        $filename = "Jadwal_Pemicu_Blok_{$courseSlug}_{$semester->semester_name}_{$yearName}.xlsx";
+        return Excel::download(new PemicuExport($courseId, $semesterId), $filename);
     }
 }

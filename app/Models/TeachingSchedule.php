@@ -8,12 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 class TeachingSchedule extends Model
 {
     use HasFactory;
+    protected $guarded = ['id'];
+    protected $fillable = ['course_schedule_id', 'course_id', 'semester_id', 'activity_id', 'session_number', 'lecturer_id', 'scheduled_date', 'start_time', 'end_time', 'room', "group", 'topic', 'created_by', 'updated_at', 'zone'];
 
-    protected $fillable = ['course_schedule_id', 'course_id', 'semester_id', 'activity_id', 'session_number', 'lecturer_id', 'scheduled_date', 'start_time', 'end_time', 'room',"group", 'topic', 'created_by', 'updated_at', 'zone'];
-
-    /**
-     * Relasi ke tabel Course (blok/mata kuliah)
-     */
+    public function clearSchedule()
+    {
+        return $this->update([
+            'scheduled_date' => null,
+            'start_time' => null,
+            'end_time' => null,
+            'room' => null,
+            'zone' => null,
+            'group' => null,
+            'topic' => null,
+            'lecturer_id' => null,
+        ]);
+    }
     public function course()
     {
         return $this->belongsTo(Course::class);
@@ -90,5 +100,10 @@ class TeachingSchedule extends Model
     public function practicumGroups()
     {
         return $this->hasMany(PracticumGroup::class, 'teaching_schedule_id');
+    }
+
+    public function attendance()
+    {
+        return $this->hasMany(AttendanceSessions::class, 'teaching_schedule_id');
     }
 }

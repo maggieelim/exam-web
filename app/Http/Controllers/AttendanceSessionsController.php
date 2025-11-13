@@ -11,19 +11,14 @@ use App\Models\CourseLecturer;
 use App\Models\Lecturer;
 use App\Models\LecturerAttendanceRecords;
 use App\Models\Semester;
-use App\Models\User;
-use Auth;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
-use Stevebauman\Location\Facades\Location;
+use Illuminate\Support\Facades\Auth;
 use Str;
 
 class AttendanceSessionsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
 
     private function getActiveSemester()
     {
@@ -31,8 +26,51 @@ class AttendanceSessionsController extends Controller
         return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
     }
 
+    public function getEvents()
+    {
+        $userId = Auth::id();
+        $lecturer = Lecturer::with('courseLecturers')->where('user_id', $userId)->first();
+
+        $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
+
+        // Ambil attendance berdasarkan course_lecturer_id dari lecturerRecords
+        $attendances =  AttendanceSessions::with(['course', 'activity'])
+            ->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
+                $q->whereIn('course_lecturer_id', $courseLecturerIds);
+            })
+            ->get()
+            ->map(function ($attendance) {
+                return [
+                    'title' => $attendance->course->name . ' - ' . $attendance->activity->activity_name,
+                    'start' => $attendance->start_time, // format ISO (YYYY-MM-DDTHH:MM:SS)
+                    'end'   => $attendance->end_time,
+                    'url' => route('attendance.show', $attendance->absensi_code),
+                    'extendedProps' => [
+                        'status' => $attendance->status,
+                        'total'  => $attendance->total_attendance,
+                    ],
+                    'color' => match ($attendance->status) {
+                        'finished' => '#28a745', // hijau
+                        'active'  => '#007bff', // biru
+                        default    => '#ffc107', // kuning
+                    },
+                ];
+            });
+
+        return response()->json($attendances);
+    }
+
+
     public function index(Request $request)
     {
+        $userId = Auth::id();
+
+        // Ambil data lecturer dari user login
+        $lecturer = Lecturer::with('courseLecturers')->where('user_id', $userId)->first();
+
+        // Ambil semua course_lecturer_id milik dosen login
+        $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
+
         // Ambil semester aktif jika tidak dipilih
         $activeSemester = $this->getActiveSemester();
         $semesterId = $request->get('semester_id', $activeSemester?->id);
@@ -45,8 +83,11 @@ class AttendanceSessionsController extends Controller
         $sort = in_array($request->get('sort'), $allowedSorts) ? $request->get('sort') : 'start_time';
         $dir = $request->get('dir', 'desc');
 
-        // Query dasar
-        $query = AttendanceSessions::with(['course', 'activity']);
+        // Query dasar + filter by lecturer
+        $query = AttendanceSessions::with(['course', 'activity'])
+            ->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
+                $q->whereIn('course_lecturer_id', $courseLecturerIds);
+            });
 
         // 🔍 Filter berdasarkan semester (jika ada)
         if ($semesterId) {
@@ -56,11 +97,15 @@ class AttendanceSessionsController extends Controller
         // 🔍 Filter berdasarkan nama/kode blok (jika ada input 'name')
         if ($request->filled('name')) {
             $query->whereHas('course', function ($q) use ($request) {
-                $q->where('kode_blok', 'LIKE', "%{$request->name}%")->orWhere('name', 'LIKE', "%{$request->name}%");
+                $q->where('kode_blok', 'LIKE', "%{$request->name}%")
+                    ->orWhere('name', 'LIKE', "%{$request->name}%");
             });
         }
+
         // Urutkan hasil
-        $attendances = $query->orderBy($sort, $dir)->paginate(15)->appends($request->all());
+        $attendances = $query->orderBy($sort, $dir)
+            ->paginate(15)
+            ->appends($request->all());
 
         // Format waktu dan update status otomatis
         $attendances->getCollection()->transform(function ($attendance) {
@@ -69,14 +114,22 @@ class AttendanceSessionsController extends Controller
             $start = Carbon::parse($attendance->start_time);
             $end = Carbon::parse($attendance->end_time);
 
-            $attendance->total_attendance = AttendanceRecords::where('attendance_session_id', $attendance->id)->count();
+            $attendance->total_attendance = AttendanceRecords::where('id', $attendance->id)->count();
             $attendance->formatted_time = $start->translatedFormat('d M Y H:i') . ' - ' . $end->translatedFormat('H:i');
 
             return $attendance;
         });
 
-        return view('attendance.index', compact('activeSemester', 'semesterId', 'semesters', 'sort', 'dir', 'attendances'));
+        return view('attendance.index', compact(
+            'activeSemester',
+            'semesterId',
+            'semesters',
+            'sort',
+            'dir',
+            'attendances'
+        ));
     }
+
 
     public function create(Request $request)
     {
@@ -90,6 +143,7 @@ class AttendanceSessionsController extends Controller
         $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
         $lecturers = Lecturer::with('courseLecturers')->get();
         $activity = Activity::all();
+        /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
         if ($user->hasRole('lecturer') || $user->hasRole('koordinator')) {
             $courses = Course::whereHas('courseLecturer', function ($query) use ($lecturer, $semesterId) {
@@ -161,19 +215,19 @@ class AttendanceSessionsController extends Controller
 
             // Associate lecturers with this session
             foreach ($request->lecturers as $lecturerId) {
-            // pastikan course_lecturer_id ada
-            $courseLecturer = CourseLecturer::firstOrCreate([
-                'course_id' => $request->course,
-                'lecturer_id' => $lecturerId,
-            ]);
+                // pastikan course_lecturer_id ada
+                $courseLecturer = CourseLecturer::firstOrCreate([
+                    'course_id' => $request->course,
+                    'lecturer_id' => $lecturerId,
+                ]);
 
-            // Simpan ke tabel LecturerAttendanceRecords
-            LecturerAttendanceRecords::create([
-                'attendance_session_id' => $attendanceSession->id,
-                'course_lecturer_id' => $courseLecturer->id,
-                'status' => 'not_checked_in', // default, bisa diganti sesuai kebutuhan
-                'checked_in_at' => null,
-            ]);
+                // Simpan ke tabel LecturerAttendanceRecords
+                LecturerAttendanceRecords::create([
+                    'attendance_session_id' => $attendanceSession->id,
+                    'course_lecturer_id' => $courseLecturer->id,
+                    'status' => 'not_checked_in', // default, bisa diganti sesuai kebutuhan
+                    'checked_in_at' => null,
+                ]);
             }
 
             DB::commit();
@@ -243,7 +297,6 @@ class AttendanceSessionsController extends Controller
                 $currentToken = $this->generateQrToken($attendanceSession->id);
             } else {
                 $currentToken = $currentToken->token;
-                
             }
         } else {
             // Session hasn't started yet or has ended

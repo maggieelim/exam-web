@@ -2,20 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PlenoExport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
-use App\Models\CourseStudent;
-use App\Models\PemicuDetails;
 use App\Models\PlenoDetails;
-use App\Models\PracticumDetails;
+use App\Models\Semester;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerAttendanceService;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CoursePlenoController extends Controller
 {
+    private $attendanceService;
+
+    public function __construct(LecturerAttendanceService $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
+
     public function getPlenoData(Request $request, string $slug)
     {
         $scheduleService = app(ScheduleConflictService::class);
@@ -104,6 +112,13 @@ class CoursePlenoController extends Controller
                             'teaching_schedule_id' => $plenoId,
                             'lecturer_id' => $lecturerId,
                         ]);
+                        $this->attendanceService->syncLecturerAttendance(
+                            $plenoId,
+                            $lecturerId,
+                            $courseId,
+                            $semesterId,
+                            4
+                        );
                     }
                 }
             }
@@ -125,5 +140,14 @@ class CoursePlenoController extends Controller
                 500,
             );
         }
+    }
+
+    public function downloadExcel($courseSlug, $semesterId)
+    {
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
+        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+        $yearName = str_replace('/', '-', $semester->academicYear->year_name);
+        $filename = "Jadwal_Pleno_{$course->slug}_{$semester->semester_name}_{$yearName}.xlsx";
+        return Excel::download(new PlenoExport($course->id, $semesterId), $filename);
     }
 }

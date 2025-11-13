@@ -25,7 +25,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a class="btn btn-sm btn-secondary"
-                    href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}#siswa">
+                    href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}&tab=siswa">
                     Back
                 </a>
             </div>

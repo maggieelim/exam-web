@@ -4,8 +4,8 @@
         <h6 class="mb-0 text-uppercase text-white">Ujian Teori</h6>
     </div>
 
-    <form id="ujianForm" class="schedule-form" action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}"
-        method="POST">
+    <form id="ujianForm" class="schedule-form"
+        action="{{ route('admin.course.updateSchedules', $kelasData->courseSchedule->id) }}" method="POST">
         @csrf
         <div class="table-responsive">
             <table class="compact-table table-bordered">

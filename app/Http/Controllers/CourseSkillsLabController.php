@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SkillsLabExport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\CourseStudent;
+use App\Models\Semester;
 use App\Models\SkillslabDetails;
 use App\Models\TeachingSchedule;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CourseSkillsLabController extends Controller
 {
@@ -37,12 +40,12 @@ class CourseSkillsLabController extends Controller
         $scheduleIds = $skillsLabs->pluck('id');
 
         $kelompok = SkillslabDetails::whereIn('teaching_schedule_id', $scheduleIds)
-        ->select('group_code', 'kelompok_num')
-        ->orderBy('group_code')
-        ->orderBy('kelompok_num')
-        ->get()
-        ->groupBy('group_code')
-        ->map(fn($items) => $items->pluck('kelompok_num')->unique()->values());
+            ->select('group_code', 'kelompok_num')
+            ->orderBy('group_code')
+            ->orderBy('kelompok_num')
+            ->get()
+            ->groupBy('group_code')
+            ->map(fn($items) => $items->pluck('kelompok_num')->unique()->values());
 
         $lecturers = CourseLecturer::with('activities', 'lecturer.user')->where('course_id', $course->id)->where('semester_id', $semesterId)->whereHas('activities', fn($query) => $query->where('activity_id', 2))->get();
 
@@ -123,5 +126,13 @@ class CourseSkillsLabController extends Controller
                 500,
             );
         }
+    }
+    public function downloadExcel($courseSlug, $semesterId)
+    {
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
+        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+        $yearName = str_replace('/', '-', $semester->academicYear->year_name);
+        $filename = "Jadwal_SkillLab_{$course->slug}_{$semester->semester_name}_{$yearName}.xlsx";
+        return Excel::download(new SkillsLabExport($course->id, $semesterId), $filename);
     }
 }

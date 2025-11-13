@@ -34,7 +34,7 @@
                 <div class="mt-3 d-flex gap-2">
                     <button type="submit" class="btn btn-sm btn-primary">Bentuk Kelompok </button>
                     <a class="btn btn-sm btn-secondary"
-                        href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}#siswa">
+                        href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}&tab=siswa">
                         Back
                     </a>
                 </div>

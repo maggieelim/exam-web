@@ -18,13 +18,11 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
 use App\Http\Controllers\OngoingExamController;
-use App\Http\Controllers\PracticumController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\SessionsController;
-use App\Http\Controllers\SkillslabController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -98,7 +96,6 @@ Route::middleware(['auth', 'role:admin'])
         Route::resource('semester', SemesterController::class);
 
         Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
-        Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
         Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
         Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
         Route::get('/courses/{course}/bentuk_kelompok', [CourseStudentController::class, 'createKelompok'])->name('courses.createKelompok');
@@ -120,8 +117,13 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/course/schedule/pemicu', [CoursePemicuController::class, 'update'])->name('course.assignPemicu');
         Route::post('/course/schedule/pleno', [CoursePlenoController::class, 'update'])->name('course.assignPleno');
         Route::post('/course/schedule/skillLab', [CourseSkillsLabController::class, 'update'])->name('course.assignSkillLab');
-        Route::get('/course/{course}/get-lecturers', [CourseLecturerController::class, 'getLecturersByActivity'])
-    ->name('courses.get-lecturers-by-activity');
+        Route::get('/course/{course}/get-lecturers', [CourseLecturerController::class, 'getLecturersByActivity'])->name('courses.get-lecturers-by-activity');
+        Route::get('/courses/{course}/semester/{semesterId}/download-practicum-assignment', [CoursePracticumController::class, 'downloadExcel'])->name('courses.downloadPracticumAssignment');
+        Route::get('/courses/{course}/semester/{semesterId}/download-daftarSiswa', [CourseStudentController::class, 'downloadExcel'])->name('courses.downloadDaftarSiswa');
+        Route::get('/courses/{course}/semester/{semesterId}/download-pemicu', [CoursePemicuController::class, 'downloadExcel'])->name('courses.downloadPemicu');
+        Route::get('/courses/{course}/semester/{semesterId}/download-pleno', [CoursePlenoController::class, 'downloadExcel'])->name('courses.downloadPleno');
+        Route::get('/courses/{course}/semester/{semesterId}/download-skillsLab', [CourseSkillsLabController::class, 'downloadExcel'])->name('courses.downloadSkillsLab');
+        Route::get('/courses/{course}/semester/{semesterId}/download-kelas', [CourseScheduleController::class, 'downloadExcel'])->name('courses.downloadPerkuliahan');
     });
 
 Route::middleware(['auth', 'role:lecturer,koordinator,admin'])
@@ -148,6 +150,8 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     //attendance
     Route::resource('attendance', AttendanceSessionsController::class);
     Route::get('/attendance/{attendanceCode}/qr-code', [AttendanceSessionsController::class, 'getQrCode']);
+    Route::get('/attendances/json', [AttendanceSessionsController::class, 'getEvents'])->name('attendances.json');
+
     // courses
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{course}/download', [CourseController::class, 'download'])->name('courses.download');
@@ -159,6 +163,7 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     Route::post('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::get('/courses/students/edit/{slug}', [CourseStudentController::class, 'edit'])->name('courses.editStudent');
 
     // exams
     Route::get('/exams/{status?}', [ExamController::class, 'index'])

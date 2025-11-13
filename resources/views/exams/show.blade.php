@@ -9,7 +9,8 @@
         <h5>{{ $exam->title }}</h5>
         <!-- Form Delete Exam (terpisah) -->
         @if($exam->status === 'upcoming')
-        <form action="{{ route('exams.destroy', $exam->exam_code) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus exam ini?')" class="d-inline">
+        <form action="{{ route('exams.destroy', $exam->exam_code) }}" method="POST"
+          onsubmit="return confirm('Yakin ingin menghapus exam ini?')" class="d-inline">
           @csrf
           @method('DELETE')
           <button type="submit" class="btn btn-sm btn-danger">Delete Exam</button>
@@ -21,10 +22,11 @@
           <p><strong>Course:</strong> {{ $exam->course->name }}</p>
         </div>
         <div class="col-md-4">
-          <p><strong>Semester:</strong> {{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name }}</p>
+          <p><strong>Semester:</strong> {{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name
+            }}</p>
         </div>
         <div class="col-md-4">
-          <p><strong>Date:</strong> {{ $exam->exam_date->format('d-m-Y') }}</p>
+          <p><strong>Date:</strong> {{ $exam->exam_date?->format('d-m-Y') ?? '-' }}</p>
         </div>
         <div class="col-md-4">
           <p><strong>Duration:</strong> {{ $exam->duration }} minutes</p>
@@ -48,9 +50,8 @@
         <a href="{{ route('exams.questions.' . $status, $exam->exam_code) }}" class="btn btn-sm bg-gradient-warning">
           Edit Questions
         </a>
-        <button class="btn btn-outline-secondary btn-sm " type="button"
-          data-bs-toggle="collapse" data-bs-target="#filterCollapse"
-          aria-expanded="false" aria-controls="filterCollapse">
+        <button class="btn btn-outline-secondary btn-sm " type="button" data-bs-toggle="collapse"
+          data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
           <i class="fas fa-filter"></i> Filter
         </button>
       </div>
@@ -90,9 +91,7 @@
           <p class="mb-2">{{ $question->kalimat_tanya }}</p>
           @if($question->image)
           <div class="my-3">
-            <img src="{{ asset('storage/' . $question->image) }}"
-              alt="Gambar Soal"
-              class="img-fluid rounded shadow-sm"
+            <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal" class="img-fluid rounded shadow-sm"
               style="max-width: 400px;">
           </div>
           @endif
@@ -116,7 +115,11 @@
       </div>
       @endforeach
       @else
-      <p class="text-muted">Belum ada soal untuk exam ini.</p>
+      <div class="card">
+        <div class="card-body">
+          <p class="text-muted">Belum ada soal untuk exam ini.</p>
+        </div>
+      </div>
       @endif
     </div>
     <div class="d-flex justify-content-center mt-3">

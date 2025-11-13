@@ -60,6 +60,9 @@ class ScheduleAjaxHandler {
         const submitButton = form.querySelector('button[type="submit"]');
         const originalText = submitButton.innerHTML;
 
+         form.querySelectorAll('.schedule-error').forEach(el => el.remove());
+         form.querySelectorAll('tr.table-danger').forEach(el => el.classList.remove('table-danger'));
+
         // Show loading state
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         submitButton.disabled = true;
@@ -88,6 +91,27 @@ class ScheduleAjaxHandler {
                     this.fallbackNotification(data.message, "success");
                 }
 
+                 if (data.failed_schedules && data.failed_schedules.length > 0) {
+                data.failed_schedules.forEach(failed => {
+                    const row = form.querySelector(`input[name="schedules[${failed.schedule_id}][id]"]`)?.closest('tr');
+                    if (row) {
+                        row.classList.add('table-danger');
+
+                        const errorRow = document.createElement('tr');
+                        errorRow.classList.add('schedule-error');
+                        errorRow.innerHTML = `
+                            <td colspan="12" class="text-danger text-end fw-semibold bg-light">
+                                 ${failed.message}
+                            </td>
+                        `;
+                        row.insertAdjacentElement('afterend', errorRow);
+                    }
+                });
+
+                // Scroll ke error pertama
+                const firstError = form.querySelector('.table-danger');
+                if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
                 // Jalankan custom afterSuccess jika ada
                 if (customHandler && customHandler.afterSuccess) {
                     customHandler.afterSuccess(data, form);

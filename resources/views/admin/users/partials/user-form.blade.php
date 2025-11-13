@@ -33,8 +33,10 @@
         <label class="form-label">Gender</label>
         <select name="gender" class="form-control" required>
             <option value="">Pilih Gender</option>
-            <option value="Pria" {{ old('gender', $genderValue) === 'Pria' ? 'selected' : '' }}>Pria</option>
-            <option value="Wanita" {{ old('gender', $genderValue) === 'Wanita' ? 'selected' : '' }}>Wanita</option>
+            <option value="Laki-Laki" {{ old('gender', $genderValue) === 'Laki-Laki' ? 'selected' : '' }}>Laki-Laki
+            </option>
+            <option value="Perempuan" {{ old('gender', $genderValue) === 'Perempuan' ? 'selected' : '' }}>Perempuan
+            </option>
         </select>
     </div>
 

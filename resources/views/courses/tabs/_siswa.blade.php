@@ -1,29 +1,38 @@
-<div class="d-flex gap-2">
-    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-        data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-        <i class="fas fa-filter"></i> Filter
-    </button>
-    <button class="btn bg-gradient-primary btn-sm" type="button" data-bs-toggle="modal"
-        data-bs-target="#addStudentModal">
-        +&nbsp; Siswa
-    </button>
-    <a class="btn bg-gradient-primary btn-sm"
-        href="{{ route('admin.courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
-        Bentuk Kelompok
-    </a>
-    <a class="btn bg-gradient-primary btn-sm"
-        href="{{ route('admin.courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
-        Bentuk Grup
-    </a>
+<div class="d-flex justify-content-between gap-2">
+    <div>
+        <a class="btn btn-sm btn-outline-info"
+            href="{{ route('admin.courses.downloadDaftarSiswa', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
+            title="Download Excel">
+            <i class="fas fa-download"></i>
+        </a>
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+            + Siswa
+        </button>
+        <a class="btn btn-primary btn-sm"
+            href="{{ route('admin.courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+            Bentuk Kelompok
+        </a>
+        <a class="btn btn-primary btn-sm"
+            href="{{ route('admin.courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+            Bentuk Grup
+        </a>
+    </div>
+    <div>
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+            data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+    </div>
 </div>
 
 <!-- Collapse Form -->
 <div class="collapse" id="filterCollapse">
-    <form method="GET" action="{{ route('courses.edit', [$course->slug]) }}#siswa">
+    <form method="GET" action="{{ route('courses.edit', [$course->slug]) }}">
         <div class="mx-3 my-2 py-2">
             <div class="row g-2">
                 <!-- Input Blok -->
                 <input type="hidden" name="semester_id" value="{{ request('semester_id') }}">
+                <input type="hidden" name="tab" value="siswa">
                 <div class="col-md-6">
                     <label for="blok" class="form-label mb-1">NIM</label>
                     <input type="text" class="form-control form-control-sm" name="nim"
@@ -39,7 +48,7 @@
 
                 <!-- Buttons -->
                 <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                    <a href="{{ route('courses.edit', [$course->slug, 'semester_id' => request('semester_id')]) }}#siswa"
+                    <a href="{{ route('courses.edit', [$course->slug, 'semester_id' => request('semester_id'), 'tab' => request('tab')]) }}"
                         class="btn btn-light btn-sm">Reset</a>
                     <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                 </div>

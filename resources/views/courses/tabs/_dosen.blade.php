@@ -19,8 +19,7 @@
                 <!-- Input Dosen -->
                 <div class="col-md-6">
                     <label for="dosen" class="form-label mb-1">Name</label>
-                    <input type="text" class="form-control form-control-sm" name="name"
-                        value="{{ request('name') }}">
+                    <input type="text" class="form-control form-control-sm" name="name" value="{{ request('name') }}">
                 </div>
                 <div class="col-md-6">
                     <label for="blok" class="form-label mb-1">Bagian</label>
@@ -38,66 +37,65 @@
         </div>
     </form>
 </div>
+<form id="lecturerForm" action="{{ route('admin.courses.updateLecturer', $course->slug) }}" method="POST">
+    @csrf
+    <div class="table-wrapper p-0">
 
-<div class="table-responsive p-0">
-    <form id="lecturerForm" action="{{ route('admin.courses.updateLecturer', $course->slug) }}" method="POST">
-        @csrf
         <table class="compact-table table-bordered">
             <thead class="text-center align-middle">
                 <tr>
-                    <th>#</th>
-                    <th>Nama</th>
-                    <th>Bagian</th>
-                    <th>Pleno</th>
-                    <th>Kuliah</th>
-                    <th>Praktikum</th>
-                    <th>Tutor</th>
-                    <th>Skill Lab</th>
+                    <th class="headrow">#</th>
+                    <th class="headrow">Nama</th>
+                    <th class="headrow">Bagian</th>
+                    <th class="headrow">Pleno</th>
+                    <th class="headrow">Kuliah</th>
+                    <th class="headrow">Praktikum</th>
+                    <th class="headrow">Tutor</th>
+                    <th class="headrow">Skill Lab</th>
                 </tr>
             </thead>
 
             <tbody>
                 @foreach ($lecturerData->lecturers as $index => $lecturer)
-                    <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td>{{ $lecturer->lecturer->user->name }}</td>
-                        <td>{{ $lecturer->lecturer->bagian }}</td>
-                        <td class="text-center">
-                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][pleno]" value="1"
-                                {{ $lecturer->hasActivity('Pleno') ? 'checked' : '' }} class="group-checkbox input-bg">
-                        </td>
-                        <td class="text-center">
-                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][kuliah]" value="1"
-                                {{ $lecturer->hasActivity('Kuliah') ? 'checked' : '' }}
-                                class="group-checkbox input-bg">
-                        </td>
-                        <td class="text-center">
-                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][praktikum]" value="1"
-                                {{ $lecturer->hasActivity('Praktikum') ? 'checked' : '' }}
-                                class="group-checkbox input-bg">
-                        </td>
-                        <td class="text-center">
-                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][pemicu]" value="1"
-                                {{ $lecturer->hasActivity('Pemicu') ? 'checked' : '' }}
-                                class="group-checkbox input-bg">
-                        </td>
-                        <td class="text-center">
-                            <input type="checkbox" name="lecturers[{{ $lecturer->id }}][skill lab]" value="1"
-                                {{ $lecturer->hasActivity('Skill Lab') ? 'checked' : '' }}
-                                class="group-checkbox input-bg">
-                        </td>
-                    </tr>
+                <tr>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>{{ $lecturer->lecturer->user->name }}</td>
+                    <td>{{ $lecturer->lecturer->bagian }}</td>
+                    <td class="text-center clickable-td">
+                        <input type="checkbox" name="lecturers[{{ $lecturer->id }}][pleno]" value="1" {{
+                            $lecturer->hasActivity('Pleno') ? 'checked' : '' }}
+                        class="group-checkbox input-bg">
+                    </td>
+                    <td class="text-center clickable-td">
+                        <input type="checkbox" name="lecturers[{{ $lecturer->id }}][kuliah]" value="1" {{
+                            $lecturer->hasActivity('Kuliah') ? 'checked' : '' }}
+                        class="group-checkbox input-bg">
+                    </td>
+                    <td class="text-center clickable-td">
+                        <input type="checkbox" name="lecturers[{{ $lecturer->id }}][praktikum]" value="1" {{
+                            $lecturer->hasActivity('Praktikum') ? 'checked' : '' }}
+                        class="group-checkbox input-bg">
+                    </td>
+                    <td class="text-center clickable-td">
+                        <input type="checkbox" name="lecturers[{{ $lecturer->id }}][pemicu]" value="1" {{
+                            $lecturer->hasActivity('Pemicu') ? 'checked' : '' }}
+                        class="group-checkbox input-bg">
+                    </td>
+                    <td class="text-center clickable-td">
+                        <input type="checkbox" name="lecturers[{{ $lecturer->id }}][skill lab]" value="1" {{
+                            $lecturer->hasActivity('Skill Lab') ? 'checked' : '' }}
+                        class="group-checkbox input-bg">
+                    </td>
+                </tr>
                 @endforeach
             </tbody>
         </table>
-        <div class="mt-3 d-flex justify-content-end">
-            <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
-        </div>
-    </form>
-    <div id="alert-container" class="mt-3"></div>
 
-</div>
-
+    </div>
+    <div class="mt-3 d-flex justify-content-end">
+        <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+    </div>
+</form>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const form = document.getElementById("lecturerForm");
@@ -160,8 +158,6 @@
                     submitButton.disabled = false;
                 });
         });
-
-
 
         // Tambahkan event listener untuk debug perubahan checkbox
         document.querySelectorAll('.input-bg[type="checkbox"]').forEach(checkbox => {

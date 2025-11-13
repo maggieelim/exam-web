@@ -189,7 +189,7 @@ class ExamController extends Controller
         $lecturer = Lecturer::where('user_id', $user->id)->first();
         if ($user->hasRole('lecturer') && $lecturer) {
             $courses = CourseLecturer::with('course')->where('lecturer_id', $lecturer->id)->where('semester_id', $activeSemester->id)->get()->map(fn($cl) => $cl->course); // ambil model Course dari pivot
-        }elseif ($user->hasRole('koordinator')) {
+        } elseif ($user->hasRole('koordinator')) {
             $courses = CourseCoordinator::with('course')->where('lecturer_id', $lecturer->id)->where('semester_id', $activeSemester->id)->get()->map(fn($cl) => $cl->course);
         } else {
             $courses = Course::where('semester', $activeSemester->semester_name)->orWhere('semester', 'Ganjil/Genap')->get();
@@ -328,6 +328,6 @@ class ExamController extends Controller
 
         $exam->delete();
 
-        return redirect()->route('exams.index')->with('success', 'Exam beserta semua soal berhasil dihapus!');
+        return redirect()->route('exams.index', ['status' => 'upcoming'])->with('success', 'Exam beserta semua soal berhasil dihapus!');
     }
 }

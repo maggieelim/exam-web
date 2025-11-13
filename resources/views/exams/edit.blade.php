@@ -13,26 +13,30 @@
 
       <!-- Informasi Jadwal Ujian -->
       <div class="row">
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
           <label for="title">Judul Ujian</label>
-          <input type="text" name="title" class="form-control" required value="{{ $exam->title }}" {{ $status === 'ongoing' ? 'disabled' : '' }}>
+          <input type="text" name="title" class="form-control" required value="{{ $exam->title }}" {{
+            $status==='ongoing' ? 'disabled' : '' }}>
         </div>
 
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
           <label for="exam_date">Tanggal</label>
-          <input type="date" name="exam_date" class="form-control" required value="{{ old('exam_date', isset($exam->exam_date) ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '') }}"
-            {{ $status === 'ongoing' ? 'disabled' : '' }}>
+          <input type="date" name="exam_date" class="form-control" required
+            value="{{ old('exam_date', isset($exam->exam_date) ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '') }}"
+            {{ $status==='ongoing' ? 'disabled' : '' }}>
         </div>
 
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
           <label for="duration">Durasi (menit)</label>
-          <input type="number" name="duration" class="form-control" required min="1" value="{{ $exam->duration }}" {{ $status === 'ongoing' ? 'disabled' : '' }}>
+          <input type="number" name="duration" class="form-control" required min="1" value="{{ $exam->duration }}" {{
+            $status==='ongoing' ? 'disabled' : '' }}>
         </div>
 
-        <div class="col-md-3 mb-3">
+        {{-- <div class="col-md-3 mb-3">
           <label for="room">Ruangan</label>
-          <input type="text" name="room" class="form-control" value="{{ $exam->room }}" {{ $status === 'ongoing' ? 'disabled' : '' }}>
-        </div>
+          <input type="text" name="room" class="form-control" value="{{ $exam->room }}" {{ $status==='ongoing'
+            ? 'disabled' : '' }}>
+        </div> --}}
       </div>
 
       <!-- Pilih Course -->
@@ -40,11 +44,11 @@
         <div class="col-md-4 mb-3">
           <label for="semester_id" class="form-label">Semester</label>
           <input type="text" class="form-control"
-            value="{{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name }}"
-            readonly>
+            value="{{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name }}" readonly>
         </div>
         <div class=" col-md-4 mb-3"> <label for="course_id" class="form-label">Pilih Course</label>
-          <select name="course_id" id="course_id" class="form-select" required {{ $status === 'ongoing' ? 'disabled' : '' }}>
+          <select name="course_id" id="course_id" class="form-select" required {{ $status==='ongoing' ? 'disabled' : ''
+            }}>
             <option value="">-- Pilih Course --</option>
             @foreach($courses as $course)
             <option value="{{ $course->id }}" {{ $exam->course_id == $course->id ? 'selected' : '' }}>
@@ -55,12 +59,14 @@
         </div>
         <div class="col-md-4 mb-3">
           <label for="password">Password</label>
-          <input type="text" name="password" class="form-control" value="{{$exam->password}}" required {{ $status === 'ongoing' ? 'disabled' : '' }}>
+          <input type="text" name="password" class="form-control" value="{{$exam->password}}" required {{
+            $status==='ongoing' ? 'disabled' : '' }}>
         </div>
       </div>
       <!-- Tombol Update -->
       <div class="mb-3">
-        <button type="submit" class="btn btn-sm btn-primary" {{ $status === 'ongoing' ? 'disabled' : '' }}>Update Exams</button>
+        <button type="submit" class="btn btn-sm btn-primary" {{ $status==='ongoing' ? 'disabled' : '' }}>Update
+          Exams</button>
       </div>
     </form>
   </div>

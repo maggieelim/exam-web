@@ -3,8 +3,8 @@
         <h6 class="mb-0 text-uppercase text-white">Kuliah</h6>
     </div>
 
-    <form id="scheduleForm" class="schedule-form" action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}"
-        method="POST">
+    <form id="scheduleForm" class="schedule-form"
+        action="{{ route('admin.course.updateSchedules', $kelasData->courseSchedule->id) }}" method="POST">
         @csrf
         <div class="table-responsive">
             <table class="compact-table table-bordered">
@@ -77,23 +77,22 @@
                                     class="form-control text-center input-bg" value="{{ $schedule->topic }}">
                             </td>
                             <td class="soft-info" style="min-width: 150px">
-                                <select class="form-select text-center input-bg lecturer-select"
-                                    name="schedules[{{ $schedule->id }}][lecturer_id]"
-                                    data-schedule-id="{{ $schedule->id }}">
-                                    <option value="">-- Pilih --</option>
-                                    @php
-                                        $availableLecturers =
-                                            $availableLecturersPerSchedule[$schedule->id] ?? collect();
-                                        $currentLecturerId = $schedule->lecturer_id;
-                                    @endphp
+                                <input type="text" class="form-control text-center input-bg "
+                                    name="schedules[{{ $schedule->id }}][lecturer_name]"
+                                    list="lecturer-list-{{ $schedule->id }}"
+                                    value="{{ $schedule->lecturer->user->name ?? '' }}">
 
-                                    @foreach ($availableLecturers as $lecturer)
-                                        <option value="{{ $lecturer->id }}"
-                                            {{ $currentLecturerId == $lecturer->id ? 'selected' : '' }}>
+                                <input type="hidden" name="schedules[{{ $schedule->id }}][lecturer_id]"
+                                    value="{{ $schedule->lecturer_id }}" class="lecturer-id-input">
+
+                                <datalist id="lecturer-list-{{ $schedule->id }}">
+                                    @foreach ($kelasData->lecturers as $lecturer)
+                                        <option value="{{ $lecturer->user->name }}"
+                                            data-lecturer-id="{{ $lecturer->id }}">
                                             {{ $lecturer->user->name }}
                                         </option>
                                     @endforeach
-                                </select>
+                                </datalist>
                             </td>
 
                             <td>
@@ -117,3 +116,25 @@
         </div>
     </form>
 </div>
+<script>
+    // Simple JavaScript untuk datalist
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('input[list]').forEach(input => {
+            input.addEventListener('input', function() {
+                const datalist = document.getElementById(this.getAttribute('list'));
+                const options = datalist.querySelectorAll('option');
+                const hiddenInput = this.closest('td').querySelector('.lecturer-id-input');
+
+                const selectedOption = Array.from(options).find(option =>
+                    option.value === this.value
+                );
+
+                if (selectedOption) {
+                    hiddenInput.value = selectedOption.getAttribute('data-lecturer-id');
+                } else {
+                    hiddenInput.value = '';
+                }
+            });
+        });
+    });
+</script>

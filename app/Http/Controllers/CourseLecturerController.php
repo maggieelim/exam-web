@@ -93,35 +93,63 @@ class CourseLecturerController extends Controller
      */
     public function edit(string $slug, Request $request)
     {
+        // Ambil data awal
         $activity = Activity::where('category', 'teaching')->get();
         $course = Course::where('slug', $slug)->firstOrFail();
         $semesterId = $request->query('semester_id');
         $semester = Semester::with('academicYear')->findOrFail($semesterId);
 
-        // Ambil semua dosen
+        $selectedActivity = $request->query('activity_id', '');
+        $activityId = $selectedActivity;
+
+        // Base query dosen
         $query = Lecturer::with('user');
 
+        // 🔍 Filter bagian
         if ($request->filled('bagian')) {
-            $query->where('bagian', 'like', '%' . $request->bagian . '%');
+            $query->where('bagian', 'ILIKE', '%' . $request->bagian . '%');
         }
 
+        // 🔍 Filter nama dosen
         if ($request->filled('name')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->name . '%');
+                $q->where('name', 'ILIKE', '%' . $request->name . '%');
             });
+        }
+
+        // 🔍 Sorting
+        $sort = $request->get('sort', 'name');
+        $dir = $request->get('dir', 'asc');
+        $allowedSorts = ['name', 'bagian'];
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'name';
+        }
+
+        // Sorting berdasarkan kolom di tabel yang benar
+        if ($sort === 'name') {
+            $query->join('users', 'lecturers.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('lecturers.*'); 
+        } elseif ($sort === 'bagian') {
+            $query->join('users', 'lecturers.user_id', '=', 'users.id')->orderBy('lecturers.bagian', $dir)->select('lecturers.*'); 
+        } else {
+            $query->orderBy($sort, $dir);
         }
 
         $lecturers = $query->get();
 
-        // Ambil dosen yang sudah ditugaskan di aktivitas tertentu
-        $activityId = $request->query('activity_id');
+        // 🎯 Dosen yang sudah di-assign ke activity dan semester tersebut
         $assignedLecturers = [];
-
         if ($activityId) {
-            $assignedLecturers = DB::table('teaching_schedules')->where('course_id', $course->id)->where('semester_id', $semesterId)->where('activity_id', $activityId)->pluck('lecturer_id')->toArray();
+            $assignedLecturers = CourseLecturer::where('course_id', $course->id)
+                ->where('semester_id', $semesterId)
+                ->whereHas('activities', function ($q) use ($activityId) {
+                    $q->where('activity_id', $activityId);
+                })
+                ->pluck('lecturer_id')
+                ->toArray();
         }
 
-        return view('courses.dosen.add_lecturer', compact('course', 'lecturers', 'semester', 'semesterId', 'activity', 'assignedLecturers'));
+        return view('courses.dosen.add_lecturer', compact('sort', 'dir', 'course', 'lecturers', 'semester', 'semesterId', 'activity', 'assignedLecturers', 'activityId', 'selectedActivity'));
     }
 
     public function getLecturersByActivity(Request $request, string $slug)

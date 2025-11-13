@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DaftarSiswaExport;
 use App\Models\Course;
 use App\Models\CourseSchedule;
 use App\Models\CourseStudent;
@@ -111,12 +112,12 @@ class CourseStudentController extends Controller
 
             return redirect()
                 ->to(url()->previous() . '#siswa')
-                ->with($messages);
+                ->with('success', 'Mahasiswa berhasil ditambahkan.');
         }
 
         // --- Case 2: Import Excel (NIM saja) ---
         if ($request->hasFile('excel')) {
-            $collection = Excel::toCollection(null, $request->file('excel'));
+            $collection = Excel::toCollection(null, $request->file('excel'))->toArray();
 
             foreach ($collection[0] as $row) {
                 $nim = trim($row[0]);
@@ -143,7 +144,7 @@ class CourseStudentController extends Controller
 
             return redirect()
                 ->to(url()->previous() . '#siswa')
-                ->with('success', 'Mahasiswa dari Excel berhasil ditambahkan.');
+                ->with('success', 'Mahasiswa berhasil ditambahkan.');
         }
 
         return back()->withErrors(['error' => 'Tidak ada data yang dikirim.']);
@@ -336,8 +337,8 @@ class CourseStudentController extends Controller
             ->groupBy(function ($cs) {
                 $gender = $cs->student->user->gender ?? 'tidak diketahui';
                 return match (strtolower($gender)) {
-                    'l', 'laki-laki', 'pria', 'male' => 'pria',
-                    'p', 'perempuan', 'wanita', 'female' => 'wanita',
+                    'l', 'laki-laki', 'pria', 'male' => 'laki-laki',
+                    'p', 'perempuan', 'wanita', 'female' => 'perempuan',
                     default => 'tidak diketahui',
                 };
             })
@@ -473,5 +474,15 @@ class CourseStudentController extends Controller
             return response()->json(['message' => 'Mahasiswa berhasil dihapus.']);
         }
         return back()->with('success', 'Mahasiswa berhasil dihapus dari course.');
+    }
+
+    public function downloadExcel($courseSlug, $semesterId)
+    {
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
+        $courseId = $course->id;
+        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+        $yearName = str_replace('/', '-', $semester->academicYear->year_name);
+        $filename = "DaftarSiswa_Blok_{$courseSlug}_{$semester->semester_name}_{$yearName}.xlsx";
+        return Excel::download(new DaftarSiswaExport($courseId, $semesterId), $filename);
     }
 }

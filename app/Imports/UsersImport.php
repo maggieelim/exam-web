@@ -42,10 +42,10 @@ class UsersImport implements ToModel, WithHeadingRow
             throw new \Exception('Kolom gender tidak boleh kosong.');
         }
 
-        // Hanya boleh 'pria' atau 'wanita'
-        $allowedGenders = ['pria', 'wanita'];
+        // Hanya boleh 'Laki-Laki' atau 'Perempuan'
+        $allowedGenders = ['laki-laki', 'perempuan'];
         if (!in_array($gender, $allowedGenders)) {
-            throw new \Exception("Gender '{$row['gender']}' tidak valid. Hanya boleh 'Pria' atau 'Wanita'.");
+            throw new \Exception("Gender '{$row['gender']}' tidak valid. Hanya boleh 'Laki-Laki' atau 'Perempuan'.");
         }
         // Simpan user dulu
         $user = User::create([

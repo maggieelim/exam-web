@@ -19,27 +19,24 @@
                 @csrf
                 <!-- Informasi Jadwal Ujian Baru -->
                 <div class="row">
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="title">Judul Ujian</label>
                         <input type="text" name="title" class="form-control" required>
                     </div>
 
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="exam_date">Tanggal</label>
-                        <input type="date"
-                            name="exam_date"
-                            class="form-control"
-                            required
+                        <input type="date" name="exam_date" class="form-control" required
                             min="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="duration">Durasi (menit)</label>
                         <input type="number" name="duration" class="form-control" required min="1">
                     </div>
-                    <div class=" col-md-3 mb-3">
+                    {{-- <div class=" col-md-3 mb-3">
                         <label for="room">Ruangan</label>
                         <input type="text" name="room" class="form-control">
-                    </div>
+                    </div> --}}
                 </div>
 
                 <!-- Pilih Course -->
@@ -70,9 +67,7 @@
                     <label for="file">Upload Soal</label>
                     <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv">
                 </div>
-                <a href="{{ asset('templates/template_soal.xlsx') }}"
-                    class="btn bg-gradient-info btn-sm"
-                    download>
+                <a href="{{ asset('templates/template_soal.xlsx') }}" class="btn bg-gradient-info btn-sm" download>
                     <i class="fas fa-download me-1"></i>Template Soal
                 </a>
                 <button type="submit" class="btn btn-sm bg-gradient-success">Simpan Ujian</button>

@@ -6,7 +6,7 @@
             <div class="mt-3 d-flex justify-content-between">
                 <h5 class="text-uppercase">Penjadwalan Dosen</h5>
                 <a class="btn btn-sm btn-secondary"
-                    href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}#dosen">
+                    href="{{ route('courses.edit', $course->slug) }}?semester_id={{ $semester->id }}&tab=dosen">
                     Back
                 </a>
             </div>
@@ -26,16 +26,17 @@
                 </div>
                 <div class="col-md-4 d-flex align-items-center col-12">
                     <p class="me-2 mb-0"><strong>Tugas:</strong></p>
-                    <select name="activity_id" id="activity_id" class="form-select form-select-sm w-50"
-                        onchange="updateLecturersByActivity(this.value)">
+                    <select name="activity_id" id="activity_id" class="form-select form-select-sm w-50">
                         <option value="">Pilih Tugas</option>
                         @foreach ($activity as $act)
-                            <option value="{{ $act->id }}" {{ old('activity_id') == $act->id ? 'selected' : '' }}>
+                            <option value="{{ $act->id }}"
+                                {{ request('activity_id') == $act->id || $selectedActivity == $act->id ? 'selected' : '' }}>
                                 {{ $act->activity_name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+
             </div>
         </div>
 
@@ -47,46 +48,72 @@
                 </button>
             </div>
             <div class="collapse" id="filterCollapse">
-                <form method="GET" action="{{ route('admin.courses.addLecturer', [$course->slug, $semester->id]) }}">
-                    <div class="mx-3 my-2 py-2">
-                        <div class="row g-2">
-                            <!-- Input Blok -->
-                            <input type="hidden" class="form-control" name="semester_id"
-                                value="{{ request('semester_id') }}">
-                            <!-- Input Dosen -->
-                            <div class="col-md-6">
-                                <label for="dosen" class="form-label mb-1">Name</label>
-                                <input type="text" class="form-control form-control-sm" name="name"
-                                    value="{{ request('name') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="blok" class="form-label mb-1">Bagian</label>
-                                <input type="text" class="form-control form-control-sm" name="bagian"
-                                    value="{{ request('bagian') }}">
-                            </div>
+                <div class="mx-3 my-2 py-2">
+                    <div class="row g-2">
+                        <!-- Input Dosen -->
+                        <div class="col-md-6">
+                            <label for="dosen" class="form-label mb-1">Name</label>
+                            <input type="text" class="form-control form-control-sm" id="filter_name"
+                                value="{{ request('name') }}" placeholder="Cari nama dosen...">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="blok" class="form-label mb-1">Bagian</label>
+                            <input type="text" class="form-control form-control-sm" id="filter_bagian"
+                                value="{{ request('bagian') }}" placeholder="Cari bagian...">
+                        </div>
 
-                            <!-- Buttons -->
-                            <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route('admin.courses.addLecturer', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
-                                    class="btn btn-light btn-sm">Reset</a>
-                                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-                            </div>
+                        <!-- Buttons -->
+                        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                            <a href="{{ route('admin.courses.addLecturer', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                class="btn btn-light btn-sm">Reset</a>
+                            <button type="button" id="applyFilter" class="btn btn-primary btn-sm">Apply</button>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
+
             <form id="kelompokForm" action="{{ route('admin.courses.assignLecturer', $course->slug) }}" method="POST">
                 @csrf
                 <div class="table-responsive p-0">
                     <input type="hidden" name="semester_id" value="{{ $semesterId }}">
-                    <input type="hidden" id="selectedActivity" name="selected_activity" value="">
+                    <input type="hidden" name="selected_activity" id="selected_activity" value="{{ $selectedActivity }}">
 
                     <table class="compact-table table-bordered">
                         <thead class="text-center align-middle">
                             <tr>
                                 <th style="width: 40px;"></th>
-                                <th>Nama</th>
-                                <th>Bagian</th>
+                                <th>
+                                    <a
+                                        href="{{ route(
+                                            'admin.courses.addLecturer',
+                                            array_merge(request()->all(), [
+                                                'course' => $course->slug,
+                                                'semester_id' => $semesterId,
+                                                'sort' => 'name',
+                                                'dir' => $sort === 'name' && $dir === 'asc' ? 'desc' : 'asc',
+                                            ]),
+                                        ) }}">
+                                        Nama
+                                        @if ($sort === 'name')
+                                            <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th> <a
+                                        href="{{ route(
+                                            'admin.courses.addLecturer',
+                                            array_merge(request()->all(), [
+                                                'course' => $course->slug,
+                                                'semester_id' => $semesterId,
+                                                'sort' => 'bagian',
+                                                'dir' => $sort === 'bagian' && $dir === 'asc' ? 'desc' : 'asc',
+                                            ]),
+                                        ) }}">
+                                        Bagian
+                                        @if ($sort === 'bagian')
+                                            <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
+                                        @endif
+                                    </a></th>
                                 <th>Strata</th>
                                 <th>Gelar</th>
                                 <th>Tipe Dosen</th>
@@ -118,67 +145,26 @@
             </form>
         </div>
     </div>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const activitySelect = document.querySelector('#activity_id');
-            const selectedActivityInput = document.querySelector('#selectedActivity');
-
-            // Saat dropdown berubah, update hidden input
-            activitySelect.addEventListener('change', () => {
-                selectedActivityInput.value = activitySelect.value;
-            });
-
-            // Jika ingin memastikan nilai tetap tersimpan setelah reload (misalnya pakai old input)
-            selectedActivityInput.value = activitySelect.value;
-        });
-
-        function updateLecturersByActivity(activityId) {
+        document.addEventListener("DOMContentLoaded", function() {
+            const activitySelect = document.getElementById('activity_id');
             const semesterId = document.getElementById('semester_id').value;
-            const courseId = document.getElementById('course_id').value;
             const courseSlug = document.getElementById('course_slug').value;
-            const tbody = document.getElementById('lecturers-tbody');
 
-            // Show loading
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
+            activitySelect.addEventListener('change', function() {
+                const activityId = this.value;
+                const name = document.getElementById('filter_name')?.value || '';
+                const bagian = document.getElementById('filter_bagian')?.value || '';
 
-            // Update hidden input
-            document.getElementById('selectedActivity').value = activityId;
-
-            // AJAX request to get lecturers data based on activity
-            fetch(`/admin/course/${courseSlug}/get-lecturers?semester_id=${semesterId}&activity_id=${activityId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Clear tbody
-                    tbody.innerHTML = '';
-
-                    // Populate with new data
-                    data.lecturers.forEach(lecturer => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="text-center">
-                                <input name="lecturers[]" value="${lecturer.id}" type="checkbox" ${lecturer.assigned ? 'checked' : ''}>
-                            </td>
-                            <td>${lecturer.user.name || '-'}</td>
-                            <td>${lecturer.bagian || '-'}</td>
-                            <td>${lecturer.strata || '-'}</td>
-                            <td>${lecturer.gelar || '-'}</td>
-                            <td>${lecturer.tipe_dosen || '-'}</td>
-                            <td>${lecturer.nidn || '-'}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    tbody.innerHTML =
-                        '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+                const params = new URLSearchParams({
+                    semester_id: semesterId,
+                    activity_id: activityId,
+                    name: name,
+                    bagian: bagian
                 });
-        }
+
+                window.location.href = `/admin/course/${courseSlug}/addLecturer?${params.toString()}`;
+            });
+        });
     </script>
 @endsection

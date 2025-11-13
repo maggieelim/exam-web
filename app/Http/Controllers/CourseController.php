@@ -146,7 +146,7 @@ class CourseController extends Controller
         $query->orderBy($sort, $dir);
 
         // Pagination
-        $courses = $query->paginate(15)->appends($request->all());
+        $courses = $query->paginate(25)->appends($request->all());
         if ($agent->isMobile()) {
             return view('courses.index_mobile', compact('courses', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
         }
@@ -191,13 +191,36 @@ class CourseController extends Controller
             ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
             ->get();
 
-        $students = CourseStudent::with(['student.user'])
+        $query = CourseStudent::with(['student.user'])
             ->where('course_id', $course->id)
-            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
-            ->paginate(20);
+            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId));
 
-        return view('courses.show', compact('course', 'lecturers', 'students', 'semesterId'));
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->whereHas('student', function ($q) use ($search) {
+                $q->where('nim', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $sort = $request->get('sort', 'name');
+        $dir = $request->get('dir', 'asc');
+
+        if ($sort === 'nim') {
+            $query->join('students', 'course_students.student_id', '=', 'students.id')->orderBy('students.nim', $dir)->select('course_students.*');
+        } elseif ($sort === 'name') {
+            $query->join('students', 'course_students.student_id', '=', 'students.id')->join('users', 'students.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('course_students.*');
+        } else {
+            $query->orderBy('course_students.kelompok', 'desc');
+        }
+
+        $students = $query->paginate(20);
+
+        return view('courses.show', compact('sort', 'dir', 'course', 'lecturers', 'students', 'semesterId'));
     }
+
 
     public function import(Request $request)
     {
@@ -276,64 +299,43 @@ class CourseController extends Controller
      */
     public function edit($slug, Request $request)
     {
-        $scheduleService = app(ScheduleConflictService::class);
-        $studentData = app(CourseStudentController::class)->getStudentData($request, $slug);
-        $lecturerData = app(CourseLecturerController::class)->getLecturerData($request, $slug);
-        $practicumData = app(CoursePracticumController::class)->getPracticumData($request, $slug);
-        $pemicuData = app(CoursePemicuController::class)->getPemicuData($request, $slug);
-        $plenoData = app(CoursePlenoController::class)->getPlenoData($request, $slug);
-        $skillLabData = app(CourseSkillsLabController::class)->getSkillsLabData($request, $slug);
-
         $semesterId = $request->query('semester_id');
         $course = Course::where('slug', $slug)->firstOrFail();
-        $semester = Semester::with('academicYear')->findOrFail($semesterId);
+        $activeTab = $request->query('tab', 'kelas');
 
-        $courseSchedule = CourseSchedule::with(['course', 'semester'])
-            ->where('course_id', $course->id)
-            ->where('semester_id', $semesterId)
-            ->first();
+        // Load data berdasarkan tab yang aktif
+        $tabData = [];
 
-        // Ambil teaching schedules jika jadwal ada
-        $teachingSchedules = collect();
-        if ($courseSchedule) {
-            $teachingSchedules = TeachingSchedule::with('activity')
-                ->where('course_schedule_id', $courseSchedule->id)
-                ->orderBy('session_number')
-                ->get()
-                ->groupBy(function ($item) {
-                    $name = strtolower($item->activity->activity_name);
-                    return match (true) {
-                        Str::contains($name, ['ujian praktikum', 'praktikum']) => 'PRAKTIKUM',
-                        Str::contains($name, ['ujian skill lab', 'skill lab']) => 'SKILL LAB',
-                        default => strtoupper($item->activity->activity_name),
-                    };
-                })
-                ->map(fn($group) => $group->sortBy('activity_id')->values());
+        switch ($activeTab) {
+            case 'kelas':
+                $tabData['kelasData'] = app(CourseScheduleController::class)->getScheduleData($request, $slug);
+                break;
+            case 'siswa':
+                $tabData['studentData'] = app(CourseStudentController::class)->getStudentData($request, $slug);
+                break;
+            case 'dosen':
+                $tabData['lecturerData'] = app(CourseLecturerController::class)->getLecturerData($request, $slug);
+                break;
+            case 'praktikum':
+                $tabData['practicumData'] = app(CoursePracticumController::class)->getPracticumData($request, $slug);
+                break;
+            case 'pemicu':
+                $tabData['pemicuData'] = app(CoursePemicuController::class)->getPemicuData($request, $slug);
+                break;
+            case 'pleno':
+                $tabData['plenoData'] = app(CoursePlenoController::class)->getPlenoData($request, $slug);
+                break;
+            case 'skilllab':
+                $tabData['skillLabData'] = app(CourseSkillsLabController::class)->getSkillsLabData($request, $slug);
+                break;
         }
 
-        $lecturers = Lecturer::with('user')->get();
-        $availableLecturersPerSchedule = [];
-
-        if ($courseSchedule) {
-            $allSchedules = TeachingSchedule::where('course_schedule_id', $courseSchedule->id)
-                ->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->get();
-
-            foreach ($allSchedules as $schedule) {
-                $availableLecturersPerSchedule[$schedule->id] = $scheduleService->getAvailableLecturers(
-                    $lecturers,
-                    $schedule->scheduled_date,
-                    $schedule->start_time,
-                    $schedule->end_time,
-                    $schedule->id, // exclude current schedule
-                    $semesterId,
-                );
-            }
-        }
-
-        $selectedLecturers = $lecturers; // duplikat variabel karena query sama
-
-        return view('courses.edit', compact('skillLabData','plenoData', 'pemicuData', 'practicumData', 'lecturerData', 'studentData', 'course', 'lecturers', 'selectedLecturers', 'semesterId', 'courseSchedule', 'semester', 'teachingSchedules', 'availableLecturersPerSchedule'));
+        return view('courses.edit', array_merge([
+            'course' => $course,
+            'semesterId' => $semesterId,
+            'activeTab' => $activeTab,
+            'semester' => Semester::with('academicYear')->findOrFail($semesterId),
+        ], $tabData));
     }
 
     /**

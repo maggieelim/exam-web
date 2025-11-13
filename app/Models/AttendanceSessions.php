@@ -11,7 +11,7 @@ class AttendanceSessions extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['loc_name','semester_id', 'course_id', 'activity_id', 'absensi_code', 'start_time', 'end_time', 'location_lat', 'location_long', 'tolerance_meter', 'status', 'created_at', 'updated_at'];
+    protected $fillable = ['loc_name', 'teaching_schedule_id', 'semester_id', 'course_id', 'activity_id', 'absensi_code', 'start_time', 'end_time', 'location_lat', 'location_long', 'tolerance_meter', 'status', 'created_at', 'updated_at'];
 
     public function course()
     {
@@ -35,7 +35,7 @@ class AttendanceSessions extends Model
 
     public function lecturerRecords()
     {
-        return $this->hasMany(LecturerAttendanceRecords::class);
+        return $this->hasMany(LecturerAttendanceRecords::class, 'attendance_session_id');
     }
 
     public function activity()
@@ -45,17 +45,22 @@ class AttendanceSessions extends Model
 
     public function isExpired()
     {
-        return Carbon::now()->gt(Carbon::parse($this->end_time));
+        return $this->end_time && Carbon::now()->greaterThan($this->end_time);
     }
 
     public function isActive()
     {
-        return Carbon::now()->between(Carbon::parse($this->start_time), Carbon::parse($this->end_time));
+        return $this->start_time && Carbon::now()->between($this->start_time, $this->end_time);
     }
-     public function updateStatusIfExpired()
+    public function updateStatusIfExpired()
     {
         if ($this->status !== 'finished' && Carbon::now()->gt(Carbon::parse($this->end_time))) {
             $this->update(['status' => 'finished']);
         }
+    }
+
+    public function teachingSchedule()
+    {
+        return $this->belongsTo(TeachingSchedule::class, 'teaching_schedule_id');
     }
 }

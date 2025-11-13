@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PracticumAssignmentExport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\PracticumDetails;
+use App\Models\Semester;
 use App\Models\TeachingSchedule;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CoursePracticumController extends Controller
 {
@@ -74,7 +77,7 @@ class CoursePracticumController extends Controller
             'unavailableSlots' => $unavailableSlots,
         ];
     }
-   
+
     public function update(Request $request)
     {
         $request->validate([
@@ -122,5 +125,14 @@ class CoursePracticumController extends Controller
                 500,
             );
         }
+    }
+
+    public function downloadExcel($courseSlug, $semesterId)
+    {
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
+        $semester = Semester::with('academicYear')->where('id', $semesterId)->first();
+        $yearName = str_replace('/', '-', $semester->academicYear->year_name);
+        $filename = "Jadwal_Praktikum_{$course->slug}_{$semester->semester_name}_{$yearName}.xlsx";
+        return Excel::download(new PracticumAssignmentExport($course->id, $semesterId), $filename);
     }
 }

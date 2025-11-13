@@ -96,7 +96,7 @@ class UserController extends Controller
             $query->orderBy($sort, $dir);
         }
 
-        $users = $query->paginate(15)->appends($request->all());
+        $users = $query->paginate(25)->appends($request->all());
 
         if ($agent->isMobile()) {
             return view('admin.users.index_mobile', compact('users', 'type', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
@@ -119,8 +119,8 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'gender' => 'required',
             'nim' => $type === 'student' ? 'required|string|unique:students,nim' : 'nullable',
-            'nidn' => $type === 'lecturer' ? 'required|string|unique:lecturers,nidn' : 'nullable',
-            'strata' => $type === 'lecturer' ? 'required|in:S1,S2,S3,Sp1,Sp2' : 'nullable',
+            'nidn' => $type === 'lecturer' ? 'string|unique:lecturers,nidn' : 'nullable',
+            'strata' => $type === 'lecturer' ? 'required' : 'nullable',
             'gelar' => $type === 'lecturer' ? 'nullable|string|max:50' : 'nullable',
             'tipe_dosen' => $type === 'lecturer' ? 'required|in:Asdos,CDT,DT,DTT' : 'nullable',
             'min_sks' => $type === 'lecturer' ? 'nullable|integer|min:0' : 'nullable',
@@ -263,9 +263,9 @@ class UserController extends Controller
             $rules['nim'] = 'required|string';
             $rules['angkatan'] = 'required|string';
         } elseif ($type === 'lecturer') {
-            $rules['nidn'] = 'required|string';
+            $rules['nidn'] = 'string';
             $rules['role'] = 'required|exists:roles,name';
-            $rules['strata'] = 'required|in:S1,S2,S3,Sp1,Sp2';
+            $rules['strata'] = 'required';
             $rules['gelar'] = 'nullable|string|max:50';
             $rules['tipe_dosen'] = 'required|in:Asdos,CDT,DT,DTT';
             $rules['min_sks'] = 'nullable|integer|min:0';

@@ -19,6 +19,9 @@
         "sass-loader": "^12.3.0"
     },
     "dependencies": {
-        "flatpickr": "^4.6.13"
+        "@fullcalendar/core": "^6.1.19",
+        "@fullcalendar/resource-timeline": "^6.1.19",
+        "flatpickr": "^4.6.13",
+        "fullcalendar": "^6.1.19"
     }
 }

@@ -5,7 +5,7 @@
     </div>
 
     <form id="skillslabForm" class="schedule-form"
-        action="{{ route('admin.course.updateSchedules', $courseSchedule->id) }}" method="POST">
+        action="{{ route('admin.course.updateSchedules', $kelasData->courseSchedule->id) }}" method="POST">
         @csrf
         <div class="table-responsive">
             <table class="compact-table table-bordered">
