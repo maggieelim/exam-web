@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Exports\SkillsLabExport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
-use App\Models\CourseStudent;
 use App\Models\Semester;
 use App\Models\SkillslabDetails;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerAttendanceService;
+use App\Services\LecturerSortService;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
@@ -17,9 +18,17 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class CourseSkillsLabController extends Controller
 {
+    private $attendanceService;
+
+    public function __construct(LecturerAttendanceService $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
     public function getSkillsLabData(Request $request, string $slug)
     {
         $scheduleService = app(ScheduleConflictService::class);
+        $sorter = app(LecturerSortService::class);
+
         $semesterId = $request->query('semester_id');
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
@@ -48,6 +57,7 @@ class CourseSkillsLabController extends Controller
             ->map(fn($items) => $items->pluck('kelompok_num')->unique()->values());
 
         $lecturers = CourseLecturer::with('activities', 'lecturer.user')->where('course_id', $course->id)->where('semester_id', $semesterId)->whereHas('activities', fn($query) => $query->where('activity_id', 2))->get();
+        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
 
         $unavailableSlots = [];
         foreach ($lecturers as $lecturer) {
@@ -83,31 +93,61 @@ class CourseSkillsLabController extends Controller
 
         try {
             DB::beginTransaction();
-
+            $semesterId = $request->semester_id;
+            $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
 
             foreach ($assignments as $lecturerId => $skillLabs) {
                 foreach ($skillLabs as $skillLabId => $assignmentData) {
+
                     $kelompok = $assignmentData['kelompok'] ?? null;
-                    $assigned = $assignmentData['assigned'] ?? 0;
+
+                    // Ambil detail lama (bisa null)
+                    $detail = SkillslabDetails::where('teaching_schedule_id', $skillLabId)
+                        ->where('lecturer_id', $lecturerId)
+                        ->first();
+
+                    // Ambil data dari teaching_schedules
+                    $schedule = TeachingSchedule::find($skillLabId);
 
                     if (!empty($kelompok)) {
+
                         SkillslabDetails::updateOrCreate(
                             [
                                 'teaching_schedule_id' => $skillLabId,
-                                'lecturer_id' => $lecturerId,
+                                'kelompok_num'        => $kelompok,
+                                'group_code'          => $detail->group_code ?? $schedule->group,
                             ],
                             [
-                                'kelompok_num' => $kelompok,
-                                'practicum_group_id' => null, // jika memang tidak digunakan
-                            ],
+                                'lecturer_id'        => $lecturerId,
+                                'practicum_group_id'  => null,
+                                'course_schedule_id'  => $detail->course_schedule_id ?? $schedule->course_schedule_id,
+                            ]
                         );
-                    } elseif ($assigned) {
-                        // Jika sebelumnya assigned tapi sekarang dropdown dikosongkan → hapus
-                        SkillslabDetails::where('teaching_schedule_id', $skillLabId)->where('lecturer_id', $lecturerId)->delete();
+
+                        $this->attendanceService->syncLecturerAttendance(
+                            $skillLabId,
+                            $lecturerId,
+                            $courseId,
+                            $semesterId,
+                            2
+                        );
+                    } else {
+
+                        SkillslabDetails::where('teaching_schedule_id', $skillLabId)
+                            ->where('lecturer_id', $lecturerId)
+                            ->delete();
+
+                        $this->attendanceService->removeLecturerAttendance(
+                            $skillLabId,
+                            $lecturerId,
+                            $courseId,
+                            $semesterId
+                        );
                     }
                 }
             }
+
 
             DB::commit();
 

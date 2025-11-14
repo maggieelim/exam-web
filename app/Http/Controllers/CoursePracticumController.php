@@ -8,6 +8,8 @@ use App\Models\CourseLecturer;
 use App\Models\PracticumDetails;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerAttendanceService;
+use App\Services\LecturerSortService;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
@@ -16,9 +18,18 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class CoursePracticumController extends Controller
 {
+    private $attendanceService;
+
+    public function __construct(LecturerAttendanceService $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
+
     public function getPracticumData(Request $request, string $slug)
     {
         $scheduleService = app(ScheduleConflictService::class);
+        $sorter = app(LecturerSortService::class);
+
         $semesterId = $request->query('semester_id');
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
@@ -45,6 +56,8 @@ class CoursePracticumController extends Controller
                 $query->where('activity_id', 3);
             })
             ->get();
+
+        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
 
         // Get unavailable slots using single query
         $unavailableSlots = [];
@@ -86,25 +99,72 @@ class CoursePracticumController extends Controller
             'assignments' => 'sometimes|array',
         ]);
 
+        DB::beginTransaction();
+
         try {
-            DB::beginTransaction();
 
             $semesterId = $request->semester_id;
             $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
 
-            $practicumIds = TeachingSchedule::where('course_id', $courseId)->where('semester_id', $semesterId)->where('activity_id', 3)->pluck('id');
+            // Ambil semua practicum berdasarkan course & semester
+            $practicumIds = TeachingSchedule::where('course_id', $courseId)
+                ->where('semester_id', $semesterId)
+                ->where('activity_id', 3)
+                ->pluck('id');
 
-            PracticumDetails::whereIn('teaching_schedule_id', $practicumIds)->delete();
+            foreach ($practicumIds as $practicumId) {
 
-            foreach ($assignments as $lecturerId => $practicumAssignments) {
-                foreach ($practicumAssignments as $practicumId => $isAssigned) {
-                    if ($isAssigned) {
-                        PracticumDetails::updateOrCreate([
-                            'teaching_schedule_id' => $practicumId,
-                            'lecturer_id' => $lecturerId,
-                        ]);
+                // Lecturer yang dikirim dari form untuk practicum ini
+                $submittedLecturers = [];
+
+                foreach ($assignments as $lecturerId => $practicumAssignments) {
+                    if (!empty($practicumAssignments[$practicumId])) {
+                        $submittedLecturers[] = $lecturerId;
                     }
+                }
+
+                // Lecturer yang ada di database
+                $existingLecturers = PracticumDetails::where('teaching_schedule_id', $practicumId)
+                    ->pluck('lecturer_id')
+                    ->toArray();
+
+                // Cari yang harus dihapus
+                $toDelete = array_diff($existingLecturers, $submittedLecturers);
+
+                // Cari yang harus ditambah
+                $toAdd = array_diff($submittedLecturers, $existingLecturers);
+
+                // HAPUS
+                foreach ($toDelete as $lecturerId) {
+
+                    PracticumDetails::where('teaching_schedule_id', $practicumId)
+                        ->where('lecturer_id', $lecturerId)
+                        ->delete();
+
+                    $this->attendanceService->removeLecturerAttendance(
+                        $practicumId,
+                        $lecturerId,
+                        $courseId,
+                        $semesterId
+                    );
+                }
+
+                // TAMBAH
+                foreach ($toAdd as $lecturerId) {
+
+                    PracticumDetails::create([
+                        'teaching_schedule_id' => $practicumId,
+                        'lecturer_id' => $lecturerId,
+                    ]);
+
+                    $this->attendanceService->syncLecturerAttendance(
+                        $practicumId,
+                        $lecturerId,
+                        $courseId,
+                        $semesterId,
+                        3
+                    );
                 }
             }
 
@@ -117,13 +177,10 @@ class CoursePracticumController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 

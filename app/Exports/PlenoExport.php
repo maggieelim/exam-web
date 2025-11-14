@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\PlenoDetails;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerSortService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -33,11 +34,14 @@ class PlenoExport implements FromCollection, WithHeadings, WithTitle, WithStyles
 
     public function collection()
     {
+        $sorter = app(LecturerSortService::class);
         $lecturers = CourseLecturer::with('lecturer.user')
             ->where('course_id', $this->courseId)
             ->where('semester_id', $this->semesterId)
             ->whereHas('activities', fn($q) => $q->where('activity_id', 4))
             ->get();
+
+        $lecturers = $sorter->sort($lecturers, $this->courseId, $this->semesterId);
 
         $data = new Collection();
 

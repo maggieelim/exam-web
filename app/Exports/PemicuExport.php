@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\PemicuDetails;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerSortService;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -31,6 +32,7 @@ class PemicuExport implements FromCollection, WithHeadings, WithTitle, WithStyle
 
     public function collection()
     {
+        $sorter = app(LecturerSortService::class);
         $lecturers = CourseLecturer::with('lecturer.user')
             ->where('course_id', $this->courseId)
             ->where('semester_id', $this->semesterId)
@@ -38,6 +40,8 @@ class PemicuExport implements FromCollection, WithHeadings, WithTitle, WithStyle
                 $query->where('activity_id', 5);
             })
             ->get();
+
+        $lecturers = $sorter->sort($lecturers, $this->courseId, $this->semesterId);
 
         $data = collect();
 

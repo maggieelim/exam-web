@@ -1,12 +1,12 @@
 <div class="d-flex">
-    <a class="btn btn-sm btn-success"
+    <a class="btn btn-sm btn-outline-info"
         href="{{ route('admin.courses.downloadPracticumAssignment', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
         title="Download Excel">
-        <i class="fas fa-download"></i> Download Excel
+        <i class="fas fa-download"></i>
     </a>
 </div>
 
-<form class="schedule-form"    action="{{ route('admin.course.assignPracticum') }}" method="POST">
+<form class="schedule-form" action="{{ route('admin.course.assignPracticum') }}" method="POST">
     @csrf
     <div class="table-wrapper p-0">
         <input type="hidden" name="semester_id" value="{{ $semesterId }}">

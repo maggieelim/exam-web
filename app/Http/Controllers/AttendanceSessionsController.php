@@ -394,14 +394,58 @@ class AttendanceSessionsController extends Controller
         return $earthRadius * $c;
     }
 
-    public function edit(string $id)
+    public function edit($attendanceCode)
     {
-        //
+        $attendance = AttendanceSessions::with('activity', 'semester.academicYear', 'course')->where('absensi_code', $attendanceCode)->first();
+        $lecturers = LecturerAttendanceRecords::with('courseLecturer.lecturer.user')->where('attendance_session_id', $attendance->id)->get();
+
+        return view('attendance.edit', compact('lecturers', 'attendance'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $attendanceCode)
     {
-        //
+        $request->validate([
+            'tolerance' => 'required|numeric|min:1',
+            'location_lat' => 'required',
+            'location_long' => 'required',
+            'location_address' => 'nullable|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+            $user = Auth::id();
+            $lecturer = Lecturer::where('user_id', $user)->firstOrFail();
+
+            $attendance = AttendanceSessions::where('absensi_code', $attendanceCode)->firstOrFail();
+            $courseLecturer = CourseLecturer::where('lecturer_id', $lecturer->id)->where('semester_id', $attendance->semester_id)->where('course_id', $attendance->course_id)->firstOrFail();
+            $lecturerAttendance = LecturerAttendanceRecords::where('attendance_session_id', $attendance->id)->where('course_lecturer_id', $courseLecturer->id)->first();
+            // Create attendance session
+            $attendance->update([
+                'location_lat' => $request->location_lat,
+                'location_long' => $request->location_long,
+                'loc_name' => $request->location_address,
+                'tolerance_meter' => $request->tolerance,
+            ]);
+
+            if ($lecturerAttendance) {
+                $lecturerAttendance->update([
+                    'status' => 'checked_in',
+                    'checked_in_at' => Carbon::now(),
+                ]);
+            }
+            // Generate initial QR token
+            $this->generateQrToken($attendance->id);
+
+            DB::commit();
+
+            return redirect()->route('attendance.show', $attendance->absensi_code)->with('success', 'Attendance session created successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->with('error', 'Failed to create attendance session: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     public function destroy(string $id)

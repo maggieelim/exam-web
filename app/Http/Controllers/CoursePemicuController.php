@@ -9,6 +9,8 @@ use App\Models\CourseStudent;
 use App\Models\PemicuDetails;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerAttendanceService;
+use App\Services\LecturerSortService;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
@@ -17,9 +19,17 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class CoursePemicuController extends Controller
 {
+    private $attendanceService;
+
+    public function __construct(LecturerAttendanceService $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
     public function getPemicuData(Request $request, string $slug)
     {
         $scheduleService = app(ScheduleConflictService::class);
+        $sorter = app(LecturerSortService::class);
+
         $semesterId = $request->query('semester_id');
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
@@ -53,6 +63,8 @@ class CoursePemicuController extends Controller
                 $query->where('activity_id', 5);
             })
             ->get();
+
+        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
 
         // Get unavailable slots using single query
         $unavailableSlots = [];
@@ -102,7 +114,7 @@ class CoursePemicuController extends Controller
             $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
 
-            $practicumIds = TeachingSchedule::where('course_id', $courseId)->where('semester_id', $semesterId)->where('activity_id', 3)->pluck('id');
+            $pemicuIds = TeachingSchedule::where('course_id', $courseId)->where('semester_id', $semesterId)->where('activity_id', 5)->pluck('id');
 
             foreach ($assignments as $lecturerId => $tutorAssignments) {
                 foreach ($tutorAssignments as $tutorId => $assignmentData) {
@@ -119,8 +131,21 @@ class CoursePemicuController extends Controller
                                 'practicum_group_id' => null,
                             ],
                         );
+                        $this->attendanceService->syncLecturerAttendance(
+                            $tutorId,
+                            $lecturerId,
+                            $courseId,
+                            $semesterId,
+                            5
+                        );
                     } else {
                         PemicuDetails::where('teaching_schedule_id', $tutorId)->where('lecturer_id', $lecturerId)->delete();
+                        $this->attendanceService->removeLecturerAttendance(
+                            $tutorId,
+                            $lecturerId,
+                            $courseId,
+                            $semesterId
+                        );
                     }
                 }
             }

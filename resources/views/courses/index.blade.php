@@ -139,28 +139,14 @@
                                     <span class="text-sm font-weight-bold">{{ $course->student_count ?? 0 }}</span>
                                 </td>
                                 <td class="align-middle text-center">
-                                    <div class="btn-group">
-                                        <button type="button"
-                                            class="btn bg-gradient-primary m-1 p-2 px-3 dropdown-toggle"
-                                            data-bs-toggle="dropdown" aria-expanded="false" title="Manage">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-                                        <ul class="dropdown-menu shadow">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                    href="{{ route('courses.edit', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
-                                                    <i class="fas fa-cog text-secondary me-2"></i> Kelola Blok
-                                                </a>
-                                            </li>
-                                            {{-- <li>
-                                                <a class="dropdown-item"
-                                                    href="{{ route('courses.editStudent', ['slug' => $course->slug, 'semester_id' => $semesterId]) }}">
-                                                    <i class="fas fa-users text-secondary me-2"></i> Kelola Peserta
-                                                    Blok
-                                                </a>
-                                            </li> --}}
-                                        </ul>
-                                    </div>
+                                    <a href="{{ route('courses.editKoor', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
+                                        <i class="fa-solid fa-users"></i> Koord
+                                    </a>
+                                    <a href="{{ route('courses.edit', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
                                     <a href="{{ route('courses.show', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>

@@ -9,6 +9,7 @@ use App\Models\PlenoDetails;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
 use App\Services\LecturerAttendanceService;
+use App\Services\LecturerSortService;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use DB;
@@ -27,6 +28,8 @@ class CoursePlenoController extends Controller
     public function getPlenoData(Request $request, string $slug)
     {
         $scheduleService = app(ScheduleConflictService::class);
+        $sorter = app(LecturerSortService::class);
+
         $semesterId = $request->query('semester_id');
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
@@ -53,6 +56,8 @@ class CoursePlenoController extends Controller
                 $query->where('activity_id', 4);
             })
             ->get();
+
+        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
 
         // Get unavailable slots using single query
         $unavailableSlots = [];
@@ -94,32 +99,72 @@ class CoursePlenoController extends Controller
             'assignments' => 'sometimes|array',
         ]);
 
+        DB::beginTransaction();
+
         try {
-            DB::beginTransaction();
 
             $semesterId = $request->semester_id;
             $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
 
-            $plenoIds = TeachingSchedule::where('course_id', $courseId)->where('semester_id', $semesterId)->where('activity_id', 4)->pluck('id');
+            // Ambil semua teaching schedule untuk pleno (activity_id = 4)
+            $plenoIds = TeachingSchedule::where('course_id', $courseId)
+                ->where('semester_id', $semesterId)
+                ->where('activity_id', 4)
+                ->pluck('id');
 
-            PlenoDetails::whereIn('teaching_schedule_id', $plenoIds)->delete();
+            foreach ($plenoIds as $plenoId) {
 
-            foreach ($assignments as $lecturerId => $plenoAssignments) {
-                foreach ($plenoAssignments as $plenoId => $isAssigned) {
-                    if ($isAssigned) {
-                        PlenoDetails::updateOrCreate([
-                            'teaching_schedule_id' => $plenoId,
-                            'lecturer_id' => $lecturerId,
-                        ]);
-                        $this->attendanceService->syncLecturerAttendance(
-                            $plenoId,
-                            $lecturerId,
-                            $courseId,
-                            $semesterId,
-                            4
-                        );
+                // Dosen yang dikirim dalam form untuk pleno ini
+                $submittedLecturers = [];
+
+                foreach ($assignments as $lecturerId => $plenoAssignments) {
+                    if (!empty($plenoAssignments[$plenoId])) {
+                        $submittedLecturers[] = $lecturerId;
                     }
+                }
+
+                // Dosen yang already ada di DB
+                $existingLecturers = PlenoDetails::where('teaching_schedule_id', $plenoId)
+                    ->pluck('lecturer_id')
+                    ->toArray();
+
+                // Tentukan yang harus dihapus
+                $toDelete = array_diff($existingLecturers, $submittedLecturers);
+
+                // Tentukan yang harus ditambahkan
+                $toAdd = array_diff($submittedLecturers, $existingLecturers);
+
+                // 🔻 HAPUS lecturer yang tidak dicentang
+                foreach ($toDelete as $lecturerId) {
+
+                    PlenoDetails::where('teaching_schedule_id', $plenoId)
+                        ->where('lecturer_id', $lecturerId)
+                        ->delete();
+
+                    $this->attendanceService->removeLecturerAttendance(
+                        $plenoId,
+                        $lecturerId,
+                        $courseId,
+                        $semesterId
+                    );
+                }
+
+                // 🔺 TAMBAH lecturer baru
+                foreach ($toAdd as $lecturerId) {
+
+                    PlenoDetails::create([
+                        'teaching_schedule_id' => $plenoId,
+                        'lecturer_id' => $lecturerId,
+                    ]);
+
+                    $this->attendanceService->syncLecturerAttendance(
+                        $plenoId,
+                        $lecturerId,
+                        $courseId,
+                        $semesterId,
+                        4
+                    );
                 }
             }
 
@@ -130,17 +175,16 @@ class CoursePlenoController extends Controller
                 'message' => 'Data dosen pleno berhasil diperbarui.',
             ]);
         } catch (\Exception $e) {
+
             DB::rollBack();
 
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
+
 
     public function downloadExcel($courseSlug, $semesterId)
     {

@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Course;
+use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
 use App\Models\CourseLecturerActivity;
 use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerSortService;
 use DB;
 use Illuminate\Http\Request;
 
@@ -16,12 +18,17 @@ class CourseLecturerController extends Controller
 {
     public function getLecturerData(Request $request, string $slug)
     {
+        $sorter = app(LecturerSortService::class);
         $semesterId = $request->query('semester_id');
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        $query = CourseLecturer::with('lecturer.user', 'activities.activity')->where('course_id', $course->id)->where('semester_id', $semesterId);
+        $query = CourseLecturer::with('lecturer.user', 'activities.activity')
+            ->where('course_id', $course->id)
+            ->where('semester_id', $semesterId);
+
+        // FILTERS
         if ($request->filled('bagian')) {
             $query->whereHas('lecturer', function ($q) use ($request) {
                 $q->where('bagian', 'like', '%' . $request->bagian . '%');
@@ -34,6 +41,7 @@ class CourseLecturerController extends Controller
             });
         }
 
+        // SORTING
         $sort = $request->get('sort', 'name');
         $dir = $request->get('dir', 'asc');
 
@@ -46,6 +54,7 @@ class CourseLecturerController extends Controller
         }
 
         $lecturers = $query->get();
+        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
 
         return (object) [
             'course' => $course,
@@ -128,9 +137,9 @@ class CourseLecturerController extends Controller
 
         // Sorting berdasarkan kolom di tabel yang benar
         if ($sort === 'name') {
-            $query->join('users', 'lecturers.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('lecturers.*'); 
+            $query->join('users', 'lecturers.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('lecturers.*');
         } elseif ($sort === 'bagian') {
-            $query->join('users', 'lecturers.user_id', '=', 'users.id')->orderBy('lecturers.bagian', $dir)->select('lecturers.*'); 
+            $query->join('users', 'lecturers.user_id', '=', 'users.id')->orderBy('lecturers.bagian', $dir)->select('lecturers.*');
         } else {
             $query->orderBy($sort, $dir);
         }

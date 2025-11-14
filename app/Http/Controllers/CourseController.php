@@ -8,16 +8,13 @@ use App\Imports\CoursesImport;
 use App\Models\Course;
 use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
-use App\Models\CourseLecturerActivity;
-use App\Models\CourseSchedule;
 use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\Semester;
-use App\Models\TeachingSchedule;
 use App\Models\User;
-use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -153,15 +150,117 @@ class CourseController extends Controller
         return view('courses.index', compact('courses', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
     }
 
+    public function editKoor($slug, Request $request)
+    {
+        $semesterId = $request->query('semester_id');
+
+        $semester = Semester::with('academicYear')->find($semesterId);
+        $course = Course::where('slug', $slug)->first();
+
+        $koordinator = CourseCoordinator::with('lecturer')->where('course_id', $course->id)->where('semester_id', $semesterId)->where('role', 'koordinator')->first();
+
+        $sekretaris = CourseCoordinator::with('lecturer')->where('course_id', $course->id)->where('semester_id', $semesterId)->where('role', 'sekretaris')->first();
+
+        $lecturers = Lecturer::with('user')->get();
+
+        return view('courses.editKoor', compact(
+            'koordinator',
+            'sekretaris',
+            'lecturers',
+            'course',
+            'semester'
+        ));
+    }
+
+    public function updateKoor(Request $request)
+    {
+        $request->validate([
+            'course_id'      => 'required|exists:courses,id',
+            'semester_id'    => 'required|exists:semesters,id',
+            'koordinator_id' => 'nullable|exists:lecturers,id',
+            'sekretaris_id'  => 'nullable|exists:lecturers,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $courseId   = $request->course_id;
+            $semesterId = $request->semester_id;
+
+            $addToCourseLecturer = function ($lecturerId) use ($courseId, $semesterId) {
+                if (!$lecturerId) return;
+
+                CourseLecturer::updateOrCreate(
+                    [
+                        'course_id'   => $courseId,
+                        'semester_id' => $semesterId,
+                        'lecturer_id' => $lecturerId,
+                    ],
+                    [] // tidak ada kolom lain yang perlu di-update
+                );
+            };
+
+            if ($request->koordinator_id) {
+
+                CourseCoordinator::updateOrCreate(
+                    [
+                        'course_id'   => $courseId,
+                        'semester_id' => $semesterId,
+                        'role'        => 'koordinator',
+                    ],
+                    [
+                        'lecturer_id' => $request->koordinator_id,
+                    ]
+                );
+
+                // otomatis tambahkan ke course_lecturers
+                $addToCourseLecturer($request->koordinator_id);
+            } else {
+                // hapus jika kosong
+                CourseCoordinator::where([
+                    'course_id'   => $courseId,
+                    'semester_id' => $semesterId,
+                    'role'        => 'koordinator',
+                ])->delete();
+            }
+
+            if ($request->sekretaris_id) {
+
+                CourseCoordinator::updateOrCreate(
+                    [
+                        'course_id'   => $courseId,
+                        'semester_id' => $semesterId,
+                        'role'        => 'sekretaris',
+                    ],
+                    [
+                        'lecturer_id' => $request->sekretaris_id,
+                    ]
+                );
+
+                $addToCourseLecturer($request->sekretaris_id);
+            } else {
+                CourseCoordinator::where([
+                    'course_id'   => $courseId,
+                    'semester_id' => $semesterId,
+                    'role'        => 'sekretaris',
+                ])->delete();
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Koordinator dan Sekretaris berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     public function create()
     {
         $lecturers = User::role('lecturer')->get();
         return view('courses.create', compact('lecturers'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -178,9 +277,6 @@ class CourseController extends Controller
         return redirect()->back()->with('success', 'Course berhasil dibuat!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($slug, Request $request)
     {
         $course = Course::where('slug', $slug)->firstOrFail();
@@ -189,6 +285,7 @@ class CourseController extends Controller
         $lecturers = CourseCoordinator::with(['lecturer.user'])
             ->where('course_id', $course->id)
             ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
+            ->orderBy("role", 'asc')
             ->get();
 
         $query = CourseStudent::with(['student.user'])
@@ -220,7 +317,6 @@ class CourseController extends Controller
 
         return view('courses.show', compact('sort', 'dir', 'course', 'lecturers', 'students', 'semesterId'));
     }
-
 
     public function import(Request $request)
     {

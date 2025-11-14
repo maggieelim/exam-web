@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\SkillslabDetails;
 use App\Models\TeachingSchedule;
+use App\Services\LecturerSortService;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -31,6 +32,7 @@ class SkillsLabExport implements FromCollection, WithHeadings, WithTitle, WithSt
 
     public function collection()
     {
+        $sorter = app(LecturerSortService::class);
         $lecturers = CourseLecturer::with('lecturer.user')
             ->where('course_id', $this->courseId)
             ->where('semester_id', $this->semesterId)
@@ -39,6 +41,7 @@ class SkillsLabExport implements FromCollection, WithHeadings, WithTitle, WithSt
             })
             ->get();
 
+        $lecturers = $sorter->sort($lecturers, $this->courseId, $this->semesterId);
         $data = collect();
 
         foreach ($lecturers as $index => $courseLecturer) {

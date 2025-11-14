@@ -138,10 +138,10 @@
                                         </button>
                                         <ul class="dropdown-menu shadow">
                                             <li>
-                                                {{-- <a class="dropdown-item"
-                                                    href="{{ route('attendance.edit', ['course' => $attendance->slug, 'semester_id' => $semesterId]) }}">
-                                                    <i class="fas fa-cog text-secondary me-2"></i> Kelola Blok
-                                                </a> --}}
+                                                <a class="dropdown-item"
+                                                    href="{{ route('attendance.edit', ['attendance' => $attendance->absensi_code,]) }}">
+                                                    <i class="fas fa-cog text-secondary me-2"></i> Edit
+                                                </a>
                                             </li>
                                         </ul>
                                     </div>

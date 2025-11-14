@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\TeachingSchedule;
 use App\Models\CourseLecturer;
 use App\Models\PracticumDetails;
+use App\Services\LecturerSortService;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
@@ -31,6 +32,7 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
 
     public function collection()
     {
+        $sorter = app(LecturerSortService::class);
         $lecturers = CourseLecturer::with('lecturer.user')
             ->where('course_id', $this->courseId)
             ->where('semester_id', $this->semesterId)
@@ -39,11 +41,13 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
             })
             ->get();
 
+        $lecturers = $sorter->sort($lecturers, $this->courseId, $this->semesterId);
+
         $data = collect();
-        
+
         foreach ($lecturers as $index => $courseLecturer) {
             $lecturer = $courseLecturer->lecturer;
-            
+
             $row = [
                 'no' => $index + 1,
                 'nama_dosen' => $lecturer->user->name,
@@ -53,12 +57,12 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
             // Tambahkan kolom untuk setiap praktikum dengan key yang konsisten
             foreach ($this->practicums as $practicumIndex => $practicum) {
                 $key = 'practicum_' . $practicumIndex;
-                
+
                 // Cek apakah dosen ditugaskan di praktikum ini
                 $isAssigned = PracticumDetails::where('teaching_schedule_id', $practicum->id)
                     ->where('lecturer_id', $lecturer->id)
                     ->exists();
-                
+
                 $row[$key] = $isAssigned ? 'checked' : '-';
             }
 
@@ -73,11 +77,11 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
         $headings = ['No', 'Nama Dosen', 'Bagian'];
 
         foreach ($this->practicums as $practicum) {
-            $heading = $practicum->topic . "\n" . 
-                       $practicum->group . "\n" .
-                       Carbon::parse($practicum->scheduled_date)->translatedFormat('D d/M') . "\n" .
-                       Carbon::parse($practicum->start_time)->format('H:i') . "\n" . Carbon::parse($practicum->end_time)->format('H:i');
-            
+            $heading = $practicum->topic . "\n" .
+                $practicum->group . "\n" .
+                Carbon::parse($practicum->scheduled_date)->translatedFormat('D d/M') . "\n" .
+                Carbon::parse($practicum->start_time)->format('H:i') . "\n" . Carbon::parse($practicum->end_time)->format('H:i');
+
             $headings[] = $heading;
         }
 
@@ -120,7 +124,6 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
             ];
 
             $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray($headerStyle);
-
         }
 
         // Style untuk data
@@ -141,27 +144,27 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
 
             // Center alignment untuk kolom No dan checkbox
             $sheet->getStyle('A2:A' . $lastRow)
-                  ->getAlignment()
-                  ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
             // Center alignment untuk kolom praktikum (mulai dari kolom D)
             if ($lastColumn >= 'D') {
                 $firstPracticumCol = 'D';
                 $lastPracticumCol = $lastColumn;
                 $sheet->getStyle($firstPracticumCol . '2:' . $lastPracticumCol . $lastRow)
-                      ->getAlignment()
-                      ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             }
 
             // Left alignment untuk kolom nama dan bagian
             $sheet->getStyle('B2:C' . $lastRow)
-                  ->getAlignment()
-                  ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
             // Wrap text untuk semua sel
             $sheet->getStyle('A1:' . $lastColumn . $lastRow)
-                  ->getAlignment()
-                  ->setWrapText(true);
+                ->getAlignment()
+                ->setWrapText(true);
         }
 
         // Freeze panes dan row height
@@ -193,11 +196,11 @@ class PracticumAssignmentExport implements FromCollection, WithHeadings, WithTit
             AfterSheet::class => function (AfterSheet $event) {
                 // Pastikan data sesuai dengan header
                 $sheet = $event->sheet->getDelegate();
-                
+
                 // Debug info - bisa dihapus setelah testing
                 $highestRow = $sheet->getHighestRow();
                 $highestColumn = $sheet->getHighestColumn();
-                
+
                 \Log::info("Excel generated: {$highestRow} rows, {$highestColumn} columns");
                 \Log::info("Practicums count: " . count($this->practicums));
             },

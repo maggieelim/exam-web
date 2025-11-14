@@ -2,7 +2,9 @@
 
 namespace App\Exports;
 
+use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
+use App\Services\LecturerSortService;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -23,22 +25,27 @@ class CourseLecturersSheet implements FromCollection, WithHeadings, WithTitle, W
 
   public function collection()
   {
-    return CourseLecturer::with('lecturer.user')
+    $sorter = app(LecturerSortService::class);
+    $lecturers = CourseLecturer::with('lecturer.user')
       ->where('course_id', $this->course->id)
       ->where('semester_id', $this->semesterId)
-      ->get()
-      ->map(function ($item) {
-        return [
-          'NIDN'   => $item->lecturer->nidn,
-          'Nama'   => $item->lecturer->user->name,
-          'Strata'   => $item->lecturer->strata,
-          'Gelar'   => $item->lecturer->gelar,
-          'Tipe Dosen'   => $item->lecturer->tipe_dosen,
-          'Email'  => $item->lecturer->user->email,
-          'Gender'  => $item->lecturer->user->gender,
-        ];
-      });
+      ->get();
+
+    // 🔥 Pakai sorter
+    $sorted = $sorter->sort($lecturers, $this->course->id, $this->semesterId);
+    return $sorted->map(function ($item) {
+      return [
+        'NIDN'   => $item->lecturer->nidn,
+        'Nama'   => $item->lecturer->user->name,
+        'Strata' => $item->lecturer->strata,
+        'Gelar'  => $item->lecturer->gelar,
+        'Tipe Dosen' => $item->lecturer->tipe_dosen,
+        'Email'  => $item->lecturer->user->email,
+        'Gender' => $item->lecturer->user->gender,
+      ];
+    });
   }
+
 
   public function headings(): array
   {

@@ -160,6 +160,8 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     Route::post('/courses/store', [CourseController::class, 'store'])->name('courses.store');
     Route::post('/courses/import', [CourseController::class, 'import'])->name('courses.import');
     Route::get('/courses/edit/{course}', [CourseController::class, 'edit'])->name('courses.edit');
+    Route::get('/courses/edit_koordinator/{course}', [CourseController::class, 'editKoor'])->name('courses.editKoor');
+    Route::post('/courses/edit_koordinator/{course}', [CourseController::class, 'updateKoor'])->name('courses.updateKoor');
     Route::post('/courses/update/{course}', [CourseController::class, 'update'])->name('courses.update');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
