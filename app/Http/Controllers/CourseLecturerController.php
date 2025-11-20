@@ -65,41 +65,6 @@ class CourseLecturerController extends Controller
         ];
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $slug, Request $request)
     {
         // Ambil data awal
@@ -116,13 +81,13 @@ class CourseLecturerController extends Controller
 
         // 🔍 Filter bagian
         if ($request->filled('bagian')) {
-            $query->where('bagian', 'ILIKE', '%' . $request->bagian . '%');
+            $query->where('bagian', 'LIKE', '%' . $request->bagian . '%');
         }
 
         // 🔍 Filter nama dosen
         if ($request->filled('name')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'ILIKE', '%' . $request->name . '%');
+                $q->where('name', 'LIKE', '%' . $request->name . '%');
             });
         }
 

@@ -33,26 +33,42 @@ class AttendanceSessionsController extends Controller
 
         $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
 
-        // Ambil attendance berdasarkan course_lecturer_id dari lecturerRecords
-        $attendances =  AttendanceSessions::with(['course', 'activity'])
+        $attendances =  AttendanceSessions::with(['course', 'activity', 'lecturerRecords'])
             ->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
                 $q->whereIn('course_lecturer_id', $courseLecturerIds);
             })
             ->get()
-            ->map(function ($attendance) {
+            ->map(function ($attendance) use ($courseLecturerIds) {
+                $hasAttendance = LecturerAttendanceRecords::where('attendance_session_id', $attendance->id)
+                    ->whereIn('course_lecturer_id', $courseLecturerIds)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                // Tambahkan pengecekan jika sudah finished
+                if ($attendance->status === 'finished') {
+                    $url = route('attendances.report.show1', [
+                        'course'      => $attendance->course->slug,
+                        'semester_id' => $attendance->semester_id,
+                        'session'     => $attendance->id
+                    ]);
+                } else {
+                    $url = $hasAttendance
+                        ? route('attendance.edit', $attendance->absensi_code)
+                        : route('attendance.show', $attendance->absensi_code);
+                }
                 return [
                     'title' => $attendance->course->name . ' - ' . $attendance->activity->activity_name,
-                    'start' => $attendance->start_time, // format ISO (YYYY-MM-DDTHH:MM:SS)
+                    'start' => $attendance->start_time,
                     'end'   => $attendance->end_time,
-                    'url' => route('attendance.show', $attendance->absensi_code),
+                    'url'   => $url,
                     'extendedProps' => [
                         'status' => $attendance->status,
                         'total'  => $attendance->total_attendance,
                     ],
                     'color' => match ($attendance->status) {
-                        'finished' => '#28a745', // hijau
-                        'active'  => '#007bff', // biru
-                        default    => '#ffc107', // kuning
+                        'finished' => '#5fb374ff', // hijau
+                        'active'  => '#5da4f0ff', // biru
+                        default    => '#ecc13eff', // kuning
                     },
                 ];
             });
@@ -60,12 +76,10 @@ class AttendanceSessionsController extends Controller
         return response()->json($attendances);
     }
 
-
     public function index(Request $request)
     {
         $userId = Auth::id();
 
-        // Ambil data lecturer dari user login
         $lecturer = Lecturer::with('courseLecturers')->where('user_id', $userId)->first();
 
         // Ambil semua course_lecturer_id milik dosen login
@@ -129,7 +143,6 @@ class AttendanceSessionsController extends Controller
             'attendances'
         ));
     }
-
 
     public function create(Request $request)
     {
@@ -417,11 +430,27 @@ class AttendanceSessionsController extends Controller
             $lecturer = Lecturer::where('user_id', $user)->firstOrFail();
 
             $attendance = AttendanceSessions::where('absensi_code', $attendanceCode)->firstOrFail();
+            $startTime = Carbon::parse($attendance->start_time);
+            $endTime   = Carbon::parse($attendance->end_time);
+            $now       = Carbon::now();
+            if ($now->lt($startTime->copy()->subMinutes(10))) {
+                return redirect()
+                    ->back()
+                    ->with('error', 'Absensi belum bisa di-update. Anda hanya bisa update maksimal 10 menit sebelum waktu mulai.')
+                    ->withInput();
+            }
+            if ($now->gt($endTime)) {
+                return redirect()
+                    ->back()
+                    ->with('error', 'Absensi sudah berakhir.')
+                    ->withInput();
+            }
             $courseLecturer = CourseLecturer::where('lecturer_id', $lecturer->id)->where('semester_id', $attendance->semester_id)->where('course_id', $attendance->course_id)->firstOrFail();
             $lecturerAttendance = LecturerAttendanceRecords::where('attendance_session_id', $attendance->id)->where('course_lecturer_id', $courseLecturer->id)->first();
             // Create attendance session
             $attendance->update([
                 'location_lat' => $request->location_lat,
+                'status' => 'active',
                 'location_long' => $request->location_long,
                 'loc_name' => $request->location_address,
                 'tolerance_meter' => $request->tolerance,

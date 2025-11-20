@@ -51,8 +51,7 @@ class LecturerAttendanceService
                 'attendance_session_id' => $attendance->id,
                 'course_lecturer_id' => $courseLecturer->id,
             ], [
-                'attendance_status' => 'scheduled',
-                'created_by' => auth()->id(),
+                'status' => 'pending',
             ]);
 
             Log::info('Lecturer attendance synced successfully', [

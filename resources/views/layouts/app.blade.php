@@ -56,40 +56,45 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const calendarEl = document.getElementById('calendar');
+        const calendarEl = document.getElementById('calendar');
 
-            if (!calendarEl) return; // kalau halaman tidak punya #calendar, jangan lanjut
+        if (!calendarEl) return;
 
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                themeSystem: 'standard',
-                nowIndicator: true,
-                allDaySlot: false, // hilangkan bar "All Day"
-                slotMinTime: "07:00:00", // mulai jam 7 pagi
-                slotMaxTime: "17:00:00", // selesai jam 5 so
-                events: '{{ route('attendances.json') }}', // ambil dari backend Laravel
-                eventClick: function(info) {
-                    info.jsEvent.preventDefault(); // mencegah buka tab baru
-
-                    if (info.event.url) {
-                        window.location.href = info.event.url; // 👈 redirect ke halaman detail
-                    }
-                },
-                eventTimeFormat: { // tampilkan jam di dalam kalender
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    meridiem: false
-                },
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek'
-                },
-                height: 'auto'
-            });
-
-            calendar.render();
+        // Deteksi jika device mobile
+        const isMobile = window.innerWidth <= 768;
+        
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: isMobile ? 'timeGridDay' : 'timeGridWeek', // Day untuk mobile, Week untuk desktop
+            nowIndicator: true,
+            allDaySlot: false,
+            slotMinTime: "07:00:00",
+            slotMaxTime: "17:00:00",
+            events: '{{ route('attendances.json') }}',
+            eventClick: function(info) {
+                info.jsEvent.preventDefault();
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                }
+            },
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                meridiem: true
+            },
+            headerToolbar: {
+                right: 'prev,next today',
+                center: 'title',
+                left: isMobile ? '' : 'dayGridMonth,timeGridWeek,timeGridDay' // Sesuaikan toolbar
+            },
+            dayHeaderFormat: {
+            day: 'numeric',
+            month: 'short'
+              },
+            height: 'auto'
         });
+
+        calendar.render();
+    });
     </script>
 
 </head>
@@ -134,6 +139,7 @@
     <script src="{{ asset('js/notifications.js') }}"></script>
     <script src="{{ asset('js/schedule-ajax.js') }}"></script>
     <script src="{{ asset('js/dropdown.js') }}"></script>
+    <script src="{{ asset('js/score-picker.js') }}"></script>
 
     <!-- Github buttons -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>

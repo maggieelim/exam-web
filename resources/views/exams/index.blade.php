@@ -72,14 +72,14 @@
                     <table class="table align-items-center mb-0">
                         <thead>
                             <tr>
-                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                <th class="text-uppercase text-dark text-sm font-weight-bolder">
                                     <a href="{{ route('exams.index', $status) }}?{{ http_build_query(
                                             array_merge(request()->except('page'), [
                                                 'sort' => 'title',
                                                 'dir' => $sort === 'title' && $dir === 'asc' ? 'desc' : 'asc',
                                             ]),
                                         ) }}" class="text-dark text-decoration-none">
-                                        Title
+                                        Exams
                                         @if ($sort === 'title')
                                         <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
                                         @endif
@@ -104,6 +104,9 @@
                                     <span class="text-sm font-weight-bold">
                                         {{ $exam->title }} <br>
                                         {{ $exam->course->name }} <br>
+                                        {{ $exam->exam_date?
+                                        \Carbon\Carbon::parse($exam->exam_date)->translatedFormat('l, j M Y ' ):
+                                        '-'}}<br>
                                     </span>
                                     <span class="text-sm">
                                         Modified at:
@@ -119,7 +122,7 @@
                                 </td>
                                 <td class="align-middle text-center">
                                     <span class="text-sm font-weight-bold">
-                                        {{ $exam->duration . ' Minutes' }}
+                                        {{ $exam->duration ? $exam->duration . ' Minutes' : 'No Duration Yet' }}
                                     </span>
                                 </td>
                                 <td class="align-middle text-center">

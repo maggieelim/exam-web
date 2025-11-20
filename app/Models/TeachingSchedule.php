@@ -9,7 +9,7 @@ class TeachingSchedule extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-    protected $fillable = ['course_schedule_id', 'course_id', 'semester_id', 'activity_id', 'session_number', 'lecturer_id', 'scheduled_date', 'start_time', 'end_time', 'room', "group", 'topic', 'created_by', 'updated_at', 'zone'];
+    protected $fillable = ['course_schedule_id', 'course_id', 'semester_id', 'activity_id', 'pemicu_ke', 'session_number', 'lecturer_id', 'scheduled_date', 'start_time', 'end_time', 'room', "group", 'topic', 'created_by', 'updated_at', 'zone'];
 
     public function clearSchedule()
     {
@@ -29,17 +29,11 @@ class TeachingSchedule extends Model
         return $this->belongsTo(Course::class);
     }
 
-    /**
-     * Relasi ke tabel Semester
-     */
     public function semester()
     {
         return $this->belongsTo(Semester::class);
     }
 
-    /**
-     * Relasi ke tabel Activity (jenis kegiatan)
-     */
     public function activity()
     {
         return $this->belongsTo(Activity::class);
@@ -49,38 +43,30 @@ class TeachingSchedule extends Model
     {
         return $this->belongsTo(CourseSchedule::class);
     }
-    /**
-     * Relasi ke tabel Lecturer (dosen pengampu)
-     */
+
     public function lecturer()
     {
         return $this->belongsTo(Lecturer::class);
     }
 
-    /**
-     * Relasi ke user yang membuat jadwal (biasanya kaprodi)
-     */
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * Scope: hanya jadwal milik dosen tertentu
-     */
     public function scopeForLecturer($query, $lecturerId)
     {
         return $query->where('lecturer_id', $lecturerId);
     }
 
-    /**
-     * Scope: hanya jadwal di semester tertentu
-     */
     public function scopeForSemester($query, $semesterId)
     {
         return $query->where('semester_id', $semesterId);
     }
-
+    public function examDetail()
+    {
+        return $this->hasOne(Exam::class, 'teaching_schedule_id');
+    }
     public function skillslabDetails()
     {
         return $this->hasMany(SkillslabDetails::class);
@@ -105,5 +91,19 @@ class TeachingSchedule extends Model
     public function attendance()
     {
         return $this->hasMany(AttendanceSessions::class, 'teaching_schedule_id');
+    }
+    public function getPemicuAttribute()
+    {
+        return $this->pemicu_ke ?? ceil($this->session_number / 2);
+    }
+    public function pemicuScores()
+    {
+        return $this->hasMany(PemicuScore::class);
+    }
+
+    public function scopeForPemicu($query, $pemicuNumber)
+    {
+        return $query->where('pemicu_ke', $pemicuNumber)
+            ->orWhereRaw('CEIL(session_number / 2) = ?', [$pemicuNumber]);
     }
 }

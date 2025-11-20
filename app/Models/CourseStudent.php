@@ -20,7 +20,7 @@ class CourseStudent extends Model
 
     public function student()
     {
-        return $this->belongsTo(Student::class, 'user_id', 'user_id');
+        return $this->belongsTo(Student::class, 'student_id');
     }
 
     public function course()
@@ -28,7 +28,13 @@ class CourseStudent extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function attendanceRecords(){
+    public function attendanceRecords()
+    {
         return $this->hasMany(AttendanceRecords::class, 'course_student_id');
+    }
+
+    public function pemicuScores()
+    {
+        return $this->hasMany(PemicuScore::class, 'course_student_id');
     }
 }

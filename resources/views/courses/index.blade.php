@@ -139,9 +139,15 @@
                                     <span class="text-sm font-weight-bold">{{ $course->student_count ?? 0 }}</span>
                                 </td>
                                 <td class="align-middle text-center">
+                                    @hasrole('admin')
                                     <a href="{{ route('courses.editKoor', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
                                         <i class="fa-solid fa-users"></i> Koord
+                                    </a>
+                                    @endrole
+                                    <a href="{{ route('attendances.report', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
+                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
+                                        <i class="fa-solid fa-file"></i>
                                     </a>
                                     <a href="{{ route('courses.edit', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                         class="btn bg-gradient-info m-1 p-2 px-3" title="Info">

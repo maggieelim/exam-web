@@ -13,6 +13,7 @@ class Exam extends Model
     protected $fillable = [
         'exam_code',
         'title',
+        'teaching_schedule_id',
         'course_id',
         'exam_date',
         'room',
@@ -55,6 +56,11 @@ class Exam extends Model
                 $model->updated_by = Auth::id();
             }
         });
+    }
+
+    public function teachingSchedule()
+    {
+        return $this->belongsTo(TeachingSchedule::class);
     }
 
     public function course()

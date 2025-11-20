@@ -1,119 +1,130 @@
 @extends('layouts.user_type.auth')
-
 @section('content')
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header pb-3">
-                <h5 class="mb-1">Attendance Session: {{ $attendanceSession->absensi_code }}</h5>
-                <div class="status-badge">
-                    @if ($attendanceSession->isExpired())
-                        <span class="badge bg-danger">Finished</span>
-                    @elseif($attendanceSession->isActive())
-                        <span class="badge bg-success">Active</span>
-                    @else
-                        <span class="badge bg-warning">Not Started</span>
-                    @endif
-                </div>
+<div class="col-12 mb-4">
+    <div class="card">
+        <div class="d-flex justify-content-between flex-wrap p-4 pb-0 gap-2">
+            <div class="status-badge">
+                @if ($attendanceSession->isExpired())
+                <span class="badge bg-danger">Finished</span>
+                @elseif($attendanceSession->isActive())
+                <span class="badge bg-success">Active</span>
+                @else
+                <span class="badge bg-warning">Not Started</span>
+                @endif
             </div>
-            <div class="card-body px-4 pt-2 pb-2">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h6 class="mb-3">QR Code for Attendance</h6>
-                                <div id="qrCodeContainer">
-                                    <div id="qrCode" class="mb-3"></div>
-                                    @if ($attendanceSession->isExpired())
-                                        <div class="alert alert-warning">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                            Attendance session has ended. QR code is no longer available.
-                                        </div>
-                                    @elseif(!$attendanceSession->isActive())
-                                        <div class="alert alert-info">
-                                            <i class="fas fa-info-circle"></i>
-                                            QR code will be available when session starts.
-                                        </div>
-                                    @else
-                                        <small class="text-muted">QR code refreshes every 60 seconds</small>
-                                    @endif
-                                </div>
-                                <div class="mt-3">
-                                    <p class="small text-muted mb-1">Session Code:
-                                        <strong>{{ $attendanceSession->absensi_code }}</strong>
-                                    </p>
-                                    <p class="small text-muted mb-1">Valid until:
-                                        {{ \Carbon\Carbon::parse($attendanceSession->end_time)->format('M d, Y H:i') }}</p>
-                                    <p class="small text-muted mb-1">Status:
-                                        @if ($attendanceSession->isExpired())
-                                            <span class="text-danger">Finished</span>
-                                        @elseif($attendanceSession->isActive())
-                                            <span class="text-success">Active</span>
-                                        @else
-                                            <span class="text-warning">Not Started</span>
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <!-- Session details remain the same -->
-                        <div class="card">
-                            <div class="card-body">
-                                <h6>Session Details</h6>
-                                <table class="table table-sm">
-                                    <tr>
-                                        <td><strong>Course:</strong></td>
-                                        <td>{{ $attendanceSession->course->name ?? 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Activity:</strong></td>
-                                        <td>
-                                            {{ $attendanceSession->activity->activity_name }}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Start Time:</strong></td>
-                                        <td>{{ \Carbon\Carbon::parse($attendanceSession->start_time)->format('M d, Y H:i') }}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>End Time:</strong></td>
-                                        <td>{{ \Carbon\Carbon::parse($attendanceSession->end_time)->format('M d, Y H:i') }}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Location:</strong></td>
-                                        <td>
-                                            Lat: {{ $attendanceSession->location_lat }}<br>
-                                            Long: {{ $attendanceSession->location_long }}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Tolerance:</strong></td>
-                                        <td>{{ $attendanceSession->tolerance_meter }} meters</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <a href="{{ route('attendance.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> Back to List
-                    </a>
-                </div>
+            <div>
+                <a href="{{ route('attendances.report.show1', ['course'=> $attendanceSession->course->slug ,'session'=> $attendanceSession->id, 'semester_id' => $attendanceSession->semester_id]) }}"
+                    class="btn btn-sm btn-info">
+                    <i class="fas fa-file me-1"></i>
+                    Report
+                </a>
+                <a href="{{ route('attendance.edit', $attendanceSession->absensi_code) }}"
+                    class="btn btn-sm btn-warning">
+                    Edit
+                </a>
+                <a href="{{ route('attendance.index') }}" class="btn btn-sm btn-secondary">
+                    Back </a>
             </div>
         </div>
+        <div class="card-body row g-4 px-3 pb-4">
+
+            <!-- QR Code Card -->
+            <div class="col-12 col-md-6">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <h6 class="mb-3">QR Code for Attendance</h6>
+                        <div id="qrCodeContainer">
+                            <div id="qrCode" class="mb-3"></div>
+
+                            @if ($attendanceSession->isExpired())
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Attendance session has ended. QR code is no longer available.
+                            </div>
+                            @elseif(!$attendanceSession->isActive())
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                QR code will be available when session starts.
+                            </div>
+                            @else
+                            <small class="text-muted">QR code refreshes every 60 seconds</small>
+                            @endif
+                        </div>
+
+                        <div class="mt-3">
+                            <p class="small text-muted mb-1">
+                                Session Code: <strong>{{ $attendanceSession->absensi_code }}</strong>
+                            </p>
+                            <p class="small text-muted mb-1">
+                                Valid until: {{ \Carbon\Carbon::parse($attendanceSession->end_time)->format('M d, Y
+                                H:i') }}
+                            </p>
+                            <p class="small text-muted mb-1">Status:
+                                @if ($attendanceSession->isExpired())
+                                <span class="text-danger">Finished</span>
+                                @elseif($attendanceSession->isActive())
+                                <span class="text-success">Active</span>
+                                @else
+                                <span class="text-warning">Not Started</span>
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Details Card -->
+            <div class="col-12 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6>Session Details</h6>
+
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Course:</strong></td>
+                                <td>{{ $attendanceSession->course->name ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Activity:</strong></td>
+                                <td>{{ $attendanceSession->activity->activity_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Start Time:</strong></td>
+                                <td>{{ \Carbon\Carbon::parse($attendanceSession->start_time)->format('M d, Y H:i') }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>End Time:</strong></td>
+                                <td>{{ \Carbon\Carbon::parse($attendanceSession->end_time)->format('M d, Y H:i') }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Location:</strong></td>
+                                <td>
+                                    Lat: {{ $attendanceSession->location_lat }}<br>
+                                    Long: {{ $attendanceSession->location_long }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tolerance:</strong></td>
+                                <td>{{ $attendanceSession->tolerance_meter }} meters</td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
+</div>
 @endsection
 
 @push('dashboard')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
-    <script>
-        let refreshInterval;
+<script>
+    let refreshInterval;
         const attendanceCode = '{{ $attendanceSession->absensi_code }}';
         const isSessionActive = {{ $attendanceSession->isActive() ? 'true' : 'false' }};
         const isSessionExpired = {{ $attendanceSession->isExpired() ? 'true' : 'false' }};
@@ -226,29 +237,23 @@
                 clearInterval(refreshInterval);
             }
         });
-    </script>
+</script>
 
-    <style>
-        #qrCode {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 220px;
-        }
+<style>
+    #qrCode {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 270px;
+    }
 
-        #qrCode canvas {
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 10px;
-            background: white;
-            max-width: 100%;
-            height: auto;
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-        }
-    </style>
+    #qrCode canvas {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        background: white;
+        max-width: 100%;
+        height: auto;
+    }
+</style>
 @endpush

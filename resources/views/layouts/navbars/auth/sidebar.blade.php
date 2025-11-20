@@ -61,10 +61,10 @@
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}" href="{{ url('courses') }}">
+                <a class="nav-link {{ request()->is('course*') ? 'active' : '' }}" href="{{ url('courses') }}">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-book {{ request()->is('courses*') ? 'text-white' : 'text-dark' }}"></i>
+                        <i class="fas fa-book {{ request()->is('course*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Manage Courses</span>
                 </a>
@@ -81,8 +81,44 @@
                 </a>
             </li>
             @endrole
-
-            @hasanyrole('koordinator|admin')
+            @hasanyrole([ 'lecturer'])
+            <li class="nav-item mt-3">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Assessment</h6>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('attendance*') && !request()->is('attendances/report*') ? 'active' : '' }}"
+                    href="{{ url('attendance') }}">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i
+                            class="fas fa-clipboard-check {{ request()->is('attendance*') && !request()->is('attendances/report*') ? 'text-white' : 'text-dark' }}"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Attendance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('tutor*') ? 'active' : '' }}" href="{{ url('tutors') }}">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-star {{ request()->is('tutor*') ? 'text-white' : 'text-dark' }}"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Nilai Tutor</span>
+                </a>
+            </li>
+            @endhasanyrole
+            @hasrole('koordinator')
+            <li class="nav-item mt-2">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}" href="{{ url('courses') }}">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-book {{ request()->is('courses*') ? 'text-white' : 'text-dark' }}"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manage Courses</span>
+                </a>
+            </li>
             <li class="nav-item mt-2">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exams</h6>
             </li>
@@ -119,41 +155,29 @@
                     <span class="nav-link-text ms-1">Previous Exam</span>
                 </a>
             </li>
-            @endhasanyrole
-            @role('koordinator')
             <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Report</h6>
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exams Report</h6>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->is('lecturer/ungraded*') ? 'active' : '' }}"
-                    href="{{ url('lecturer/ungraded') }}">
+                <a class="nav-link {{ request()->is('ungraded*') ? 'active' : '' }}" href="{{ url('ungraded') }}">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i
-                            class="fas fa-clipboard-list {{ request()->is('lecturer/ungraded*') ? 'text-white' : 'text-dark' }}"></i>
+                            class="fas fa-clipboard-list {{ request()->is('ungraded*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Ungraded</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->is('lecturer/published*') ? 'active' : '' }}"
-                    href="{{ url('lecturer/published') }}">
+                <a class="nav-link {{ request()->is('published*') ? 'active' : '' }}" href="{{ url('published') }}">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i
-                            class="fas fa-clipboard-list {{ request()->is('lecturer/published*') ? 'text-white' : 'text-dark' }}"></i>
+                            class="fas fa-clipboard-list {{ request()->is('published*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Published</span>
                 </a>
             </li>
-            <!-- <li class="nav-item">
-                                                                                                                        <a class="nav-link {{ Request::is('user-profile') ? 'active' : '' }}" href="{{ url('user-profile') }}">
-                                                                                                                          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                                                                                                            <i class="fas fa-chart-bar {{ Request::is('user-profile') ? 'text-white' : 'text-dark' }}"></i>
-                                                                                                                          </div>
-                                                                                                                          <span class="nav-link-text ms-1">Graded</span>
-                                                                                                                        </a>
-                                                                                                                      </li> -->
             @endrole
 
             @role('student')
@@ -182,44 +206,10 @@
                     <span class="nav-link-text ms-1">Previous Exam</span>
                 </a>
             </li>
-
-            <!-- <li class="nav-item mt-2">
-                                                                                                                        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Academic</h6>
-                                                                                                                      </li>
-                                                                                                                      <li class="nav-item">
-                                                                                                                        <a class="nav-link {{ request()->is('student/results*') ? 'active' : '' }}" href="{{ url('student/results') }}">
-                                                                                                                          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                                                                                                                            <i class="fas fa-chart-line {{ request()->is('student/results*') ? 'text-white' : 'text-dark' }}"></i>
-                                                                                                                          </div>
-                                                                                                                          <span class="nav-link-text ms-1">Exam Results</span>
-                                                                                                                        </a>
-                                                                                                                      </li> -->
             @endrole
             <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Attendance</h6>
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Account</h6>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('attendance*') ? 'active' : '' }}" href="{{ url('attendance') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-clipboard-check {{ request()->is('attendance*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Attendance</span>
-                </a>
-            </li>
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Account pages</h6>
-            </li>
-            {{-- <li class="nav-item">
-                <a class="nav-link {{ (Request::is('profile') ? 'active' : '') }}" href="{{ url('profile') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-user {{ (Request::is('profile') ? 'text-white' : 'text-dark') }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Profile</span>
-                </a>
-            </li> --}}
             <li class="nav-item">
                 <a class="nav-link" href="{{ url('/logout') }}">
                     <div

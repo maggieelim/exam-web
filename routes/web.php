@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceReportController;
 use App\Http\Controllers\AttendanceSessionsController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CourseController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentExamResultsController;
+use App\Http\Controllers\TutorGradingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,10 +78,9 @@ Route::middleware('guest')->group(function () {
 
 // ================= ADMIN ONLY =================
 Route::middleware(['auth', 'role:admin'])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::prefix('users/{type}')
+        Route::prefix('admin/users/{type}')
             ->name('users.')
             ->group(function () {
                 Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
@@ -126,8 +127,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/courses/{course}/semester/{semesterId}/download-kelas', [CourseScheduleController::class, 'downloadExcel'])->name('courses.downloadPerkuliahan');
     });
 
-Route::middleware(['auth', 'role:lecturer,koordinator,admin'])
-    ->prefix('lecturer')
+Route::middleware(['auth', 'role:lecturer,koordinator'])
     ->name('lecturer.')
     ->group(function () {
         Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])
@@ -147,10 +147,21 @@ Route::middleware(['auth', 'role:lecturer,koordinator,admin'])
 
 // ================= SHARED ADMIN & LECTURER =================
 Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function () {
+    Route::resource('tutors', TutorGradingController::class);
+    Route::get('/tutors/{course}/{kelompok}', [TutorGradingController::class, 'show'])->name('tutors.show');
+    Route::get('/tutors/{pemicu}/{student}/edit', [TutorGradingController::class, 'edit'])->name('tutors.edit');
+    Route::post('tutors/{pemicu}/{student}', [TutorGradingController::class, 'update'])->name('tutors.update');
+    Route::get('tutors/{course}/{kelompok}/download', [TutorGradingController::class, 'downloadExcel'])->name('tutors.download');
+
     //attendance
     Route::resource('attendance', AttendanceSessionsController::class);
     Route::get('/attendance/{attendanceCode}/qr-code', [AttendanceSessionsController::class, 'getQrCode']);
     Route::get('/attendances/json', [AttendanceSessionsController::class, 'getEvents'])->name('attendances.json');
+    Route::get('/attendances/report', [AttendanceReportController::class, 'indexLecturer'])->name('attendances.reportLecturer');
+    Route::get('courses/attendances/report/{course}', [AttendanceReportController::class, 'index'])->name('attendances.report');
+    Route::get('courses/attendances/report/{course}/{session}', [AttendanceReportController::class, 'show'])->name('attendances.report.show');
+    Route::get('/attendance/report/{course}/{session}', [AttendanceReportController::class, 'show'])->name('attendances.report.show1');
+    Route::get('courses/export/attendances/report/{course}/{session}', [AttendanceReportController::class, 'exportAttendanceReport'])->name('attendances.report.export');
 
     // courses
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');

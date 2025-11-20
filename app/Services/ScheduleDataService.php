@@ -16,7 +16,7 @@ class ScheduleDataService
     {
         $course = $this->getCourseWithSchedules($slug);
         $semester = $this->getSemesterWithAcademicYear($semesterId);
-
+        $lecturers = Lecturer::with('user')->get();
         $courseSchedule = $this->getCourseSchedule($course->id, $semesterId);
 
         if (!$courseSchedule) {
@@ -28,7 +28,7 @@ class ScheduleDataService
             'semester' => $semester,
             'courseSchedule' => $courseSchedule,
             'teachingSchedules' => $this->getTeachingSchedules($courseSchedule->id),
-            'lecturers' => $this->getLecturers(),
+            'lecturers' => $lecturers,
         ];
     }
 
@@ -55,7 +55,7 @@ class ScheduleDataService
 
     private function getTeachingSchedules(int $courseScheduleId): Collection
     {
-        return TeachingSchedule::with('activity')
+        return TeachingSchedule::with('activity', 'pemicuDetails')
             ->where('course_schedule_id', $courseScheduleId)
             ->orderBy('session_number')
             ->get()
@@ -72,13 +72,6 @@ class ScheduleDataService
             Str::contains($name, ['ujian skill lab', 'skill lab']) => 'SKILL LAB',
             default => strtoupper($item->activity->activity_name),
         };
-    }
-
-    private function getLecturers(): Collection
-    {
-        return cache()->remember('lecturers_with_user', 3600, function () { // 1 hour cache
-            return Lecturer::with('user')->get();
-        });
     }
 
     private function emptyScheduleData(Course $course, Semester $semester): object

@@ -313,11 +313,16 @@ class UserController extends Controller
             }
 
             // Sync role
-            if ($request->filled('role')) {
-                $user->syncRoles([$request->role]);
+
+        }
+        if ($request->filled('role')) {
+            $user->assignRole([$request->role]);
+            if ($request->role === 'lecturer') {
+                $user->lecturer()->updateOrCreate([
+                    'user_id' => $user->id
+                ], []);
             }
         }
-
         return redirect()
             ->route('admin.users.index', $type)
             ->with('success', ucfirst($type) . ' updated successfully.');

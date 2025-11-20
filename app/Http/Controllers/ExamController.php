@@ -70,13 +70,14 @@ class ExamController extends Controller
         // Base query
         $query = Exam::with(['course', 'creator', 'updater', 'attempts' => fn($q) => $q->where('user_id', $user->id), 'semester'])->withCount('questions');
 
-        if ($user->hasRole('lecturer')) {
-            $courses = CourseLecturer::where('lecturer_id', $lecturer->id)->with('course')->get()->pluck('course');
+        // if ($user->hasRole('lecturer')) {
+        //     $courses = CourseLecturer::where('lecturer_id', $lecturer->id)->with('course')->get()->pluck('course');
 
-            $query->whereHas('course.courseLecturer', function ($q) use ($lecturer) {
-                $q->where('lecturer_id', $lecturer->id);
-            });
-        } elseif ($user->hasRole('koordinator')) {
+        //     $query->whereHas('course.courseLecturer', function ($q) use ($lecturer) {
+        //         $q->where('lecturer_id', $lecturer->id);
+        //     });
+        // } 
+        if ($user->hasRole('koordinator')) {
             // Koordinator blok → tampilkan exam hanya untuk blok yang dia koordinatori
             $coordinatedCourseIds = CourseCoordinator::where('lecturer_id', $lecturer->id)->pluck('course_id');
 

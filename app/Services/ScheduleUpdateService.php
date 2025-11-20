@@ -9,6 +9,8 @@ use App\Models\CourseLecturerActivity;
 use App\Models\LecturerAttendanceRecords;
 use App\Models\SkillslabDetails;
 use App\Helpers\ZoneTimeHelper;
+use App\Models\AttendanceRecords;
+use App\Models\CourseStudent;
 use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -364,6 +366,12 @@ class ScheduleUpdateService
             'room' => $data['room'] ?? null,
         ]);
 
+        if ($schedule->examDetail) {
+            $schedule->examDetail->update([
+                'exam_date' => $data['scheduled_date'] ?? null,
+            ]);
+        }
+
         $schedule->refresh();
         $this->syncAttendanceWithSchedule($schedule, $data, $start, $end);
 
@@ -397,6 +405,42 @@ class ScheduleUpdateService
             $startDateTime = Carbon::parse($scheduledDate . ' ' . $start);
             $endDateTime = Carbon::parse($scheduledDate . ' ' . $end);
 
+            $activity = $schedule->activity_id;
+
+            // Query dasar untuk mendapatkan students dengan course_student_id
+            $studentsQuery = CourseStudent::with('student')
+                ->where('course_id', $schedule->course_id)
+                ->where('semester_id', $schedule->semester_id);
+
+            // Filter khusus untuk SKILLSLAB berdasarkan group dan kelompok
+            if ($activity === 2) {
+                $skillslabKelompok = SkillslabDetails::where('course_schedule_id', $schedule->course_schedule_id)
+                    ->where('group_code', $schedule->group)
+                    ->pluck('kelompok_num')
+                    ->toArray();
+
+                Log::info('Skillslab group filtering', [
+                    'schedule_id' => $schedule->id,
+                    'group' => $schedule->group,
+                    'kelompok_found' => $skillslabKelompok,
+                    'course_schedule_id' => $schedule->course_schedule_id
+                ]);
+
+
+                $studentsQuery->whereIn('kelompok', $skillslabKelompok);
+            }
+
+            $students = $studentsQuery->get();
+
+            Log::info('Students for attendance', [
+                'schedule_id' => $schedule->id,
+                'activity_code' => $activity,
+                'group' => $schedule->group ?? 'N/A',
+                'student_count' => $students->count(),
+                'course_student_ids' => $students->pluck('id')->toArray()
+            ]);
+
+            // Cari atau buat attendance session
             $attendance = AttendanceSessions::where('teaching_schedule_id', $schedule->id)->first();
 
             if (!$attendance) {
@@ -410,19 +454,147 @@ class ScheduleUpdateService
                     'end_time' => $endDateTime,
                     'created_by' => auth()->id(),
                 ]);
+
+                Log::info('Created new attendance session', [
+                    'attendance_id' => $attendance->id,
+                    'absensi_code' => $attendance->absensi_code
+                ]);
             } else {
                 $attendance->update([
                     'start_time' => $startDateTime,
                     'end_time' => $endDateTime,
                 ]);
+
+                Log::info('Updated existing attendance session', [
+                    'attendance_id' => $attendance->id
+                ]);
             }
 
+            // GENERATE ALL STUDENT ATTENDANCE RECORDS DI AWAL
+            $this->generateStudentAttendanceRecords($attendance, $students);
+
+            // Sync lecturer attendance
             $this->syncLecturerAttendance($attendance, $schedule->lecturer_id);
         } catch (\Exception $e) {
             Log::error('Error syncing attendance for schedule: ' . $schedule->id, [
                 'error' => $e->getMessage(),
                 'schedule_id' => $schedule->id,
+                'trace' => $e->getTraceAsString()
             ]);
+        }
+    }
+
+    /**
+     * Generate semua student attendance records di awal sesuai struktur tabel
+     */
+    private function generateStudentAttendanceRecords(AttendanceSessions $attendance, $students): void
+    {
+        try {
+            $chunkSize = 500; // Sesuaikan dengan kapasitas server
+            $recordsCreated = 0;
+            $recordsUpdated = 0;
+
+            $students->chunk($chunkSize, function ($studentChunk) use ($attendance, &$recordsCreated, &$recordsUpdated) {
+                // Get existing records untuk chunk ini
+                $existingRecords = AttendanceRecords::where('attendance_session_id', $attendance->id)
+                    ->whereIn('course_student_id', $studentChunk->pluck('id'))
+                    ->get()
+                    ->keyBy('course_student_id');
+
+                $recordsToCreate = [];
+                $recordsToUpdate = [];
+                $now = now();
+
+                foreach ($studentChunk as $courseStudent) {
+                    if (!$courseStudent->student) {
+                        Log::warning('Student not found for course_student', [
+                            'course_student_id' => $courseStudent->id
+                        ]);
+                        continue;
+                    }
+
+                    $existingRecord = $existingRecords->get($courseStudent->id);
+
+                    if (!$existingRecord) {
+                        // Create new record
+                        $recordsToCreate[] = [
+                            'attendance_session_id' => $attendance->id,
+                            'course_student_id' => $courseStudent->id,
+                            'nim' => $courseStudent->student->nim,
+                            'latitude' => null,
+                            'longitude' => null,
+                            'loc_name' => null,
+                            'distance' => null,
+                            'wifi_ssid' => null,
+                            'device_info' => null,
+                            'scanned_at' => null,
+                            'method' => null,
+                            'status' => 'absent',
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                        $recordsCreated++;
+                    } else {
+                        // Check if update needed
+                        $updates = [];
+
+                        if ($existingRecord->nim !== $courseStudent->student->nim) {
+                            $updates['nim'] = $courseStudent->student->nim;
+                        }
+
+                        if ($existingRecord->status === null) {
+                            $updates['status'] = 'absent';
+                        }
+
+                        if (!empty($updates)) {
+                            $recordsToUpdate[$existingRecord->id] = $updates;
+                            $recordsUpdated++;
+                        }
+                    }
+                }
+
+                // Bulk insert
+                if (!empty($recordsToCreate)) {
+                    AttendanceRecords::insert($recordsToCreate);
+
+                    Log::debug('Bulk created attendance records', [
+                        'count' => count($recordsToCreate)
+                    ]);
+                }
+
+                // Bulk update
+                if (!empty($recordsToUpdate)) {
+                    foreach ($recordsToUpdate as $recordId => $updates) {
+                        AttendanceRecords::where('id', $recordId)->update($updates);
+                    }
+
+                    Log::debug('Bulk updated attendance records', [
+                        'count' => count($recordsToUpdate)
+                    ]);
+                }
+            });
+
+            // Update total attendance count
+            $totalRecords = AttendanceRecords::where('attendance_session_id', $attendance->id)->count();
+            $attendance->update([
+                'total_attendance' => $totalRecords
+            ]);
+
+            Log::info('Student attendance records generated', [
+                'attendance_id' => $attendance->id,
+                'total_students' => $students->count(),
+                'records_created' => $recordsCreated,
+                'records_updated' => $recordsUpdated,
+                'total_attendance' => $totalRecords
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error generating student attendance records', [
+                'error' => $e->getMessage(),
+                'attendance_id' => $attendance->id,
+                'student_count' => $students->count(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e; // Re-throw untuk handling di level atas
         }
     }
 

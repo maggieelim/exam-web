@@ -5,6 +5,7 @@
             title="Download Excel">
             <i class="fas fa-download"></i>
         </a>
+        @hasrole('admin')
         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addStudentModal">
             + Siswa
         </button>
@@ -16,6 +17,7 @@
             href="{{ route('admin.courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
             Bentuk Grup
         </a>
+        @endhasrole
     </div>
     <div>
         <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -35,15 +37,13 @@
                 <input type="hidden" name="tab" value="siswa">
                 <div class="col-md-6">
                     <label for="blok" class="form-label mb-1">NIM</label>
-                    <input type="text" class="form-control form-control-sm" name="nim"
-                        value="{{ request('nim') }}">
+                    <input type="text" class="form-control form-control-sm" name="nim" value="{{ request('nim') }}">
                 </div>
 
                 <!-- Input Dosen -->
                 <div class="col-md-6">
                     <label for="dosen" class="form-label mb-1">Name</label>
-                    <input type="text" class="form-control form-control-sm" name="name"
-                        value="{{ request('name') }}">
+                    <input type="text" class="form-control form-control-sm" name="name" value="{{ request('name') }}">
                 </div>
 
                 <!-- Buttons -->
@@ -70,25 +70,25 @@
 
         <tbody>
             @foreach ($studentData->groupedStudents as $kelompok => $students)
-                <tr>
-                    <td colspan="4" class="group-header" data-bs-toggle="collapse"
-                        data-bs-target="#group-{{ $kelompok }}"> <i class="fas fa-caret-down collapse-icon"></i>
-                        Kelompok: {{ $kelompok }} <span class="text-muted">(Jumlah={{ $students->count() }}
-                            Siswa)</span>
-                    </td>
+            <tr>
+                <td colspan="4" class="group-header" data-bs-toggle="collapse" data-bs-target="#group-{{ $kelompok }}">
+                    <i class="fas fa-caret-down collapse-icon"></i>
+                    Kelompok: {{ $kelompok }} <span class="text-muted">(Jumlah={{ $students->count() }}
+                        Siswa)</span>
+                </td>
 
-                </tr>
+            </tr>
 
-                {{-- Isi anggota kelompok --}}
-                @foreach ($students as $index => $studentUser)
-                    <tr class="collapse show" id="group-{{ $kelompok }}">
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td>{{ $studentUser->student->nim ?? '-' }}</td>
-                        <td>{{ $studentUser->student->user->name ?? '-' }}</td>
-                        <td>{{ $studentUser->student->user->gender ?? '-' }}</td>
+            {{-- Isi anggota kelompok --}}
+            @foreach ($students as $index => $studentUser)
+            <tr class="collapse show" id="group-{{ $kelompok }}">
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>{{ $studentUser->student->nim ?? '-' }}</td>
+                <td>{{ $studentUser->student->user->name ?? '-' }}</td>
+                <td>{{ $studentUser->student->user->gender ?? '-' }}</td>
 
-                    </tr>
-                @endforeach
+            </tr>
+            @endforeach
             @endforeach
             <tr>
                 <td colspan="5" class="group-header"><strong> Total Siswa:
@@ -118,8 +118,7 @@
                     <!-- Upload Excel Section -->
                     <div>
                         <label for="excel" class="form-label">Upload File Excel</label>
-                        <input type="file" name="excel" id="excel" class="form-control"
-                            accept=".xlsx,.xls,.csv">
+                        <input type="file" name="excel" id="excel" class="form-control" accept=".xlsx,.xls,.csv">
 
                         <div class="mt-2">
                             <a href="{{ asset('templates/import_mahasiswa_peserta_blok.xlsx') }}"

@@ -5,7 +5,6 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AttendanceSessions extends Model
 {
@@ -30,7 +29,7 @@ class AttendanceSessions extends Model
 
     public function studentRecords()
     {
-        return $this->hasMany(AttendanceRecords::class);
+        return $this->hasMany(AttendanceRecords::class, 'attendance_session_id');
     }
 
     public function lecturerRecords()
@@ -62,5 +61,41 @@ class AttendanceSessions extends Model
     public function teachingSchedule()
     {
         return $this->belongsTo(TeachingSchedule::class, 'teaching_schedule_id');
+    }
+    public function getFormattedScheduleAttribute()
+    {
+        if (!$this->teachingSchedule) {
+            return '-';
+        }
+
+        $date = Carbon::parse($this->teachingSchedule->scheduled_date)->format('D d/M');
+        $start = Carbon::parse($this->teachingSchedule->start_time)->format('H:i');
+        $end = Carbon::parse($this->teachingSchedule->end_time)->format('H:i');
+
+        return "$date $start-$end";
+    }
+
+    public function getFormatted1ScheduleAttribute()
+    {
+        if (!$this) {
+            return '-';
+        }
+        $date = Carbon::parse($this->start_time)->format('l, d F Y');
+        $start = Carbon::parse($this->start_time)->format('H:i');
+        $end = Carbon::parse($this->end_time)->format('H:i');
+
+        return "$date $start - $end";
+    }
+
+    public function getStudentFormattedTimeAttribute()
+    {
+        if (!$this) {
+            return '-';
+        }
+        $date = Carbon::parse($this->start_time)->format('l, d F Y');
+        $start = Carbon::parse($this->start_time)->format('H:i');
+        $end = Carbon::parse($this->end_time)->format('H:i');
+
+        return "$date $start - $end";
     }
 }

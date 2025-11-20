@@ -20,8 +20,12 @@ class SessionsController extends Controller
             return redirect()->route('student.studentExams.index', ['status' => 'upcoming']);
         }
 
-        if ($user->hasRole('lecturer') || $user->hasRole('koordinator')) {
+        if ($user->hasRole('koordinator')) {
             return redirect()->route('courses.index');
+        }
+
+        if ($user->hasRole('lecturer')) {
+            return redirect()->route('attendance.index');
         }
 
         if ($user->hasRole('admin')) {

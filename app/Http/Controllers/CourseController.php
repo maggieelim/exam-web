@@ -64,17 +64,18 @@ class CourseController extends Controller
         $user = auth()->user();
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
-        if ($user->hasAnyRole('lecturer')) {
-            $lecturer = Lecturer::where('user_id', $user->id)->first();
-            if ($lecturer) {
-                $query->whereHas('courseLecturer', function ($q) use ($lecturer, $semesterId) {
-                    $q->where('lecturer_id', $lecturer->id);
-                    if ($semesterId) {
-                        $q->where('semester_id', $semesterId);
-                    }
-                });
-            }
-        } elseif ($user->hasAnyRole('koordinator')) {
+        // if ($user->hasAnyRole('lecturer')) {
+        //     $lecturer = Lecturer::where('user_id', $user->id)->first();
+        //     if ($lecturer) {
+        //         $query->whereHas('courseLecturer', function ($q) use ($lecturer, $semesterId) {
+        //             $q->where('lecturer_id', $lecturer->id);
+        //             if ($semesterId) {
+        //                 $q->where('semester_id', $semesterId);
+        //             }
+        //         });
+        //     }
+        // } 
+        if ($user->hasAnyRole('koordinator')) {
             $lecturer = Lecturer::where('user_id', $user->id)->first();
             if ($lecturer) {
                 $query->whereHas('coordinators', function ($q) use ($lecturer, $semesterId) {
@@ -187,74 +188,93 @@ class CourseController extends Controller
             $courseId   = $request->course_id;
             $semesterId = $request->semester_id;
 
+            // Helper: memastikan lecturer masuk ke CourseLecturer
             $addToCourseLecturer = function ($lecturerId) use ($courseId, $semesterId) {
-                if (!$lecturerId) return;
-
-                CourseLecturer::updateOrCreate(
-                    [
-                        'course_id'   => $courseId,
-                        'semester_id' => $semesterId,
-                        'lecturer_id' => $lecturerId,
-                    ],
-                    [] // tidak ada kolom lain yang perlu di-update
-                );
+                if ($lecturerId) {
+                    CourseLecturer::updateOrCreate(
+                        [
+                            'course_id'   => $courseId,
+                            'semester_id' => $semesterId,
+                            'lecturer_id' => $lecturerId,
+                        ],
+                        []
+                    );
+                }
             };
 
-            if ($request->koordinator_id) {
+            // roles yang ingin diatur
+            $roles = [
+                'koordinator' => $request->koordinator_id,
+                'sekretaris'  => $request->sekretaris_id,
+            ];
 
-                CourseCoordinator::updateOrCreate(
-                    [
-                        'course_id'   => $courseId,
-                        'semester_id' => $semesterId,
-                        'role'        => 'koordinator',
-                    ],
-                    [
-                        'lecturer_id' => $request->koordinator_id,
-                    ]
-                );
+            $oldKoor = CourseCoordinator::where([
+                'course_id' => $courseId,
+                'semester_id' => $semesterId,
+                'role' => 'koordinator',
+            ])->first();
 
-                // otomatis tambahkan ke course_lecturers
-                $addToCourseLecturer($request->koordinator_id);
-            } else {
-                // hapus jika kosong
-                CourseCoordinator::where([
-                    'course_id'   => $courseId,
-                    'semester_id' => $semesterId,
-                    'role'        => 'koordinator',
-                ])->delete();
+            $oldSekre = CourseCoordinator::where([
+                'course_id' => $courseId,
+                'semester_id' => $semesterId,
+                'role' => 'sekretaris',
+            ])->first();
+
+            foreach ($roles as $role => $lecturerId) {
+                if ($lecturerId) {
+                    // update or create
+                    CourseCoordinator::updateOrCreate(
+                        [
+                            'course_id'   => $courseId,
+                            'semester_id' => $semesterId,
+                            'role'        => $role,
+                        ],
+                        [
+                            'lecturer_id' => $lecturerId,
+                        ]
+                    );
+
+                    // Assign role (cek dulu)
+                    $lecturer = Lecturer::with('user')->find($lecturerId);
+                    if ($lecturer && $lecturer->user && !$lecturer->user->hasRole('koordinator')) {
+                        $lecturer->user->assignRole('koordinator');
+                    }
+
+                    // Tambah ke CourseLecturer
+                    $addToCourseLecturer($lecturerId);
+                }
+            }
+            if ($oldKoor && $oldKoor->lecturer_id != $request->koordinator_id) {
+
+                $stillCoordinator = CourseCoordinator::where('lecturer_id', $oldKoor->lecturer_id)
+                    ->where('id', '!=', $oldKoor->id)
+                    ->exists();
+
+                if (!$stillCoordinator) {
+                    $oldKoor->lecturer->user->removeRole('koordinator');
+                }
             }
 
-            if ($request->sekretaris_id) {
+            // === REMOVE ROLE jika sekretaris berubah ===
+            if ($oldSekre && $oldSekre->lecturer_id != $request->sekretaris_id) {
 
-                CourseCoordinator::updateOrCreate(
-                    [
-                        'course_id'   => $courseId,
-                        'semester_id' => $semesterId,
-                        'role'        => 'sekretaris',
-                    ],
-                    [
-                        'lecturer_id' => $request->sekretaris_id,
-                    ]
-                );
+                $stillCoordinator = CourseCoordinator::where('lecturer_id', $oldSekre->lecturer_id)
+                    ->where('id', '!=', $oldSekre->id)
+                    ->exists();
 
-                $addToCourseLecturer($request->sekretaris_id);
-            } else {
-                CourseCoordinator::where([
-                    'course_id'   => $courseId,
-                    'semester_id' => $semesterId,
-                    'role'        => 'sekretaris',
-                ])->delete();
+                if (!$stillCoordinator) {
+                    $oldSekre->lecturer->user->removeRole('koordinator');
+                }
             }
-
             DB::commit();
 
             return back()->with('success', 'Koordinator dan Sekretaris berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+            logger()->error('Error in updateKoor: ' . $e->getMessage());
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-
     public function create()
     {
         $lecturers = User::role('lecturer')->get();

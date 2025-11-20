@@ -25,63 +25,89 @@
 
                     <tbody>
                         @php
-                            $kelas = $schedules->count();
-                            $bagian = ceil($kelas / 2); // Membagi menjadi 2 bagian
+                        // Group schedules by PRE groups (11-12, 21-22, etc)
+                        $groupedSchedules = [];
+                        foreach ($schedules as $schedule) {
+                        $pemicuNumber = intval($schedule->pemicu_ke);
+                        $preGroup = floor(($pemicuNumber - 11) / 10) + 1; // PRE 1 untuk 11-12, PRE 2 untuk 21-22
+                        $groupedSchedules[$preGroup][] = $schedule;
+                        }
                         @endphp
-                        @foreach ($schedules as $index => $schedule)
-                            <tr>
-                                <td class="text-center">{{ $index + 1 }}</td>
-                                @if ($schedule->zone !== null)
-                                    <td class="text-center fw-semibold">
-                                        <a href="#" class="delete-schedule text-danger text-decoration-underline"
-                                            data-id="{{ $schedule->id }}"> DEL</a>
-                                    </td>
-                                @else
-                                    <td class="text-center fw-semibold">
-                                        <a class="delete-schedule text-danger">DEL</a>
-                                    </td>
-                                @endif
-                                <td class="text-center fw-semibold">
-                                    <a href="" class=" text-info text-decoration-underline">
-                                        PRE</a>
-                                </td>
-                                <td class="text-center fw-semibold">
-                                    @php
-                                        $kelompok = floor($index / 2) + 1;
-                                        $urutan = ($index % 2) + 1;
-                                        echo $kelompok . $urutan;
-                                    @endphp
-                                </td>
 
-                                <input type="hidden" name="schedules[{{ $schedule->id }}][id]"
-                                    value="{{ $schedule->id }}">
+                        @foreach ($groupedSchedules as $preGroup => $groupSchedules)
+                        @foreach ($groupSchedules as $index => $schedule)
+                        @php
+                        $pemicuNumber = intval($schedule->pemicu_ke);
 
-                                <td class="soft-info">
-                                    <input type="date" name="schedules[{{ $schedule->id }}][scheduled_date]"
-                                        class="form-control text-center input-bg"
-                                        value="{{ $schedule->scheduled_date }}">
-                                </td>
-                                <td>
-                                    <input readonly class="form-control text-center" type="text"
-                                        id="start_time_{{ $schedule->id }}"
-                                        value="{{ $schedule->start_time ? date('H:i', strtotime($schedule->start_time)) : '' }}">
-                                </td>
-                                <td>
-                                    <input readonly class="form-control text-center" type="text"
-                                        id="end_time_{{ $schedule->id }}"
-                                        value="{{ $schedule->end_time ? date('H:i', strtotime($schedule->end_time)) : '' }}">
-                                </td>
+                        // Get all pemicu_detail_ids from this PRE group
+                        $allPemicuDetailIds = collect($groupSchedules)
+                        ->map(function($sched) {
+                        return $sched->pemicuDetails->pluck('id')->toArray();
+                        })
+                        ->flatten()
+                        ->filter()
+                        ->values()
+                        ->toArray();
 
-                                <td class="soft-info">
-                                    <input type="text" name="schedules[{{ $schedule->id }}][zone]"
-                                        class="form-control text-center input-bg " value="{{ $schedule->zone }}">
-                                </td>
-                                <td>
-                                    <input type="text" name="schedules[{{ $schedule->id }}][group]"
-                                        id="group_{{ $schedule->id }}" class="form-control text-center input-bg"
-                                        value="{{ $schedule->group }}">
-                                </td>
-                            </tr>
+                        @endphp
+                        <tr>
+                            <td class="text-center">{{
+                                $loop->parent->index * 2 + $index + 1 }}</td>
+
+                            @if ($schedule->zone !== null)
+                            <td class="text-center fw-semibold">
+                                <a href="#" class="delete-schedule text-danger text-decoration-underline"
+                                    data-id="{{ $schedule->id }}"> DEL</a>
+                            </td>
+                            @else
+                            <td class="text-center fw-semibold">
+                                <a class="delete-schedule text-danger">DEL</a>
+                            </td>
+                            @endif
+
+                            @if ($index === 0)
+                            <td rowspan="2" class="text-center fw-semibold align-middle">
+                                <a href="#" class="text-info text-decoration-underline pre-link"
+                                    data-pre-group="{{ $preGroup }}"
+                                    data-pemicu-detail-ids="{{ json_encode($allPemicuDetailIds) }}"
+                                    data-pemicu-numbers="{{ json_encode(collect($groupSchedules)->pluck('pemicu_ke')->toArray()) }}">
+                                    PRE {{ $preGroup }}
+                                </a>
+                            </td>
+                            @endif
+
+                            <td class="text-center fw-semibold">
+                                {{ $schedule->pemicu_ke }}
+                            </td>
+
+                            <input type="hidden" name="schedules[{{ $schedule->id }}][id]" value="{{ $schedule->id }}">
+
+                            <td class="soft-info">
+                                <input type="date" name="schedules[{{ $schedule->id }}][scheduled_date]"
+                                    class="form-control text-center input-bg" value="{{ $schedule->scheduled_date }}">
+                            </td>
+                            <td>
+                                <input readonly class="form-control text-center" type="text"
+                                    id="start_time_{{ $schedule->id }}"
+                                    value="{{ $schedule->start_time ? date('H:i', strtotime($schedule->start_time)) : '' }}">
+                            </td>
+                            <td>
+                                <input readonly class="form-control text-center" type="text"
+                                    id="end_time_{{ $schedule->id }}"
+                                    value="{{ $schedule->end_time ? date('H:i', strtotime($schedule->end_time)) : '' }}">
+                            </td>
+
+                            <td class="soft-info">
+                                <input type="text" name="schedules[{{ $schedule->id }}][zone]"
+                                    class="form-control text-center input-bg" value="{{ $schedule->zone }}">
+                            </td>
+                            <td>
+                                <input type="text" name="schedules[{{ $schedule->id }}][group]"
+                                    id="group_{{ $schedule->id }}" class="form-control text-center input-bg"
+                                    value="{{ $schedule->group }}">
+                            </td>
+                        </tr>
+                        @endforeach
                         @endforeach
                     </tbody>
                 </table>

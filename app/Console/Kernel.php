@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Models\AttendanceSessions;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -24,13 +25,17 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $hour = config('app.hour');
-        $min = config('app.min');
-        $scheduledInterval = $hour !== '' ? ( ($min !== '' && $min != 0) ?  $min .' */'. $hour .' * * *' : '0 */'. $hour .' * * *') : '*/'. $min .' * * * *';
-        if(env('IS_DEMO')) {
-            $schedule->command('migrate:fresh --seed')->cron($scheduledInterval);
-        }
+        $schedule->call(function () {
+            AttendanceSessions::whereIn('status', ['active', 'upcoming'])
+                ->where('end_time', '<', now())
+                ->chunk(100, function ($sessions) {
+                    foreach ($sessions as $session) {
+                        $session->updateStatusIfExpired();
+                    }
+                });
+        })->everyMinute();
     }
+
 
     /**
      * Register the commands for the application.
@@ -39,7 +44,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

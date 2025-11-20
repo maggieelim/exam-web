@@ -159,7 +159,7 @@ class ScheduleAjaxHandler {
         deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         deleteBtn.style.pointerEvents = 'none';
 
-        fetch(`/admin/course/schedules/${scheduleId}`, {
+        fetch(`/course/schedules/${scheduleId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': token,

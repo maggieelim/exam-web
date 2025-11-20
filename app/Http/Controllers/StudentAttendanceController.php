@@ -92,22 +92,25 @@ class StudentAttendanceController extends Controller
             }
 
             // Cek apakah sudah absen
-            $existingAttendance = AttendanceRecords::where('attendance_session_id', $attendanceSession->id)->where('nim', $request->nim)->first();
+            $existingAttendance = AttendanceRecords::where('attendance_session_id', $attendanceSession->id)->where('nim', $request->nim)->whereNotNull('scanned_at')->first();
 
             if ($existingAttendance) {
                 return back()->withInput()->with('error', 'You have already submitted attendance for this session.');
             }
 
-            $gracePeriod = $startTime->copy()->addMinutes(15);
-            $status = $now->greaterThan($gracePeriod) ? 'terlambat' : 'hadir';
+            $gracePeriod = $startTime->copy()->addMinutes(20);
+            $status = $now->greaterThan($gracePeriod) ? 'late' : 'present';
 
             // Simpan attendance record
-            AttendanceRecords::create([
+            AttendanceRecords::updateOrCreate([
                 'attendance_session_id' => $attendanceSessionId,
                 'course_student_id' => $courseStudent->id,
                 'nim' => $request->nim,
+            ], [
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
+                'loc_name' => $request->loc_name,
+                'distance' => $request->distance,
                 'wifi_ssid' => $request->wifi_ssid,
                 'device_info' => $request->header('User-Agent'),
                 'scanned_at' => $now,

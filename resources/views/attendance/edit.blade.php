@@ -370,19 +370,6 @@
 </script>
 
 <style>
-    .card-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    h6.text-primary {
-        border-bottom: 1px solid #dee2e6;
-        padding-bottom: 8px;
-    }
-
-    .input-group-text {
-        background-color: #f8f9fa;
-    }
-
     #map {
         border: 1px solid #dee2e6;
     }

@@ -107,14 +107,6 @@ class ScheduleCreationService
 
     private function createExamSession(CourseSchedule $courseSchedule, Activity $activity, $sessionNumber)
     {
-        // Create exam first
-        $exam = Exam::create([
-            'course_id' => $courseSchedule->course_id,
-            'semester_id' => $courseSchedule->semester_id,
-            'title' => "UT {$sessionNumber}",
-            'created_by' => auth()->id(),
-        ]);
-
         // Create teaching schedule
         $teaching = TeachingSchedule::create([
             'course_schedule_id' => $courseSchedule->id,
@@ -125,17 +117,33 @@ class ScheduleCreationService
             'created_by' => auth()->id(),
         ]);
 
+        $exam = Exam::create([
+            'teaching_schedule_id' => $teaching->id,
+            'course_id' => $courseSchedule->course_id,
+            'semester_id' => $courseSchedule->semester_id,
+            'title' => "UT {$sessionNumber}",
+            'created_by' => auth()->id(),
+        ]);
+
         $this->createAttendanceSession($teaching, $courseSchedule, $activity);
     }
 
     private function createRegularSession(CourseSchedule $courseSchedule, Activity $activity, $sessionNumber)
     {
+        $pemicuKe = null;
+        if ($activity->id === 5) {
+            $pemicuNumber = ceil($sessionNumber / 2);
+            $urutanSesi = $sessionNumber % 2 === 0 ? 2 : 1;
+            $pemicuKe = intval($pemicuNumber . $urutanSesi);
+        }
+
         $teaching = TeachingSchedule::create([
             'course_schedule_id' => $courseSchedule->id,
             'course_id' => $courseSchedule->course_id,
             'semester_id' => $courseSchedule->semester_id,
             'activity_id' => $activity->id,
             'session_number' => $sessionNumber,
+            'pemicu_ke' => $pemicuKe,
             'created_by' => auth()->id(),
         ]);
 

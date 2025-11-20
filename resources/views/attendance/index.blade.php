@@ -7,9 +7,7 @@
             <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
-                    <h5 class="mb-0">List Attendance</h5>
-
-                    {{-- Tampilkan semester aktif/terfilter di samping judul --}}
+                    {{-- <h5 class="mb-0">List Attendance</h5>
                     @if ($semesterId)
                     @php
                     $selectedSemester = $semesters->firstWhere('id', $semesterId);
@@ -23,18 +21,18 @@
                         @endif
                     </span>
                     @endif
-                    @endif
+                    @endif --}}
                 </div>
 
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
-                    <a href="{{ route('attendance.create') }}" class="btn btn-primary btn-sm"
+                    {{-- <a href="{{ route('attendance.create') }}" class="btn btn-primary btn-sm"
                         style="white-space: nowrap;">
                         +&nbsp; New attendance
-                    </a>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                    </a> --}}
+                    {{-- <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
-                    </button>
+                    </button> --}}
                 </div>
             </div>
 
@@ -77,9 +75,9 @@
             </div>
 
             <div class="card-body pb-2">
-                <div id='calendar'></div>
+                <div id="calendar" style="max-width: 100%; width: 100%;"></div>
 
-                <div class="table-responsive p-0">
+                {{-- <div class="table-responsive p-0">
                     <table class="table align-items-center mb-0">
                         <thead>
                             <tr>
@@ -168,12 +166,68 @@
                     <div class="d-flex justify-content-center mt-3">
                         <x-pagination :paginator="$attendances" />
                     </div>
-                </div>
+                </div> --}}
             </div>
         </div>
     </div>
 </div>
 @endsection
+<style>
+    /* Kalender bisa scroll horizontal jika space sempit */
+    #calendar {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        color: #344767 !important
+    }
+
+    .fc .fc-toolbar-title {
+        color: #344767 !important
+    }
+
+    .fc .fc-button-primary {
+        background-color: rgb(141, 195, 231);
+        border-color: rgb(141, 195, 231);
+    }
+
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #344767;
+        border-color: #344767;
+    }
+
+    .fc .fc-button-primary:disabled {
+        background-color: #344767;
+        border-color: #344767;
+    }
+
+    /* Toolbar tidak mepet dan tidak pecah */
+    @media (max-width: 767px) {
+        .fc-header-toolbar {
+            flex-wrap: wrap !important;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .fc-toolbar-chunk {
+            width: 100%;
+            text-align: right;
+        }
+
+        /* Untuk mempersempit kolom jam jika layar sangat kecil */
+        .fc-timegrid-slot-label {
+            font-size: 5px !important;
+        }
+
+        .fc-timegrid-event {
+            font-size: 11px;
+        }
+
+    }
+</style>
 
 @push('dashboard')
 @endpush

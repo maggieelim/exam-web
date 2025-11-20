@@ -178,4 +178,6 @@ class CoursePemicuController extends Controller
         $filename = "Jadwal_Pemicu_Blok_{$courseSlug}_{$semester->semester_name}_{$yearName}.xlsx";
         return Excel::download(new PemicuExport($courseId, $semesterId), $filename);
     }
+
+    public function nilai() {}
 }

@@ -21,6 +21,8 @@
     "dependencies": {
         "@fullcalendar/core": "^6.1.19",
         "@fullcalendar/resource-timeline": "^6.1.19",
+        "bootstrap": "^5.3.8",
+        "bootstrap-icons": "^1.13.1",
         "flatpickr": "^4.6.13",
         "fullcalendar": "^6.1.19"
     }
