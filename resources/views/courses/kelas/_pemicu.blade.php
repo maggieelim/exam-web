@@ -51,8 +51,7 @@
 
                         @endphp
                         <tr>
-                            <td class="text-center">{{
-                                $loop->parent->index * 2 + $index + 1 }}</td>
+                            <td class="text-center">{{$loop->parent->index * 2 + $index + 1 }}</td>
 
                             @if ($schedule->zone !== null)
                             <td class="text-center fw-semibold">
@@ -66,11 +65,12 @@
                             @endif
 
                             @if ($index === 0)
+                            @php
+                            $scheduleIds = collect($groupSchedules)->pluck('id')->toArray();
+                            @endphp
                             <td rowspan="2" class="text-center fw-semibold align-middle">
-                                <a href="#" class="text-info text-decoration-underline pre-link"
-                                    data-pre-group="{{ $preGroup }}"
-                                    data-pemicu-detail-ids="{{ json_encode($allPemicuDetailIds) }}"
-                                    data-pemicu-numbers="{{ json_encode(collect($groupSchedules)->pluck('pemicu_ke')->toArray()) }}">
+                                <a href="{{ route('course.nilaiPemicu', ['id1' => $scheduleIds[0], 'id2' => $scheduleIds[1]]) }}"
+                                    class="text-info text-decoration-underline pre-link">
                                     PRE {{ $preGroup }}
                                 </a>
                             </td>

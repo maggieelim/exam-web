@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AllNilaiPemicuExport;
+use App\Exports\NilaiPemicuExport;
 use App\Exports\PemicuExport;
 use App\Models\Course;
 use App\Models\CourseLecturer;
 use App\Models\CourseStudent;
 use App\Models\PemicuDetails;
+use App\Models\PemicuScore;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
 use App\Services\LecturerAttendanceService;
@@ -25,6 +28,7 @@ class CoursePemicuController extends Controller
     {
         $this->attendanceService = $attendanceService;
     }
+
     public function getPemicuData(Request $request, string $slug)
     {
         $scheduleService = app(ScheduleConflictService::class);
@@ -39,7 +43,7 @@ class CoursePemicuController extends Controller
             ->where('semester_id', $semesterId)
             ->select('kelompok')
             ->distinct()
-            ->orderBy('kelompok') // Changed from sortBy to orderBy for SQL sorting
+            ->orderBy('kelompok')
             ->pluck('kelompok');
 
         $tutors = TeachingSchedule::whereIn('activity_id', [5])
@@ -66,7 +70,6 @@ class CoursePemicuController extends Controller
 
         $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
 
-        // Get unavailable slots using single query
         $unavailableSlots = [];
 
         foreach ($lecturers as $lecturer) {
@@ -79,7 +82,7 @@ class CoursePemicuController extends Controller
                     $tutor->getRawOriginal('scheduled_date'),
                     $tutor->getRawOriginal('start_time'),
                     $tutor->getRawOriginal('end_time'),
-                    null, // excludeScheduleId
+                    null,
                     $semesterId,
                 );
 
@@ -113,8 +116,6 @@ class CoursePemicuController extends Controller
             $semesterId = $request->semester_id;
             $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
-
-            $pemicuIds = TeachingSchedule::where('course_id', $courseId)->where('semester_id', $semesterId)->where('activity_id', 5)->pluck('id');
 
             foreach ($assignments as $lecturerId => $tutorAssignments) {
                 foreach ($tutorAssignments as $tutorId => $assignmentData) {
@@ -179,5 +180,167 @@ class CoursePemicuController extends Controller
         return Excel::download(new PemicuExport($courseId, $semesterId), $filename);
     }
 
-    public function nilai() {}
+    private function getPemicuDetailsData($id1, $id2)
+    {
+        $pemicuDetails = PemicuDetails::with([
+            'lecturer.user',
+            'pemicuScore',
+            'teachingSchedule.course.courseStudents.student.user'
+        ])
+            ->whereIn('teaching_schedule_id', [$id1, $id2])
+            ->get();
+
+        $firstDetail = $pemicuDetails->first();
+        $pemicuNumber = intval($firstDetail->teachingSchedule->pemicu_ke);
+        $preGroup = floor(($pemicuNumber - 11) / 10) + 1;
+
+        $course = $firstDetail->teachingSchedule->course;
+
+        $groupedStudents = $course->courseStudents->groupBy('kelompok')->sortKeys();
+
+        $scores = PemicuScore::whereIn('pemicu_detail_id', $pemicuDetails->pluck('id'))
+            ->get()
+            ->groupBy('course_student_id');
+
+        $groupLecturer = $pemicuDetails->mapWithKeys(function ($d) {
+            return [
+                $d->kelompok_num => $d->lecturer->user->name
+            ];
+        });
+
+        return compact(
+            'pemicuDetails',
+            'groupedStudents',
+            'scores',
+            'groupLecturer',
+            'preGroup',
+            'course'
+        );
+    }
+
+    public function nilai($id1, $id2)
+    {
+        $data = $this->getPemicuDetailsData($id1, $id2);
+
+        return view('courses.pemicu.nilai', array_merge($data, [
+            'id1' => $id1,
+            'id2' => $id2,
+        ]));
+    }
+
+    public function downloadPemicu($id1, $id2)
+    {
+        $data = $this->getPemicuDetailsData($id1, $id2);
+
+        $filename = "Nilai_Pemicu_{$data['preGroup']}_Blok_{$data['course']->slug}.xlsx";
+
+        return Excel::download(
+            new NilaiPemicuExport(
+                $data['groupedStudents'],
+                $data['scores'],
+                $data['groupLecturer'],
+                $id1,
+                $id2,
+                $data['preGroup'],
+                $data['course']
+            ),
+            $filename
+        );
+    }
+
+    private function getAllPemicuData($id, $semester)
+    {
+        $teachingSchedules = TeachingSchedule::where('course_id', $id)
+            ->where('semester_id', $semester)
+            ->where('activity_id', 5)
+            ->orderBy('pemicu_ke')
+            ->get();
+
+        if ($teachingSchedules->isEmpty()) {
+            return [
+                'semester' => $semester,
+                'pemicuGroups' => [],
+                'preGroup' => 0,
+                'course' => Course::find($id),
+                'groupedStudents' => collect(),
+                'scores' => collect(),
+                'groupLecturer' => collect(),
+                'teachingSchedules' => collect(),
+            ];
+        }
+
+        $pemicuGroups = [];
+        foreach ($teachingSchedules as $index => $schedule) {
+            $pemicuNumber = ceil(($index + 1) / 2);
+            $pemicuGroups[$pemicuNumber][] = $schedule->id;
+        }
+
+        $preGroup = count($pemicuGroups);
+        $course = $teachingSchedules->first()->course ?? Course::find($id);
+
+        $pemicuDetails = PemicuDetails::with([
+            'lecturer.user',
+            'pemicuScore',
+            'teachingSchedule'
+        ])
+            ->whereIn('teaching_schedule_id', $teachingSchedules->pluck('id'))
+            ->get();
+
+        $groupedStudents = optional($course)->courseStudents
+            ? $course->courseStudents->groupBy('kelompok')->sortKeys()
+            : collect();
+
+        $scores = PemicuScore::whereIn('pemicu_detail_id', $pemicuDetails->pluck('id'))
+            ->get()
+            ->groupBy('course_student_id');
+
+        $groupLecturer = $pemicuDetails->mapWithKeys(function ($d) {
+            return [
+                $d->kelompok_num => optional($d->lecturer->user)->name ?? '-'
+            ];
+        });
+
+        return compact(
+            'semester',
+            'pemicuGroups',
+            'preGroup',
+            'course',
+            'groupedStudents',
+            'scores',
+            'groupLecturer',
+            'teachingSchedules'
+        );
+    }
+
+    public function allPemicu($id, Request $request)
+    {
+        $semester = $request->query('semester_id');
+        $data = $this->getAllPemicuData($id, $semester);
+
+        return view('courses.pemicu.pemicu_report', $data);
+    }
+
+    public function downloadAllPemicu($id, $semester)
+    {
+        $data = $this->getAllPemicuData($id, $semester);
+
+        if (empty($data['pemicuGroups'])) {
+            abort(404, 'Tidak ada data pemicu yang ditemukan');
+        }
+
+        $filename = "Nilai_Diskusi_Blok_{$data['course']->slug}.xlsx";
+
+        return Excel::download(
+            new AllNilaiPemicuExport(
+                $data['pemicuGroups'],
+                $data['preGroup'],
+                $data['course'],
+                $data['groupedStudents'],
+                $data['scores'],
+                $data['groupLecturer'],
+                $data['teachingSchedules']
+            ),
+            $filename
+        );
+    }
 }

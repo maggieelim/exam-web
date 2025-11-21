@@ -8,7 +8,6 @@ use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\PemicuDetails;
 use App\Models\PemicuScore;
-use App\Models\TeachingSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,7 +31,7 @@ class TutorGradingController extends Controller
 
             // Ambil list pemicu_ke untuk group ini
             $pemicuKeList = $group->pluck('teachingSchedule.pemicu_ke')->unique()->sort()->values();
-
+            $pemicuKe = intval(substr($pemicuKeList->first(), 0, 1));
             // Hitung total mahasiswa per course + kelompok
             $studentCount = CourseStudent::where('course_id', $courseId)
                 ->where('kelompok', $kelompok)
@@ -44,7 +43,6 @@ class TutorGradingController extends Controller
                     ->where('kelompok', $kelompok)
                     ->get();
                 foreach ($students as $student) {
-                    // ambil PemicuDetails yang sesuai kelompok + pemicu
                     $pemicuDetail = PemicuDetails::where('lecturer_id', $lecturer->id)
                         ->where('kelompok_num', $student->kelompok)
                         ->where('teaching_schedule_id', $schedule->id) // jadwal pemicu
@@ -72,8 +70,9 @@ class TutorGradingController extends Controller
                 'course' => $first->teachingSchedule->course,
                 'kelompok' => $kelompok,
                 'pemicu_ke' => $pemicuKeList,
+                'pemicu' => $pemicuKe,
                 'student_count' => $studentCount,
-                'pemicu_detail_ids' => $pemicuDetailIdList, // ⬅ tambahkan ini
+                'pemicu_detail_ids' => $pemicuDetailIdList,
             ];
         })->values();
 

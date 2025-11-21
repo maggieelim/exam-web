@@ -15,10 +15,6 @@
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-
-                    <a href="{{ 'tutors' }}" class="btn btn-success btn-sm" style="white-space: nowrap;">
-                        <i class="fas fa-file-excel"></i> Export
-                    </a>
                 </div>
             </div>
 
@@ -60,7 +56,10 @@
                         <thead>
                             <tr>
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-wrap text-center">
-                                    Name
+                                    Blok
+                                </th>
+                                <th class="text-uppercase text-dark text-sm font-weight-bolder text-wrap text-center">
+                                    Pemicu Ke
                                 </th>
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder  text-center">
                                     Kelompok
@@ -78,6 +77,9 @@
                             <tr>
                                 <td class="align-middle text-sm text-center">
                                     {{ $tutor['course']->name}}
+                                </td>
+                                <td class="align-middle text-sm text-center">
+                                    Pemicu {{ $tutor['pemicu'] }}
                                 </td>
                                 <td class="align-middle text-sm text-center">
                                     {{ $tutor['kelompok']}}

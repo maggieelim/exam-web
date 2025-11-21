@@ -149,6 +149,10 @@
                                         class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
                                         <i class="fa-solid fa-file"></i>
                                     </a>
+                                    <a href="{{ route('course.getAllPemicu', [$course->id, 'semester_id'=>$semesterId]) }}"
+                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
+                                        <i class="fa-solid fa-star"></i>
+                                    </a>
                                     <a href="{{ route('courses.edit', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                         class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
                                         <i class="fa-solid fa-pen"></i>

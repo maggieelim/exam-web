@@ -152,7 +152,13 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
     Route::get('/tutors/{pemicu}/{student}/edit', [TutorGradingController::class, 'edit'])->name('tutors.edit');
     Route::post('tutors/{pemicu}/{student}', [TutorGradingController::class, 'update'])->name('tutors.update');
     Route::get('tutors/{course}/{kelompok}/download', [TutorGradingController::class, 'downloadExcel'])->name('tutors.download');
-
+    Route::get('/course/pemicu/nilai/{id}', [CoursePemicuController::class, 'allPemicu'])->name('course.getAllPemicu');
+    Route::get(
+        '/course/pemicu/nilai/{id}/{semester}/downloadAll',
+        [CoursePemicuController::class, 'downloadAllPemicu']
+    )->name('course.downloadAllPemicu');
+    Route::get('/course/pemicu/nilai/{id1}/{id2}', [CoursePemicuController::class, 'nilai'])->name('course.nilaiPemicu');
+    Route::get('/course/pemicu/nilai/{id1}/{id2}/download', [CoursePemicuController::class, 'downloadPemicu'])->name('course.downloadNilai');
     //attendance
     Route::resource('attendance', AttendanceSessionsController::class);
     Route::get('/attendance/{attendanceCode}/qr-code', [AttendanceSessionsController::class, 'getQrCode']);

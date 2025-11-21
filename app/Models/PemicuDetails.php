@@ -24,7 +24,10 @@ class PemicuDetails extends Model
     }
     public function getPemicuNumberAttribute()
     {
-        // session_number ada di teachingSchedule
         return ceil($this->teachingSchedule->session_number / 2);
+    }
+    public function pemicuScore()
+    {
+        return $this->hasMany(PemicuScore::class, 'pemicu_detail_id');
     }
 }
