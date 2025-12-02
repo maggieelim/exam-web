@@ -92,44 +92,16 @@
 
                         <thead>
                             <tr>
-                                {{-- Kolom NIM (hanya untuk mahasiswa) --}}
                                 @if ($type === 'student')
-                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-
-                                    <a
-                                        href="{{ route('admin.users.index', array_merge(['type' => $type, 'sort' => 'nim', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc'], $filters)) }}">
-                                        NIM
-                                        @if (request('sort') === 'nim')
-                                        <i class="fa fa-sort-{{ request('dir') === 'asc' ? 'asc' : 'desc' }}"></i>
-                                        @endif
-                                    </a>
-                                </th>
+                                <x-sortable-th label="NIM" field="nim" :sort="$sort" :dir="$dir" />
                                 @endif
-
-                                {{-- Kolom Nama --}}
+                                <x-sortable-th label="Name" field="name" :sort="$sort" :dir="$dir" />
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-
-                                    <a
-                                        href="{{ route('admin.users.index', array_merge(['type' => $type, 'sort' => 'name', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc'], $filters)) }}">
-                                        Nama
-                                        @if (request('sort') === 'name')
-                                        <i class="fa fa-sort-{{ request('dir') === 'asc' ? 'asc' : 'desc' }}"></i>
-                                        @endif
-                                    </a>
-                                </th>
-
-                                {{-- Kolom Email --}}
+                                    Email</th>
+                                @if ($type === 'lecturer')
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-
-                                    <a
-                                        href="{{ route('admin.users.index', array_merge(['type' => $type, 'sort' => 'email', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc'], $filters)) }}">
-                                        Email
-                                        @if (request('sort') === 'email')
-                                        <i class="fa fa-sort-{{ request('dir') === 'asc' ? 'asc' : 'desc' }}"></i>
-                                        @endif
-                                    </a>
-                                </th>
-
+                                    Role</th>
+                                @endif
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Action</th>
                             </tr>
@@ -144,24 +116,22 @@
                                     <span class="text-sm font-weight-bold">{{ $user->student->nim ?? '-' }}</span>
                                 </td>
                                 @endif
-
-                                {{-- Nama --}}
-                                <td class="align-middle text-center">
-                                    <span class="text-sm font-weight-bold">{{ $user->name }}</span>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $user->name }}
                                 </td>
-
-                                {{-- Email --}}
-                                <td class="align-middle text-center">
-                                    <span class="text-sm font-weight-bold">{{ $user->email }}</span>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $user->email }}
                                 </td>
-
-                                {{-- Action --}}
+                                @if ($type === 'lecturer')
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{$user->roles->pluck('name')->map('ucfirst')->implode(', ') ?? '-' }}
+                                </td>
+                                @endif
                                 <td class="align-middle text-center">
                                     <a href="{{ route('admin.users.edit', [$type, $user->id]) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-
                                     <a href="{{ route('admin.users.show', [$type, $user->id]) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>

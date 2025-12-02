@@ -42,7 +42,7 @@ $genderValue = $user->gender;
 
     <div class="col-md-4">
         <label class="form-label">Role</label>
-        <select name="role" class="form-select" required>
+        <select name="roles[]" class="form-select choices" multiple required>
             @foreach ($roles as $id => $name)
             <option value="{{ $name }}" {{ $user->hasRole($name) ? 'selected' : '' }}>
                 {{ ucfirst($name) }}

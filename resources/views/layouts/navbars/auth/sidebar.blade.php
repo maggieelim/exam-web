@@ -70,12 +70,10 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->is('admin/semester*') ? 'active' : '' }}"
-                    href="{{ url('admin/semester') }}">
+                <a class="nav-link {{ request()->is('semester*') ? 'active' : '' }}" href="{{ url('semester') }}">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-calendar {{ request()->is('admin/semester*') ? 'text-white' : 'text-dark' }}"></i>
+                        <i class="fas fa-calendar {{ request()->is('semester*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Academic Year</span>
                 </a>
@@ -111,10 +109,10 @@
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}" href="{{ url('courses') }}">
+                <a class="nav-link {{ request()->is('course*') ? 'active' : '' }}" href="{{ url('courses') }}">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-book {{ request()->is('courses*') ? 'text-white' : 'text-dark' }}"></i>
+                        <i class="fas fa-book {{ request()->is('course*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Manage Courses</span>
                 </a>
@@ -190,7 +188,7 @@
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i
-                            class="fas fa-calendar-alt {{ request()->is('student/exams/upcoming') ? 'text-white' : 'text-dark' }}"></i>
+                            class="fas fa-file {{ request()->is('student/exams/upcoming') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Upcoming Exam</span>
                 </a>
@@ -204,6 +202,20 @@
                             class="fas fa-history {{ request()->is('student/exams/previous*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Previous Exam</span>
+                </a>
+            </li>
+            <li class="nav-item mt-2">
+                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Attendance</h6>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('student/attendance*') ? 'active' : '' }}"
+                    href="{{ url('student/attendance') }}">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i
+                            class="fas fa-calendar-alt {{ request()->is('student/attendance*') ? 'text-white' : 'text-dark' }}"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Previous Attendance</span>
                 </a>
             </li>
             @endrole

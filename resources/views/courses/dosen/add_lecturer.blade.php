@@ -82,36 +82,8 @@
                     <thead class="text-center align-middle">
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th>
-                                <a href="{{ route(
-                                            'admin.courses.addLecturer',
-                                            array_merge(request()->all(), [
-                                                'course' => $course->slug,
-                                                'semester_id' => $semesterId,
-                                                'sort' => 'name',
-                                                'dir' => $sort === 'name' && $dir === 'asc' ? 'desc' : 'asc',
-                                            ]),
-                                        ) }}">
-                                    Nama
-                                    @if ($sort === 'name')
-                                    <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                                    @endif
-                                </a>
-                            </th>
-                            <th> <a href="{{ route(
-                                            'admin.courses.addLecturer',
-                                            array_merge(request()->all(), [
-                                                'course' => $course->slug,
-                                                'semester_id' => $semesterId,
-                                                'sort' => 'bagian',
-                                                'dir' => $sort === 'bagian' && $dir === 'asc' ? 'desc' : 'asc',
-                                            ]),
-                                        ) }}">
-                                    Bagian
-                                    @if ($sort === 'bagian')
-                                    <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                                    @endif
-                                </a></th>
+                            <x-sortable-th label="Name" field="name" :sort="$sort" :dir="$dir" />
+                            <x-sortable-th label="Bagian" field="bagian" :sort="$sort" :dir="$dir" />
                             <th>Strata</th>
                             <th>Gelar</th>
                             <th>Tipe Dosen</th>
@@ -122,7 +94,7 @@
                     <tbody id="lecturers-tbody">
                         @foreach ($lecturers as $lecturer)
                         <tr>
-                            <td class="text-center">
+                            <td class="text-center clickable-td">
                                 <input name="lecturers[]" value="{{ $lecturer->id }}" type="checkbox" {{
                                     in_array($lecturer->id, $assignedLecturers) ? 'checked' : '' }}>
                             </td>

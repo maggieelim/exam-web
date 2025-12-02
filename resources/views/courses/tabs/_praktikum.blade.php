@@ -1,5 +1,5 @@
 <div class="d-flex">
-    <a class="btn btn-sm btn-outline-info"
+    <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
         href="{{ route('admin.courses.downloadPracticumAssignment', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
         title="Download Excel">
         <i class="fas fa-download"></i>
@@ -56,7 +56,7 @@
                         '' }}>
                     </td>
                     @else
-                    <td class="text-center">
+                    <td class="text-center clickable-td">
                         <input type="checkbox" class="group-checkbox input-bg"
                             name="assignments[{{ $lecturer->lecturer_id }}][{{ $practicum->id }}]" value="1" {{
                             $practicum->practicumDetails->contains('lecturer_id', $lecturer->lecturer_id) ? 'checked' :

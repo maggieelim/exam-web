@@ -4,10 +4,17 @@
 <div class="row">
   <div class="col-12 card mb-4">
     <div class="card-header d-flex flex-row justify-content-between mb-0 pb-0">
-      <div>
+      <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
         <h5 class="mb-0">Exams List</h5>
+        @if ($semesterId)
+        @php
+        $selectedSemester = $semesters->firstWhere('id', $semesterId);
+        @endphp
+        <x-semester-badge :semester="$selectedSemester" :activeSemester="$activeSemester" />
+        @endif
       </div>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+        data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
         <i class="fas fa-filter"></i> Filter
       </button>
     </div>
@@ -27,7 +34,7 @@
               <select name="course_id" class="form-control">
                 <option value="">-- ALL --</option>
                 @foreach($courses as $course)
-                <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
+                <option value="{{ $course->id }}" {{ request('course_id')==$course->id ? 'selected' : '' }}>
                   {{ $course->name }}
                 </option>
                 @endforeach
@@ -37,8 +44,7 @@
               <label for="semester" class="form-label mb-1">Semester</label>
               <select name="semester_id" class="form-control">
                 @foreach($semesters as $semester)
-                <option value="{{ $semester->id }}"
-                  {{ ($semesterId == $semester->id) ? 'selected' : '' }}>
+                <option value="{{ $semester->id }}" {{ ($semesterId==$semester->id) ? 'selected' : '' }}>
                   {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
                   @if($activeSemester && $semester->id == $activeSemester->id)
                   (Aktif)
@@ -78,34 +84,28 @@
               Duration: {{ $exam->duration }} minutes
             </p>
 
-            <p class="mb-4">
-              <i class="fas fa-map-marker-alt me-2"></i>
-              Room: {{ $exam->room }}
-            </p>
-
             <!-- Button Section berdasarkan status exam -->
             <div class="mt-auto">
               @if($exam->has_completed)
               @if($exam->is_published)
-              <a href="{{ route('student.results.show', $exam->exam_code) }}"
-                class="btn bg-gradient-success w-100" title="Results">
+              <a href="{{ route('student.results.show', $exam->exam_code) }}" class="btn bg-gradient-success w-100"
+                title="Results">
                 <i class="fas fa-clipboard-check me-2"></i> See Results
               </a>
               @else
-              <div class="btn bg-gradient-secondary opacity-75 w-100 d-flex align-items-center justify-content-center" disabled>
+              <div class="btn bg-gradient-secondary opacity-75 w-100 d-flex align-items-center justify-content-center"
+                disabled>
                 <i class="fas fa-hourglass-half me-2"></i> Waiting for Grading
               </div>
               @endif
               @elseif( optional($exam->attempts->first())->status ==='in_progress')
-              <button class="btn btn-sm btn-warning w-100"
-                data-bs-toggle="modal"
+              <button class="btn btn-sm btn-warning w-100" data-bs-toggle="modal"
                 data-bs-target="#examPasswordModal-{{ $exam->exam_code }}">
                 <i class="fas fa-play me-1"></i> Lanjutkan Ujian
               </button>
 
               @elseif($exam->show_start_button)
-              <button class="btn btn-sm btn-primary w-100"
-                data-bs-toggle="modal"
+              <button class="btn btn-sm btn-primary w-100" data-bs-toggle="modal"
                 data-bs-target="#examPasswordModal-{{ $exam->exam_code }}">
                 <i class="fas fa-play me-1"></i> Start Exam
               </button>

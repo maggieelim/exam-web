@@ -95,7 +95,9 @@ Route::middleware(['auth', 'role:admin'])
                 Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
             });
         Route::resource('semester', SemesterController::class);
-
+    });
+Route::middleware(['auth', 'role:admin,koordinator'])->name('admin.')
+    ->group(function () {
         Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
         Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
         Route::delete('/courses/{course:slug}/student/{studentId}', [CourseStudentController::class, 'destroy'])->name('courses.student.destroy');
@@ -127,7 +129,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/courses/{course}/semester/{semesterId}/download-kelas', [CourseScheduleController::class, 'downloadExcel'])->name('courses.downloadPerkuliahan');
     });
 
-Route::middleware(['auth', 'role:lecturer,koordinator'])
+Route::middleware(['auth', 'role:koordinator'])
     ->name('lecturer.')
     ->group(function () {
         Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])
@@ -215,25 +217,23 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
 });
 
 // ================= STUDENT =================
-Route::middleware(['auth', 'role:student'])
-    ->prefix('student')
-    ->name('student.')
-    ->group(function () {
-        Route::get('/exams/{status?}', [ExamController::class, 'index'])
-            ->where('status', '(previous|upcoming|ongoing)')
-            ->name('studentExams.index');
-        // Route untuk mengecek status exam
-        Route::get('/exams/{exam_code}/check-status', [ExamAttemptController::class, 'checkExamStatus'])->name('exams.check-status');
-        Route::get('/exams/previous/results/{exam_code}', [StudentExamResultsController::class, 'show'])->name('results.show');
-        Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
-        Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');
-        Route::post('/exams/{exam_code}/{kode_soal}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
-        Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
+Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
+    Route::get('/exams/{status?}', [ExamController::class, 'index'])
+        ->where('status', '(previous|upcoming|ongoing)')
+        ->name('studentExams.index');
+    // Route untuk mengecek status exam
+    Route::get('/exams/{exam_code}/check-status', [ExamAttemptController::class, 'checkExamStatus'])->name('exams.check-status');
+    Route::get('/exams/previous/results/{exam_code}', [StudentExamResultsController::class, 'show'])->name('results.show');
+    Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
+    Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');
+    Route::post('/exams/{exam_code}/{kode_soal}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
+    Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
 
-        Route::get('/results', [StudentExamResultsController::class, 'index'])->name('results.index');
-        //attendance
-        Route::get('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'showAttendanceForm'])->name('attendance.form');
-        Route::post('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'submitAttendance'])->name('attendance.submit');
-    });
+    Route::get('/results', [StudentExamResultsController::class, 'index'])->name('results.index');
+    //attendance
+    Route::get('/attendance', [StudentAttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'showAttendanceForm'])->name('attendance.form');
+    Route::post('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'submitAttendance'])->name('attendance.submit');
+});
 
 Route::view('login', 'session/login-session')->name('login');

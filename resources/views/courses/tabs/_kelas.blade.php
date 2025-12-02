@@ -3,7 +3,7 @@
         class="btn btn-sm bg-gradient-secondary " title="Info">
         Bentuk Kelas
     </a>
-    <a class="btn btn-sm btn-outline-info"
+    <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
         href="{{ route('admin.courses.downloadPerkuliahan', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
         title="Download Excel">
         <i class="fas fa-download"></i>

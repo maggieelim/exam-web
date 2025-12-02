@@ -11,7 +11,7 @@
 
             <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
                 <a href="{{route('tutors.download', ['course' =>  $course->id,
-    'kelompok' => $kel, 'pemicus'=>json_encode($pemicu)]) }}" class="btn btn-success btn-sm"
+                'kelompok' => $kel, 'pemicus'=>json_encode($pemicu)]) }}" class="btn btn-success btn-sm"
                     style="white-space: nowrap;">
                     <i class="fas fa-file-excel"></i> Export
                 </a>
@@ -23,38 +23,31 @@
         </div>
 
         <div class="collapse" id="filterCollapse">
-            {{-- <form method="GET" action="{{ 'tutors/' . $kel }}"> --}}
+            <form method="GET" action="{{ route('tutors.show', ['course' => $course->id, 'kelompok' => $kel]) }}">
                 <div class="mx-3 my-2 py-2">
                     <div class="row g-2">
-                        <div class="col-md-6">
+                        <input type="hidden" id="pemicu" name="pemicu" value="{{ $pemicusJson }}">
+                        <div class="col-md-12">
                             <label for="search" class="form-label mb-1">NIM/Name</label>
                             <input type="text" name="search" id="search" class="form-control"
                                 placeholder="Cari NIM/Name" value="{{ request('search') }}">
                         </div>
-                        <div class="col-md-6">
-                            <label for="status" class="form-label mb-1">Status</label>
-                            <select name="status" id="status" class="form-select">
-                                <option value="">All</option>
-                                <option value="present" {{ request('status')=='present' ? 'selected' : '' }}>Present
-                                </option>
-                                <option value="late" {{ request('status')=='late' ? 'selected' : '' }}>Late</option>
-                                <option value="absent" {{ request('status')=='absent' ? 'selected' : '' }}>Absent
-                                </option>
 
-                            </select>
-                        </div>
                         <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                            {{-- <a href="{{ 'tutors/' . $kel }}" class="btn btn-light btn-sm">Reset</a> --}}
+                            <a href="{{ route('tutors.show', ['course' => $course->id, 'kelompok' => $kel, 'pemicu'=>$pemicusJson]) }}"
+                                class="btn btn-light btn-sm">
+                                Reset
+                            </a>
                             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                         </div>
+
                     </div>
                 </div>
-                {{--
-            </form> --}}
+            </form>
         </div>
 
-        <div class="card-body px-0 pt-0 pb-2">
 
+        <div class="card-body px-0 pt-0 pb-2">
             {{-- ================= DESKTOP TABLE (md ke atas) ================= --}}
             <div class="table-responsive p-0 d-none d-md-block">
                 <table class="table align-items-center mb-0 text-wrap">
@@ -76,13 +69,13 @@
                         @endphp
 
                         <tr>
-                            <td class="text-center">{{ $first->courseStudent->student->nim }}</td>
+                            <td class="text-center text-sm">{{ $first->courseStudent->student->nim }}</td>
 
-                            <td class="text-wrap">
+                            <td class="text-wrap text-sm">
                                 {{ $first->courseStudent->student->user->name }}
                             </td>
 
-                            <td class="text-center">
+                            <td class="text-center text-sm">
                                 {{ $stu->sum('total_score') }}
                             </td>
 
@@ -96,7 +89,7 @@
                                     'pemicu' => $pemDetail->pemicu_detail_id,
                                     'pemicus' => json_encode($allPemicuDetailIds),
                                     'student' => $studentId
-                                ]) }}" class="btn btn-info m-1 p-2 px-3">
+                                ]) }}" class="btn btn-info m-1 p-2">
                                     Diskusi {{ $index + 1 }}
                                 </a>
                                 @endforeach

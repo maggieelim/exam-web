@@ -98,12 +98,6 @@ class LecturerAttendanceService
                     'course_lecturer_id' => $courseLecturer->id,
                 ])->delete();
 
-                Log::info('Lecturer attendance removed', [
-                    'teaching_schedule_id' => $teachingScheduleId,
-                    'lecturer_id' => $lecturerId,
-                    'deleted_count' => $deleted
-                ]);
-
                 return $deleted > 0;
             }
 

@@ -32,7 +32,6 @@ class SessionsController extends Controller
             return redirect()->route('admin.users.index', ['type' => 'student']);
         }
 
-        // fallback
         return redirect('/');
     }
 

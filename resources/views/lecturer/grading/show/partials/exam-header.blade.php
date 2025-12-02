@@ -7,16 +7,18 @@
                     <i class="fas fa-chart-bar me-2"></i>
                     General Exam Statistics ({{ $exam->title }} Blok {{ $exam->course->name }})
                 </h5>
-                <div class="d-flex gap-3 align-items-center">
+                <div class="d-flex gap-2 align-items-center">
                     <!-- Publication Status -->
                     <span class="badge {{ $exam->is_published ? 'bg-success' : 'bg-danger' }}">
                         {{ $exam->is_published ? 'Published' : 'Unpublished' }}
                     </span>
 
                     <!-- Filter Toggle -->
-                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#chartCollapse" aria-expanded="false" aria-controls="chartCollapse">
-                        <i class="fas fa-filter me-1"></i> Charts
+                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#chartCollapse" aria-expanded="false"
+                        aria-controls="chartCollapse">
+                        <i class="fas fa-filter me-1"></i>
+                        Charts
                     </button>
 
                     <!-- Back Button -->

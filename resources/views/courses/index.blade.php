@@ -8,21 +8,12 @@
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
                     <h5 class="mb-0">List Blok</h5>
-
-                    {{-- Tampilkan semester aktif/terfilter di samping judul --}}
                     @if ($semesterId)
                     @php
                     $selectedSemester = $semesters->firstWhere('id', $semesterId);
                     @endphp
-                    @if ($selectedSemester)
-                    <span class="badge bg-success text-white">
-                        {{ $selectedSemester->semester_name }} -
-                        {{ $selectedSemester->academicYear->year_name }}
-                        @if ($activeSemester && $selectedSemester->id == $activeSemester->id)
-                        (Aktif)
-                        @endif
-                    </span>
-                    @endif
+
+                    <x-semester-badge :semester="$selectedSemester" :activeSemester="$activeSemester" />
                     @endif
                 </div>
 
@@ -86,34 +77,8 @@
                     <table class="table align-items-center mb-0 text-wrap">
                         <thead>
                             <tr>
-                                <th class="text-uppercase text-dark text-sm font-weight-bolder text-wrap text-center">
-                                    <a href="{{ route(
-                                                'courses.index',
-                                                array_merge(request()->all(), [
-                                                    'sort' => 'kode_blok',
-                                                    'dir' => $sort === 'kode_blok' && $dir === 'asc' ? 'desc' : 'asc',
-                                                ]),
-                                            ) }}">
-                                        Kode Blok
-                                        @if ($sort === 'kode_blok')
-                                        <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="text-uppercase text-dark text-sm font-weight-bolder  text-center">
-                                    <a href="{{ route(
-                                                'courses.index',
-                                                array_merge(request()->all(), [
-                                                    'sort' => 'name',
-                                                    'dir' => $sort === 'name' && $dir === 'asc' ? 'desc' : 'asc',
-                                                ]),
-                                            ) }}">
-                                        Nama
-                                        @if ($sort === 'name')
-                                        <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                                        @endif
-                                    </a>
-                                </th>
+                                <x-sortable-th label="Kode Blok" field="kode_blok" :sort="$sort" :dir="$dir" />
+                                <x-sortable-th label="Nama" field="name" :sort="$sort" :dir="$dir" />
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Semester
                                 </th>
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-center text-wrap">
@@ -129,7 +94,7 @@
                                 <td class="align-middle text-center">
                                     <span class="text-sm font-weight-bold">{{ $course->kode_blok }}</span>
                                 </td>
-                                <td class="align-middle text-center text-wrap">
+                                <td class="align-middle text-wrap">
                                     <span class="text-sm font-weight-bold">{{ $course->name }}</span>
                                 </td>
                                 <td class="align-middle text-center">
@@ -142,25 +107,42 @@
                                     @hasrole('admin')
                                     <a href="{{ route('courses.editKoor', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
-                                        <i class="fa-solid fa-users"></i> Koord
+                                        <i class="fas fa-user-cog me-2"></i>
+                                        Koordinator
                                     </a>
                                     @endrole
-                                    <a href="{{ route('attendances.report', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
-                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
-                                        <i class="fa-solid fa-file"></i>
-                                    </a>
-                                    <a href="{{ route('course.getAllPemicu', [$course->id, 'semester_id'=>$semesterId]) }}"
-                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
-                                        <i class="fa-solid fa-star"></i>
-                                    </a>
                                     <a href="{{ route('courses.edit', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
                                         class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
-                                        <i class="fa-solid fa-pen"></i>
+                                        <i class="fa-solid fa-pen me-2"></i>Jadwal
                                     </a>
-                                    <a href="{{ route('courses.show', ['course' => $course->slug, 'semester_id' => $semesterId]) }}"
-                                        class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                                        <i class="fas fa-info-circle"></i>
-                                    </a>
+                                    <button class="btn bg-gradient-warning dropdown-toggle m-1 p-2 px-3" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-cog me-1"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="{{ route('attendances.report', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+                                                <i class="fa-solid fa-file me-2"></i> Report Absensi
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="{{ route('course.getAllPemicu', [$course->id, 'semester_id'=>$semesterId]) }}">
+                                                <i class="fa-solid fa-star me-2"></i> Nilai Pemicu
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="{{ route('courses.show', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
+                                                <i class="fas fa-info-circle me-2"></i> Detail
+                                            </a>
+                                        </li>
+
+                                    </ul>
+
                                 </td>
                             </tr>
                             @empty

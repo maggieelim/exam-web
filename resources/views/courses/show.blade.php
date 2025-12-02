@@ -89,11 +89,11 @@
                 <thead>
                     <tr>
                         <th class=" text-center text-uppercase text-dark text-sm font-weight-bolder">No</th>
-                        <th class=" text-uppercase text-dark text-sm font-weight-bolder">NIM</th>
-                        <th class=" text-uppercase text-dark text-sm font-weight-bolder">Nama</th>
+                        <x-sortable-th label="NIM" field="nim" :sort="$sort" :dir="$dir" />
+                        <x-sortable-th label="Name" field="name" :sort="$sort" :dir="$dir" />
                         <th class=" text-uppercase text-dark text-sm font-weight-bolder">Email</th>
                         <th class=" text-uppercase text-dark text-sm font-weight-bolder">Gender</th>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Kelompok</th>
+                        <x-sortable-th label="Kelompok" field="kelompok" :sort="$sort" :dir="$dir" />
                     </tr>
                 </thead>
                 <tbody>
@@ -104,7 +104,7 @@
                     @endphp
                     <tr>
                         <td class="text-sm text-center">{{ $students->firstItem() + $index }}</td>
-                        <td class="text-sm">{{ $student->nim ?? '-' }}</td>
+                        <td class="text-sm text-center">{{ $student->nim ?? '-' }}</td>
                         <td class="text-sm">{{ $user->name ?? '-' }}</td>
                         <td class="text-sm">{{ $user->email ?? '-' }}</td>
                         <td class="text-sm">{{ $user->gender ?? '-' }}</td>

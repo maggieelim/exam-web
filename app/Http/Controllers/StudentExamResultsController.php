@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -140,168 +141,69 @@ class StudentExamResultsController extends Controller
     public function show($examCode)
     {
         $user = auth()->user();
+
         $exam = Exam::with([
+            'course',
             'questions.category',
-            'questions.options',
-            'attempts.user.student',
+            'attempts' => fn($q) => $q->where('user_id', $user->id),
         ])
             ->where('exam_code', $examCode)
             ->firstOrFail();
 
+        $attempt = $exam->attempts->firstOrFail();
+        $exam->formatted_date = Carbon::parse($attempt->started_at)->format('l, d M Y');
+
         $student = Student::where('user_id', $user->id)->firstOrFail();
-        $user = $student->user;
 
-        $attempt = ExamAttempt::where('exam_id', $exam->id)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
-
-        // Ambil semua jawaban mahasiswa
-        $allUserAnswers = ExamAnswer::with(['question'])
+        $allUserAnswers = ExamAnswer::with('question.category')
             ->where('exam_id', $exam->id)
             ->where('user_id', $user->id)
             ->get();
 
-        // Total soal pada exam
         $totalQuestions = $exam->questions->count();
 
-        // Perhitungan hasil per kategori
         $questionsByCategory = $exam->questions->groupBy('category_id');
-        $answersByCategory = $allUserAnswers->groupBy(function ($answer) {
-            return $answer->question->category_id ?? 'uncategorized';
-        });
-        $categoriesResult = collect();
-        foreach ($questionsByCategory as $categoryId => $questions) {
-            $categoryAnswers = $answersByCategory->get($categoryId, collect());
-            $totalCorrect = $categoryAnswers->where('is_correct', true)->count();
-            $totalQ = $questions->count();
-            $categoriesResult->push([
+        $answersByCategory   = $allUserAnswers->groupBy(fn($ans) => $ans->question->category_id ?? 'uncategorized');
+
+        $categoriesResult = $questionsByCategory->map(function ($questions, $categoryId) use ($answersByCategory) {
+            $answers       = $answersByCategory->get($categoryId, collect());
+            $totalCorrect  = $answers->where('is_correct', true)->count();
+            $totalQuestion = $questions->count();
+
+            return [
                 'category_id'    => $categoryId,
                 'category_name'  => $questions->first()->category->name ?? 'Uncategorized',
                 'total_correct'  => $totalCorrect,
-                'total_wrong'    => $totalQ - $totalCorrect,
-                'total_score'    => $categoryAnswers->sum('score'),
-                'total_question' => $totalQ,
-                'percentage'     => $totalQ > 0 ? round(($totalCorrect / $totalQ) * 100, 2) : 0,
-            ]);
-        }
-        // Handle uncategorized answers (jika ada)
-        $uncategorizedAnswers = $answersByCategory->get('uncategorized', collect());
-        if ($uncategorizedAnswers->isNotEmpty()) {
-            $totalCorrect = $uncategorizedAnswers->where('is_correct', true)->count();
-            $totalQ = $uncategorizedAnswers->count();
+                'total_wrong'    => $totalQuestion - $totalCorrect,
+                'total_score'    => $answers->sum('score'),
+                'total_question' => $totalQuestion,
+                'percentage'     => $totalQuestion > 0 ? round(($totalCorrect / $totalQuestion) * 100, 2) : 0,
+            ];
+        })->values();
+
+        // Tambah kategori uncategorized jika ada
+        if ($answersByCategory->has('uncategorized')) {
+            $uncat = $answersByCategory->get('uncategorized');
+
             $categoriesResult->push([
                 'category_id'    => null,
                 'category_name'  => 'Uncategorized',
-                'total_correct'  => $totalCorrect,
-                'total_wrong'    => $totalQ - $totalCorrect,
-                'total_score'    => $uncategorizedAnswers->sum('score'),
-                'total_question' => $totalQ,
-                'percentage'     => $totalQ > 0 ? round(($totalCorrect / $totalQ) * 100, 2) : 0,
+                'total_correct'  => $uncat->where('is_correct', true)->count(),
+                'total_wrong'    => $uncat->count() - $uncat->where('is_correct', true)->count(),
+                'total_score'    => $uncat->sum('score'),
+                'total_question' => $uncat->count(),
+                'percentage'     => round(($uncat->where('is_correct', true)->count() / max($uncat->count(), 1)) * 100, 2),
             ]);
         }
+
+        // Masukkan ke exam object untuk dipakai di view
         $exam->categories_result = $categoriesResult;
-
-        // Filter questions berdasarkan status jawaban & feedback
-        $filteredQuestions = $exam->questions->filter(function ($question) use ($allUserAnswers) {
-            $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
-            $isAnswered = !is_null($userAnswer->answer);
-            $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
-            $hasFeedback = $userAnswer && !empty($userAnswer->feedback);
-
-            $answerStatus = request('answer_status');
-            $feedbackStatus = request('feedback_status');
-
-            // Filter berdasarkan status jawaban
-            if ($answerStatus && $answerStatus !== 'all') {
-                switch ($answerStatus) {
-                    case 'correct':
-                        if (!$isAnswered || !$isCorrect) return false;
-                        break;
-                    case 'incorrect':
-                        if (!$isAnswered || $isCorrect) return false;
-                        break;
-                    case 'not_answered':
-                        if ($isAnswered) return false;
-                        break;
-                }
-            }
-
-            // Filter berdasarkan status feedback
-            if ($feedbackStatus && $feedbackStatus !== 'all') {
-                switch ($feedbackStatus) {
-                    case 'with_feedback':
-                        if (!$hasFeedback) return false;
-                        break;
-                    case 'without_feedback':
-                        if ($hasFeedback) return false;
-                        break;
-                }
-            }
-
-            return true;
-        });
-
-        // Siapkan data untuk view
-        $questionsData = [];
-        foreach ($filteredQuestions as $index => $question) {
-            $userAnswer = $allUserAnswers->firstWhere('exam_question_id', $question->id);
-            $isAnswered = !is_null($userAnswer->answer);
-            $isCorrect = $userAnswer ? $userAnswer->is_correct : false;
-            $studentAnswerId = $userAnswer ? $userAnswer->answer : null;
-
-            // Siapkan data options
-            $optionsData = [];
-            if ($question->options->count() > 0) {
-                foreach ($question->options as $option) {
-                    $isStudentAnswer = $studentAnswerId == $option->id;
-                    $isCorrectOption = $option->is_correct;
-
-                    $optionsData[] = [
-                        'option' => $option->option,
-                        'text' => $option->text,
-                        'is_correct' => $isCorrectOption,
-                        'is_student_answer' => $isStudentAnswer,
-                    ];
-                }
-            }
-
-            $questionsData[] = [
-                'id' => $question->id,
-                'number' => $index + 1,
-                'body' => $question->badan_soal,
-                'question_text' => $question->kalimat_tanya,
-                'image' => $question->image,
-                'category' => $question->category?->name ?? 'Tidak ada kategori',
-                'is_answered' => $isAnswered,
-                'is_correct' => $isCorrect,
-                'student_feedback' => $userAnswer ? $userAnswer->feedback : '',
-                'options' => $optionsData,
-            ];
-        }
-
-        // Pagination manual
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 10;
-        $currentItems = array_slice($questionsData, ($currentPage - 1) * $perPage, $perPage);
-        $paginatedQuestions = new LengthAwarePaginator(
-            $currentItems,
-            count($questionsData),
-            $perPage,
-            $currentPage,
-            [
-                'path' => LengthAwarePaginator::resolveCurrentPath(),
-                'query' => request()->query()
-            ]
-        );
 
         return view('students.exams.show', compact(
             'exam',
-            'attempt',
-            'allUserAnswers',
-            'paginatedQuestions',
             'student',
-            'user',
-            'totalQuestions',
+            'attempt',
+            'totalQuestions'
         ));
     }
 

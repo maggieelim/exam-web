@@ -1,5 +1,5 @@
 <div class="d-flex gap-2">
-    <a class="btn btn-sm btn-outline-info"
+    <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
         href="{{ route('admin.courses.downloadPemicu', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
         title="Download Excel">
         <i class="fas fa-download"></i>
@@ -15,9 +15,9 @@
         <table class="compact-table table-bordered">
             <thead class="text-center align-middle">
                 <tr>
-                    <th class="headcol no headrow" rowspan="2"></th>
-                    <th class="headcol no headrow" rowspan="2">No</th>
-                    <th class="headcol no headrow" rowspan="2">TD</th>
+                    {{-- <th class="headcol no" rowspan="2"></th> --}}
+                    <th class="headcol no" rowspan="2">No</th>
+                    {{-- <th class="headcol no" rowspan="2">TD</th> --}}
                     <th class="headcol name" rowspan="2">Nama Dosen</th>
                     @foreach ($pemicuData->tutors->take(ceil($pemicuData->tutors->count() / 2)) as $tutor)
                     <th colspan="2">Pemicu {{ $tutor->session_number }}</th>
@@ -35,13 +35,13 @@
             <tbody>
                 @foreach ($pemicuData->lecturers as $index => $lecturer)
                 <tr>
-                    <td class="text-center">
+                    {{-- <td class="text-center headcol no">
                         <a href="#" class="text-danger text-decoration-underline delete-lecturer"
                             data-id="{{ $lecturer->id }}"> DEL</a>
-                    </td>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $lecturer->lecturer->tipe_dosen }}</td>
-                    <td>{{ $lecturer->lecturer->user->name }}</td>
+                    </td> --}}
+                    <td class="text-center headcol no">{{ $index + 1 }}</td>
+                    {{-- <td class="headcol no">{{ $lecturer->lecturer->tipe_dosen }}</td> --}}
+                    <td class="headcol name">{{ $lecturer->lecturer->user->name }}</td>
                     @foreach ($pemicuData->tutors as $tutor)
                     @php
                     $isUnavailable = in_array(

@@ -96,7 +96,7 @@
                                     : '-' }}
                                 </td>
                                 <td class="align-middle text-sm text-center">
-                                    {{ $student->distance ? $student->distance : '-' }}
+                                    {{ $student->distance}} m
                                 </td>
                                 <td class="align-middle text-center">
                                     <span class="badge 

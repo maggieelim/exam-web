@@ -25,10 +25,9 @@
                         <select name="difficulty_level" id="difficulty_level" class="form-control">
                             <option value="">-- All Levels --</option>
                             @foreach ($difficultyLevel as $level)
-                                <option value="{{ $level }}"
-                                    {{ request('difficulty_level') == $level ? 'selected' : '' }}>
-                                    {{ $level }}
-                                </option>
+                            <option value="{{ $level }}" {{ request('difficulty_level')==$level ? 'selected' : '' }}>
+                                {{ $level }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -53,20 +52,20 @@
         <table class="table mb-0">
             <thead>
                 <tr>
-                    <th rowspan="2" class="text-center w-auto text-uppercase text-dark text-sm font-weight-bolder">No
+                    <th class="text-center w-auto text-uppercase text-dark text-sm font-weight-bolder">No
                     </th>
-                    <th rowspan="2" class="text-center text-uppercase text-dark text-sm font-weight-bolder">Question
+                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Question
                     </th>
-                    <th rowspan="2" class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder px-1">
                         Discrimination<br>Index
                     </th>
-                    <th rowspan="2" class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                        Correct
+                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder px-2">
+                        Correct<br>(%)
                     </th>
-                    <th rowspan="2" class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder px-2">
                         Difficulty
                     </th>
-                    <th rowspan="2" class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                         Anulir
                     </th>
                     {{-- <th colspan="4" class="text-center text-uppercase text-dark text-sm font-weight-bolder">Option
@@ -82,24 +81,23 @@
 
             <tbody>
                 @foreach ($questionAnalysisPaginator as $index => $analysis)
-                    @php
-                        $isAnulir = $analysis['is_anulir'] ?? false;
-                    @endphp
-                    <tr>
-                        <td class="align-middle text-center">
-                            {{ $loop->iteration }}
-                        </td>
-                        <td class="align-middle truncate-text">
-                            {{ $analysis['question_text'] }}
-                        </td>
+                @php
+                $isAnulir = $analysis['is_anulir'] ?? false;
+                @endphp
+                <tr>
+                    <td class="align-middle text-center text-sm">
+                        {{ $loop->iteration }}
+                    </td>
+                    <td class="align-middle truncate-text text-sm">
+                        {{ $analysis['question_text'] }}
+                    </td>
 
-                        {{-- Discrimination Index --}}
-                        <td class="align-middle text-center">
-                            @if ($isAnulir)
-                                <span class="badge bg-secondary">-</span>
-                            @else
-                                <span
-                                    class="badge 
+                    {{-- Discrimination Index --}}
+                    <td class="align-middle text-center">
+                        @if ($isAnulir)
+                        <span class="badge bg-secondary">-</span>
+                        @else
+                        <span class="badge 
                                     {{ $analysis['discrimination_index'] > 0.4
                                         ? 'bg-gradient-success'
                                         : ($analysis['discrimination_index'] >= 0.3
@@ -109,18 +107,17 @@
                                                 : ($analysis['discrimination_index'] >= 0.1
                                                     ? 'bg-gradient-orange'
                                                     : 'bg-gradient-danger'))) }}">
-                                    {{ $analysis['discrimination_index'] }}
-                                </span>
-                            @endif
-                        </td>
+                            {{ $analysis['discrimination_index'] }}
+                        </span>
+                        @endif
+                    </td>
 
-                        {{-- Difficulty --}}
-                        <td class="align-middle text-center">
-                            @if ($isAnulir)
-                                <span class="badge bg-secondary">-</span>
-                            @else
-                                <span
-                                    class="badge ms-2 
+                    {{-- Difficulty --}}
+                    <td class="align-middle text-center">
+                        @if ($isAnulir)
+                        <span class="badge bg-secondary">-</span>
+                        @else
+                        <span class="badge ms-2 
             {{ $analysis['correct_percentage'] >= 80
                 ? 'bg-gradient-success'
                 : ($analysis['correct_percentage'] >= 60
@@ -128,16 +125,15 @@
                     : ($analysis['correct_percentage'] >= 40
                         ? 'bg-gradient-warning'
                         : 'bg-gradient-danger')) }}">
-                                    {{ $analysis['correct_percentage'] }}%
-                                </span>
-                            @endif
-                        </td>
-                        <td class="align-middle text-center">
-                            @if ($isAnulir)
-                                <span class="badge bg-secondary">-</span>
-                            @else
-                                <span
-                                    class="badge 
+                            {{ $analysis['correct_percentage'] }}%
+                        </span>
+                        @endif
+                    </td>
+                    <td class="align-middle text-center">
+                        @if ($isAnulir)
+                        <span class="badge bg-secondary">-</span>
+                        @else
+                        <span class="badge 
                                     {{ $analysis['difficulty_level'] == 'Easy'
                                         ? 'bg-gradient-success'
                                         : ($analysis['difficulty_level'] == 'Medium'
@@ -145,60 +141,59 @@
                                             : ($analysis['difficulty_level'] == 'Fair'
                                                 ? 'bg-gradient-warning'
                                                 : 'bg-gradient-danger')) }}">
-                                    {{ $analysis['difficulty_level'] }}
-                                </span>
-                            @endif
-                        </td>
+                            {{ $analysis['difficulty_level'] }}
+                        </span>
+                        @endif
+                    </td>
 
-                        {{-- Anulir Button --}}
-                        <td class="align-middle text-center">
+                    {{-- Anulir Button --}}
+                    <td class="align-middle text-center">
+                        @if ($isAnulir)
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i> Dianulir
+                        </span>
+                        @else
+                        <form class="question-form d-inline" data-question-id="{{ $analysis['question_id'] }}">
+                            @csrf
+                            @method('PUT')
+                            <a class="btn btn-warning anulir-btn m-1 p-1 px-3"
+                                data-question-id="{{ $analysis['question_id'] }}"
+                                title="Anulir soal - semua jawaban dianggap benar">
+                                <i class="fas fa-ban me-1"></i> Anulir
+                            </a>
+                        </form>
+                        @endif
+                    </td>
+
+                    {{-- Options A-D --}}
+                    {{-- @php
+                    $options = $optionsAnalysis[$analysis['question_id']] ?? [];
+                    @endphp
+
+                    @foreach (['A', 'B', 'C', 'D'] as $optIndex => $optLabel)
+                    @php
+                    $option = $options[$optIndex] ?? null;
+                    @endphp
+                    <td class="align-middle text-center">
+                        @if ($option)
+                        <div class="d-flex gap-1 align-items-center">
+                            <span class="fw-semibold {{ $isAnulir ? 'text-decoration-line-through text-muted' : '' }}">
+                                {{ $option['percentage'] ?? 0 }}%
+                            </span>
+                            <small class="text-muted">({{ $option['count'] ?? 0 }})</small>
+                            @if (!empty($option['is_correct']) && !$isAnulir)
+                            <span class="text-success"><i class="fas fa-check"></i></span>
+                            @endif
                             @if ($isAnulir)
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i> Dianulir
-                                </span>
-                            @else
-                                <form class="question-form d-inline" data-question-id="{{ $analysis['question_id'] }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <a class="btn btn-sm btn-warning anulir-btn"
-                                        data-question-id="{{ $analysis['question_id'] }}"
-                                        title="Anulir soal - semua jawaban dianggap benar">
-                                        <i class="fas fa-ban me-1"></i> Anulir
-                                    </a>
-                                </form>
+                            <span class="text-success small"><i class="fas fa-check-double"></i></span>
                             @endif
-                        </td>
-
-                        {{-- Options A-D --}}
-                        {{-- @php
-                            $options = $optionsAnalysis[$analysis['question_id']] ?? [];
-                        @endphp
-
-                        @foreach (['A', 'B', 'C', 'D'] as $optIndex => $optLabel)
-                            @php
-                                $option = $options[$optIndex] ?? null;
-                            @endphp
-                            <td class="align-middle text-center">
-                                @if ($option)
-                                    <div class="d-flex gap-1 align-items-center">
-                                        <span
-                                            class="fw-semibold {{ $isAnulir ? 'text-decoration-line-through text-muted' : '' }}">
-                                            {{ $option['percentage'] ?? 0 }}%
-                                        </span>
-                                        <small class="text-muted">({{ $option['count'] ?? 0 }})</small>
-                                        @if (!empty($option['is_correct']) && !$isAnulir)
-                                            <span class="text-success"><i class="fas fa-check"></i></span>
-                                        @endif
-                                        @if ($isAnulir)
-                                            <span class="text-success small"><i class="fas fa-check-double"></i></span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
-                            </td>
-                        @endforeach --}}
-                    </tr>
+                        </div>
+                        @else
+                        <span class="text-muted">-</span>
+                        @endif
+                    </td>
+                    @endforeach --}}
+                </tr>
                 @endforeach
             </tbody>
         </table>
@@ -210,7 +205,7 @@
 
 <style>
     .truncate-text {
-        max-width: 350px;
+        max-width: 490px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

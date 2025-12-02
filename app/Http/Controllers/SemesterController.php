@@ -19,16 +19,34 @@ class SemesterController extends Controller
         return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $agent = new Agent();
         $activeSemester = $this->getActiveSemester();
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->paginate(15);
-     
+        $sort = $request->get('sort', 'start_date'); // default sort
+        $dir = $request->get('dir', 'desc');
+
+        $query = Semester::with('academicYear');
+        switch ($sort) {
+            case 'name':
+                $query->orderBy('semester_name', $dir);
+                break;
+
+            case 'academic_year':
+                $query->join('academic_years', 'semesters.academic_year_id', '=', 'academic_years.id')
+                    ->orderBy('academic_years.year_name', $dir)
+                    ->select('semesters.*');
+                break;
+            default:
+                $query->orderBy('start_date', $dir);
+                break;
+        }
+        $semesters = $query->paginate(20)->appends($request->query());
+
         if ($agent->isMobile()) {
             return view('admin.semester.index_mobile', compact('semesters', 'activeSemester'));
         }
-        return view('admin.semester.index', compact('semesters', 'activeSemester'));
+        return view('admin.semester.index', compact('sort', 'dir', 'semesters', 'activeSemester'));
     }
 
     /**

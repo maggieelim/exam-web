@@ -6,6 +6,7 @@ use App\Models\AttendanceSessions;
 use App\Models\AttendanceRecords;
 use App\Models\CourseStudent;
 use App\Models\AttendanceTokens;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,13 +14,47 @@ use Carbon\Carbon;
 
 class StudentAttendanceController extends Controller
 {
+    private function getActiveSemester()
+    {
+        $today = Carbon::today();
+        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
+    }
+
+    public function index(Request $request)
+    {
+        $userId = auth()->id();
+        $activeSemester = $this->getActiveSemester();
+        $semesterId = $request->query('semester_id', $activeSemester->id);
+        $statusFilter = $request->query('status');
+        $courseStudent = CourseStudent::where('user_id', $userId)->pluck('id');
+
+        $attendances = AttendanceRecords::with(['courseStudent.course', 'session.activity'])
+            ->whereIn('course_student_id', $courseStudent)
+            ->whereHas('session', function ($q) use ($semesterId) {
+                $q->whereIn('status', ['active', 'finished']);
+                $q->where('semester_id', $semesterId);
+            });
+
+        if (!empty($statusFilter)) {
+            $attendances->where('status', $statusFilter);
+        }
+
+        $attendances = $attendances->orderBy('scanned_at', 'desc')->paginate(20);
+        $semesters = Semester::with('academicYear')->get();
+
+        return view(
+            'students.attendance.index',
+            compact('attendances', 'semesters', 'semesterId', 'activeSemester')
+        );
+    }
+
+
     public function showAttendanceForm($attendanceSessionId)
     {
         $userId = auth()->id();
         $student = User::with('student')->where('id', $userId)->firstOrFail();
         $attendanceSession = AttendanceSessions::with(['course', 'activity'])->findOrFail($attendanceSessionId);
 
-        // Check if session is still active
         $now = Carbon::now();
         $startTime = Carbon::parse($attendanceSession->start_time);
         $endTime = Carbon::parse($attendanceSession->end_time);
@@ -49,14 +84,12 @@ class StudentAttendanceController extends Controller
         $attendanceSession = AttendanceSessions::findOrFail($attendanceSessionId);
 
         try {
-            // Validasi token QR code
             $validToken = AttendanceTokens::where('attendance_session_id', $attendanceSession->id)->where('token', $request->token)->where('expired_at', '>', Carbon::now())->first();
 
             if (!$validToken) {
                 return back()->withInput()->with('error', 'Invalid or expired QR code. Please scan again.');
             }
 
-            // Validasi waktu
             $now = Carbon::now();
             $startTime = Carbon::parse($attendanceSession->start_time);
             $endTime = Carbon::parse($attendanceSession->end_time);

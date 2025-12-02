@@ -6,6 +6,7 @@ use App\Models\CourseLecturer;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
+use App\Models\Lecturer;
 use DB;
 use Illuminate\Http\Request;
 use Jenssegers\Agent\Agent;
@@ -21,35 +22,36 @@ class OngoingExamController extends Controller
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $agent = new Agent();
         $user = auth()->user();
-        $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
+        $lecturer = Lecturer::where('user_id', $user->id)->first();
 
         $exam = Exam::with(['course', 'creator', 'updater', 'attempts.user.student'])
             ->withCount('questions', 'attempts')
             ->where('exam_code', $exam_code)
             ->firstOrFail();
 
-        if (!$user->hasRole('admin') && !$lecturer) {
+        if (!$user->hasRole('admin') && !$user->hasRole('koordinator') && !$lecturer) {
             abort(403, 'Unauthorized access to this exam.');
         }
 
-        $attemptsQuery = $exam
-            ->attempts()
-            ->with([
-                'user.student',
-                'answers' => function ($q) use ($exam) {
-                    $q->where('exam_id', $exam->id);
-                },
-            ])
-            ->where('exam_id', $exam->id);
+        $attemptsQuery = $exam->attempts()->with([
+            'user.student',
+            'answers' => function ($q) use ($exam) {
+                $q->where('exam_id', $exam->id);
+            },
+        ])->where('exam_id', $exam->id);
+
         if ($request->filled('status')) {
             $attemptsQuery->where('status', $request->status);
         }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $attemptsQuery->whereHas('user.student', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")->orWhere('nim', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('nim', 'like', "%{$search}%");
             });
         }
+
         $sort = $request->get('sort', 'created_at');
         $dir = $request->get('dir', 'desc');
 
@@ -60,11 +62,10 @@ class OngoingExamController extends Controller
                 ->select('exam_attempts.*')
                 ->orderBy($sort === 'nim' ? 'students.nim' : 'users.name', $dir);
         } else {
-            // Sorting default (kolom bawaan exam_attempts)
             $attemptsQuery->orderBy($sort, $dir);
         }
 
-        $attempts = $attemptsQuery->orderBy($sort, $dir)->paginate(15)->withQueryString();
+        $attempts = $attemptsQuery->orderBy($sort, $dir)->paginate(25)->withQueryString();
 
         $attempts->getCollection()->transform(function ($attempt) use ($exam) {
             $student = $attempt->user->student;
@@ -111,7 +112,7 @@ class OngoingExamController extends Controller
             'idle' => 'Idle',
             'timeout' => 'Timeout',
         ];
-         if ($agent->isMobile()) {
+        if ($agent->isMobile()) {
             return view('exams.ongoing.index_mobile', compact('exam', 'attempts', 'stats', 'sort', 'dir', 'availableStatuses'));
         }
         return view('exams.ongoing.index', compact('exam', 'attempts', 'stats', 'sort', 'dir', 'availableStatuses'));
@@ -177,10 +178,8 @@ class OngoingExamController extends Controller
         try {
             DB::beginTransaction();
 
-            // Delete all answers for this attempt
             ExamAnswer::where('exam_id', $exam->id)->where('user_id', $attempt->user_id)->delete();
 
-            // DELETE attempt (bukan update)
             $attempt->delete();
 
             DB::commit();

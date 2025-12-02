@@ -117,12 +117,13 @@ class ExamResultsController extends Controller
     public function grade($examCode, Request $request)
     {
         $agent = new Agent();
-        $exam = Exam::with(['course.lecturers', 'questions.category', 'attempts.user.student', 'answers.question.category'])
+        $exam = Exam::with(['course.lecturers', 'course.coordinators.lecturer.user', 'questions.category', 'attempts.user.student', 'answers.question.category'])
             ->where('exam_code', $examCode)
             ->withCount('questions')
             ->withCount('attempts')
             ->firstOrFail();
 
+        $lecturers = $exam->course->coordinators;
         $attemptsQuery = ExamAttempt::with(['user.student', 'answers.question.category'])->where('exam_id', $exam->id);
 
         if ($request->filled('search')) {
@@ -139,7 +140,6 @@ class ExamResultsController extends Controller
             });
         }
         /** @var \Illuminate\Pagination\LengthAwarePaginator $attempts */
-        // 🔄 Sorting untuk attempts
         $sort = $request->get('sort', 'finished_at');
         $dir = $request->get('dir', 'desc');
 
@@ -168,7 +168,7 @@ class ExamResultsController extends Controller
         if ($agent->isMobile()) {
             return view('lecturer.grading.mobile.grade_mobile', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
         }
-        return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
+        return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir', 'lecturers'));
     }
 
     public function edit($examCode, $nim)

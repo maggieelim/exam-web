@@ -6,8 +6,14 @@
         <div class="card mb-4">
             <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
-                <div>
-                    <h5 class="mb-0">Exams List</h5>
+                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+                    <h5 class="mb-0">{{ ucwords($status) }} Exams List</h5>
+                    @if ($semesterId)
+                    @php
+                    $selectedSemester = $semesters->firstWhere('id', $semesterId);
+                    @endphp
+                    <x-semester-badge :semester="$selectedSemester" :activeSemester="$activeSemester" />
+                    @endif
                 </div>
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -72,18 +78,9 @@
                     <table class="table align-items-center mb-0">
                         <thead>
                             <tr>
-                                <th class="text-uppercase text-dark text-sm font-weight-bolder">
-                                    <a href="{{ route('exams.index', $status) }}?{{ http_build_query(
-                                            array_merge(request()->except('page'), [
-                                                'sort' => 'title',
-                                                'dir' => $sort === 'title' && $dir === 'asc' ? 'desc' : 'asc',
-                                            ]),
-                                        ) }}" class="text-dark text-decoration-none">
-                                        Exams
-                                        @if ($sort === 'title')
-                                        <i class="fa fa-sort-{{ $dir === 'asc' ? 'up' : 'down' }}"></i>
-                                        @endif
-                                    </a>
+                                <x-sortable-th label="Exams" field="title" :sort="$sort" :dir="$dir" />
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Exam Date
                                 </th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Exam Questions
@@ -98,20 +95,24 @@
                         </thead>
 
                         <tbody>
-                            @foreach ($exams as $exam)
+                            @forelse ($exams as $exam)
                             <tr>
                                 <td class="align-middle px-3">
                                     <span class="text-sm font-weight-bold">
                                         {{ $exam->title }} <br>
                                         {{ $exam->course->name }} <br>
-                                        {{ $exam->exam_date?
-                                        \Carbon\Carbon::parse($exam->exam_date)->translatedFormat('l, j M Y ' ):
-                                        '-'}}<br>
                                     </span>
                                     <span class="text-sm">
                                         Modified at:
                                         {{ \Carbon\Carbon::parse($exam->updated_at)->format('j/n/y H.i') }} by
                                         {{ $exam->updater->name }}
+                                    </span>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <span class="text-sm font-weight-bold">
+                                        {{
+                                        $exam->exam_date?\Carbon\Carbon::parse($exam->exam_date)->translatedFormat('l, j
+                                        M Y ' ):'-'}}
                                     </span>
                                 </td>
                                 <td class="align-middle text-center">
@@ -164,12 +165,6 @@
                                                     <i class="fas fa-edit text-warning me-2"></i> Manage Questions
                                                 </a>
                                             </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                    href="{{ route('courses.editStudent', ['slug' => $exam->course->slug, 'semester_id' => $semesterId]) }}">
-                                                    <i class="fas fa-users text-info me-2"></i> Manage Participants
-                                                </a>
-                                            </li>
                                         </ul>
                                     </div>
                                     <a href="{{ route('exams.show.' . $status, [$exam->exam_code]) }}"
@@ -178,7 +173,19 @@
                                     </a>
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <p>Tidak ada Exam yang ditemukan</p>
+                                        <a href="{{ route('exams.index', $status) }}"
+                                            class="btn btn-sm btn-outline-primary">Reset
+                                            Filter</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                     <div class="d-flex justify-content-center mt-3">

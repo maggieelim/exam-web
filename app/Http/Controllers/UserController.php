@@ -96,7 +96,7 @@ class UserController extends Controller
             $query->orderBy($sort, $dir);
         }
 
-        $users = $query->paginate(25)->appends($request->all());
+        $users = $query->paginate(30)->appends($request->all());
 
         if ($agent->isMobile()) {
             return view('admin.users.index_mobile', compact('users', 'type', 'sort', 'dir', 'semesters', 'semesterId', 'activeSemester'));
@@ -245,7 +245,7 @@ class UserController extends Controller
             $user = User::findOrFail($id); // untuk admin atau role lain
         }
 
-        $roles = Role::pluck('name', 'id'); // Ambil semua role
+        $roles = Role::where('name', '!=', 'koordinator')->pluck('name', 'id');
         return view('admin.users.edit', compact('user', 'type', 'roles'));
     }
 
@@ -257,6 +257,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'gender' => 'required',
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,name'
         ];
 
         if ($type === 'student') {
@@ -311,18 +313,9 @@ class UserController extends Controller
                     'max_sks' => $request->max_sks,
                 ]);
             }
-
-            // Sync role
-
         }
-        if ($request->filled('role')) {
-            $user->assignRole([$request->role]);
-            if ($request->role === 'lecturer') {
-                $user->lecturer()->updateOrCreate([
-                    'user_id' => $user->id
-                ], []);
-            }
-        }
+        $user->syncRoles($request->roles);
+
         return redirect()
             ->route('admin.users.index', $type)
             ->with('success', ucfirst($type) . ' updated successfully.');
@@ -374,7 +367,6 @@ class UserController extends Controller
             $user->lecturer->delete();
         }
 
-        // Hapus user
         $user->delete();
 
         return redirect()->route('admin.users.index', $type)->with('success', 'User berhasil dihapus.');

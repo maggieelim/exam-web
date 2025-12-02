@@ -13,6 +13,7 @@ use App\Models\Lecturer;
 use App\Models\Semester;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -24,23 +25,45 @@ class ExamController extends Controller
 
     public function start(Exam $exam)
     {
+        $errors = [];
+
+        if ($exam->questions()->count() === 0) {
+            $errors[] = "There are no questions yet.";
+        }
+        if (is_null($exam->exam_date)) {
+            $errors[] = 'Exam date cannot be empty.';
+        }
+        if (is_null($exam->duration)) {
+            $errors[] = 'Duration cannot be empty.';
+        }
+        if (is_null($exam->password) || $exam->password === '') {
+            $errors[] = 'Password cannot be empty.';
+        }
+        if (!empty($errors)) {
+            return back()->withErrors($errors);
+        }
         if ($exam->status === 'upcoming') {
             $exam->update(['status' => 'ongoing']);
         }
+
         return redirect()
             ->route('exams.index', ['status' => 'ongoing'])
-            ->with('success', 'exam started successfully.');
+            ->with('success', 'Exam started successfully.');
     }
 
     public function end(Exam $exam)
     {
+        $activeAttempts = $exam->attempts()->where('status', 'in_progress')->count();
+
+        if ($activeAttempts > 0) {
+            return back()->withErrors(["There are still $activeAttempts student(s) currently taking the exam. You cannot end this exam yet."]);
+        }
+
         if ($exam->status !== 'ended') {
             $exam->update(['status' => 'ended']);
         }
 
-        $exam
-            ->attempts()
-            ->where('status', 'ongoing')
+        $exam->attempts()->where('status', 'ongoing')
             ->update([
                 'status' => 'completed',
                 'updated_at' => now(),
@@ -70,15 +93,7 @@ class ExamController extends Controller
         // Base query
         $query = Exam::with(['course', 'creator', 'updater', 'attempts' => fn($q) => $q->where('user_id', $user->id), 'semester'])->withCount('questions');
 
-        // if ($user->hasRole('lecturer')) {
-        //     $courses = CourseLecturer::where('lecturer_id', $lecturer->id)->with('course')->get()->pluck('course');
-
-        //     $query->whereHas('course.courseLecturer', function ($q) use ($lecturer) {
-        //         $q->where('lecturer_id', $lecturer->id);
-        //     });
-        // } 
         if ($user->hasRole('koordinator')) {
-            // Koordinator blok → tampilkan exam hanya untuk blok yang dia koordinatori
             $coordinatedCourseIds = CourseCoordinator::where('lecturer_id', $lecturer->id)->pluck('course_id');
 
             $courses = Course::whereIn('id', $coordinatedCourseIds)->get();
@@ -86,7 +101,7 @@ class ExamController extends Controller
             $query->whereIn('course_id', $coordinatedCourseIds);
         } elseif ($user->hasRole('student')) {
             $courses = CourseStudent::where('user_id', $user->id)->with('course')->get()->pluck('course');
-            $query->whereHas('course.courseStudents', function ($q) use ($user) {
+            $query->whereNotNull('exam_date')->whereHas('course.courseStudents', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             });
         } else {
@@ -276,8 +291,20 @@ class ExamController extends Controller
      */
     public function edit($status, string $exam_code)
     {
+        $user = auth()->user();
+        $lecturer = Lecturer::where('user_id', $user->id)->first();
+
+        if ($user->hasRole('koordinator')) {
+            $courses = Course::with('coordinators')
+                ->whereHas('coordinators', function ($q) use ($lecturer) {
+                    $q->where('lecturer_id', $lecturer->id);
+                })
+                ->get();
+        } elseif ($user->hasRole('admin')) {
+            $courses = Course::all();
+        }
+
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
-        $courses = Course::all();
 
         return view('exams.edit', compact('status', 'exam', 'courses'));
     }

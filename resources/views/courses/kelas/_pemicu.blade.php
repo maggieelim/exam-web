@@ -1,5 +1,5 @@
 <div class="card mb-4">
-    <div class="card-header p-2 bg-secondary text-white d-flex justify-content-between align-items-center">
+    <div class="card-header p-2 bg-secondary text-white">
         <h6 class="mb-0 text-uppercase text-white">TUTOR / PEMICU</h6>
     </div>
 

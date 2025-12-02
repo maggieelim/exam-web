@@ -8,91 +8,135 @@ use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\PemicuDetails;
 use App\Models\PemicuScore;
+use App\Models\Semester;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TutorGradingController extends Controller
 {
-    public function index()
+    private function getActiveSemester()
     {
-        $lecturer = Lecturer::where('user_id', Auth::id())->firstOrFail();
+        $today = Carbon::today();
+        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
+    }
+
+    public function index(Request $request)
+    {
+        $activeSemester = $this->getActiveSemester();
+        $semesterId = $request->query('semester_id', $activeSemester->id);
+        $courseId   = $request->query('course_id');
+
+        $semesters = Semester::with('academicYear')->get();
+        $lecturer  = Lecturer::where('user_id', Auth::id())->firstOrFail();
+
         $details = PemicuDetails::with('teachingSchedule.course')
             ->where('lecturer_id', $lecturer->id)
-            ->orderBy('teaching_schedule_id')
+            ->whereHas('teachingSchedule', function ($q) use ($semesterId, $courseId) {
+                $q->whereDate('scheduled_date', '<=', today())
+                    ->where('semester_id', $semesterId)
+                    ->when($courseId, fn($q) => $q->where('course_id', $courseId));
+            })
+            ->orderBy('teaching_schedule_id', 'desc')
             ->get();
 
-        $grouped = $details->groupBy(fn($item) => $item->teachingSchedule->course_id . '-' . $item->kelompok_num);
+        $courses = $details
+            ->pluck('teachingSchedule.course')
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        $grouped = $details->groupBy(
+            fn($d) =>
+            $d->teachingSchedule->course_id . '-' . $d->kelompok_num
+        );
 
         $tutors = $grouped->map(function ($group) use ($lecturer) {
-            $first = $group->first();
-            $courseId = $first->teachingSchedule->course_id;
-            $kelompok = $first->kelompok_num;
 
-            // Ambil list pemicu_ke untuk group ini
-            $pemicuKeList = $group->pluck('teachingSchedule.pemicu_ke')->unique()->sort()->values();
-            $pemicuKe = intval(substr($pemicuKeList->first(), 0, 1));
-            // Hitung total mahasiswa per course + kelompok
+            $first     = $group->first();
+            $schedule  = $first->teachingSchedule;
+            $courseId  = $schedule->course_id;
+            $kelompok  = $first->kelompok_num;
+
+            $pemicuKeList = $group->pluck('teachingSchedule.pemicu_ke')
+                ->unique()
+                ->sort()
+                ->values();
+
+            $pemicu = intval(substr($pemicuKeList->first(), 0, 1));
+
             $studentCount = CourseStudent::where('course_id', $courseId)
                 ->where('kelompok', $kelompok)
                 ->count();
 
-            // Auto-create PemicuScore jika belum ada
-            $group->pluck('teachingSchedule')->each(function ($schedule) use ($courseId, $kelompok, $lecturer) {
-                $students = CourseStudent::where('course_id', $courseId)
-                    ->where('kelompok', $kelompok)
-                    ->get();
+            $students = CourseStudent::where('course_id', $courseId)
+                ->where('kelompok', $kelompok)
+                ->get();
+
+            $group->pluck('teachingSchedule')->each(function ($schedule) use ($students, $lecturer) {
                 foreach ($students as $student) {
-                    $pemicuDetail = PemicuDetails::where('lecturer_id', $lecturer->id)
+
+                    $detail = PemicuDetails::where('lecturer_id', $lecturer->id)
                         ->where('kelompok_num', $student->kelompok)
-                        ->where('teaching_schedule_id', $schedule->id) // jadwal pemicu
+                        ->where('teaching_schedule_id', $schedule->id)
                         ->first();
 
                     PemicuScore::firstOrCreate(
                         [
-                            'course_student_id' => $student->id,
-                            'pemicu_detail_id' => $pemicuDetail->id,
-                            'teaching_schedule_id' => $schedule->id,
+                            'course_student_id'      => $student->id,
+                            'pemicu_detail_id'       => $detail->id,
+                            'teaching_schedule_id'   => $schedule->id,
                         ],
                         [
-                            'disiplin' => 0,
-                            'keaktifan' => 0,
-                            'berpikir_kritis' => 0,
-                            'info_baru' => 0,
-                            'analisis_rumusan' => 0,
-                            'total_score' => 0,
+                            'disiplin'          => 0,
+                            'keaktifan'         => 0,
+                            'berpikir_kritis'   => 0,
+                            'info_baru'         => 0,
+                            'analisis_rumusan'  => 0,
+                            'total_score'       => 0,
                         ]
                     );
                 }
             });
-            $pemicuDetailIdList = $group->pluck('id')->values();
+
             return [
-                'course' => $first->teachingSchedule->course,
-                'kelompok' => $kelompok,
-                'pemicu_ke' => $pemicuKeList,
-                'pemicu' => $pemicuKe,
-                'student_count' => $studentCount,
-                'pemicu_detail_ids' => $pemicuDetailIdList,
+                'course'            => $schedule->course,
+                'kelompok'          => $kelompok,
+                'pemicu_ke'         => $pemicuKeList,
+                'pemicu'            => $pemicu,
+                'student_count'     => $studentCount,
+                'pemicu_detail_ids' => $group->pluck('id')->values(),
             ];
         })->values();
 
-        return view('pemicu.index', compact('tutors'));
+        return view('pemicu.index', compact('tutors', 'semesterId', 'semesters', 'activeSemester', 'courses'));
     }
 
     public function show($courseId, $kelompok, Request $request)
     {
+        $search = $request->query('search');
         $pemicusJson = $request->get('pemicu', '[]');
-        $pemicu = json_decode($pemicusJson, true); // hasil array
-        $course = Course::where('id', $courseId)->firstOrFail();
+        $pemicu = json_decode($pemicusJson, true);
+
+        $course = Course::findOrFail($courseId);
         $kel = $kelompok;
 
         $students = PemicuScore::with(['courseStudent.student.user', 'pemicuDetail'])
             ->whereIn('pemicu_detail_id', $pemicu)
+            ->when($search, function ($q) use ($search) {
+                $q->whereHas('courseStudent.student', function ($q2) use ($search) {
+                    $q2->where('nim', 'LIKE', "%$search%")
+                        ->orWhereHas('user', function ($q3) use ($search) {
+                            $q3->where('name', 'LIKE', "%$search%");
+                        });
+                });
+            })
             ->get()
             ->groupBy('course_student_id');
-        return view('pemicu.show', compact('kel', 'students', 'course', 'pemicu'));
-    }
 
+        return view('pemicu.show', compact('kel', 'students', 'course', 'pemicu', 'pemicusJson'));
+    }
 
     public function edit($pemicu, $studentId, Request $request)
     {

@@ -50,7 +50,7 @@
                         <tbody>
                             @foreach ($groupedStudents as $kelompok => $students)
                             <tr>
-                                <td class="group-header" data-bs-toggle="collapse"
+                                <td class="group-header font-weight-bold" data-bs-toggle="collapse"
                                     data-bs-target="#group-{{ $kelompok }}" colspan="13">
                                     <i class="fas fa-caret-down collapse-icon"></i>
                                     Kelompok: {{ $kelompok }} (Jumlah = {{ $students->count() }} Siswa)
@@ -69,7 +69,7 @@
                             // Total nilai
                             $total = ($scoreD1->total_score ?? 0) + ($scoreD2->total_score ?? 0);
 
-                            $maxScore = 24; // (misalkan: 9 + 15)
+                            $maxScore = 24;
                             $percent = $maxScore > 0 ? ($total / $maxScore) * 100 : 0;
 
                             $lecturerName = $groupLecturer[$cs->kelompok] ?? '-';

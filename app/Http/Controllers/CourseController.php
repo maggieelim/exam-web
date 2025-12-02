@@ -154,13 +154,20 @@ class CourseController extends Controller
     public function editKoor($slug, Request $request)
     {
         $semesterId = $request->query('semester_id');
-
         $semester = Semester::with('academicYear')->find($semesterId);
         $course = Course::where('slug', $slug)->first();
 
-        $koordinator = CourseCoordinator::with('lecturer')->where('course_id', $course->id)->where('semester_id', $semesterId)->where('role', 'koordinator')->first();
+        $koordinator = CourseCoordinator::with('lecturer')
+            ->where('course_id', $course->id)
+            ->where('semester_id', $semesterId)
+            ->where('role', 'koordinator')
+            ->first();
 
-        $sekretaris = CourseCoordinator::with('lecturer')->where('course_id', $course->id)->where('semester_id', $semesterId)->where('role', 'sekretaris')->first();
+        $sekretaris = CourseCoordinator::with('lecturer')
+            ->where('course_id', $course->id)
+            ->where('semester_id', $semesterId)
+            ->where('role', 'sekretaris')
+            ->first();
 
         $lecturers = Lecturer::with('user')->get();
 
@@ -222,16 +229,13 @@ class CourseController extends Controller
 
             foreach ($roles as $role => $lecturerId) {
                 if ($lecturerId) {
-                    // update or create
                     CourseCoordinator::updateOrCreate(
                         [
                             'course_id'   => $courseId,
                             'semester_id' => $semesterId,
                             'role'        => $role,
                         ],
-                        [
-                            'lecturer_id' => $lecturerId,
-                        ]
+                        ['lecturer_id' => $lecturerId,]
                     );
 
                     // Assign role (cek dulu)
@@ -329,11 +333,11 @@ class CourseController extends Controller
             $query->join('students', 'course_students.student_id', '=', 'students.id')->orderBy('students.nim', $dir)->select('course_students.*');
         } elseif ($sort === 'name') {
             $query->join('students', 'course_students.student_id', '=', 'students.id')->join('users', 'students.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('course_students.*');
-        } else {
-            $query->orderBy('course_students.kelompok', 'desc');
+        } elseif ($sort === 'kelompok') {
+            $query->orderBy('course_students.kelompok', 'asc');
         }
 
-        $students = $query->paginate(20);
+        $students = $query->paginate(35)->appends(request()->query());
 
         return view('courses.show', compact('sort', 'dir', 'course', 'lecturers', 'students', 'semesterId'));
     }
@@ -372,15 +376,12 @@ class CourseController extends Controller
     {
         $semesterId = $this->getSemesterId($request);
 
-        // Base query
         $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer']);
 
-        // Apply filters (reuse the same methods)
         $query = $this->applyLecturerFilter($query, $semesterId);
         $query = $this->applySemesterFilter($query, $semesterId);
         $query = $this->applyCounts($query, $semesterId);
 
-        // Search filter
         if ($request->filled('name')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->name . '%')->orWhere('kode_blok', 'like', '%' . $request->name . '%');
@@ -419,7 +420,6 @@ class CourseController extends Controller
         $course = Course::where('slug', $slug)->firstOrFail();
         $activeTab = $request->query('tab', 'kelas');
 
-        // Load data berdasarkan tab yang aktif
         $tabData = [];
 
         switch ($activeTab) {

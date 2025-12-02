@@ -14,9 +14,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ExamQuestionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index(Request $request, $exam_code)
     {
         $agent = new Agent();
@@ -88,12 +86,6 @@ class ExamQuestionController extends Controller
         return redirect()->route('exams.questions.index')->with('success', 'Soal berhasil dibuat');
     }
 
-    public function showByKode($kode)
-    {
-        $soals = ExamQuestion::where('kode_soal', $kode)->get();
-        return view('soal.show_by_kode', compact('soals', 'kode'));
-    }
-
     //dipakai atau tidak??
     public function import(Request $request)
     {
@@ -111,27 +103,17 @@ class ExamQuestionController extends Controller
         $fileName = "Soal-{$exam->title}.xlsx";
         return Excel::download(new ExamQuestionsExport($exam), $fileName);
     }
-    /**
-     * Display the specified resource.
-     */
+
     public function show(string $id)
     {
         $questions = ExamQuestion::where('kode_soal', $id)->get();
         return view('exams.questions.show', compact('questions', 'kode'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         //
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    // ExamQuestionController.php - method update
 
     public function update(Request $request, $examCode, $questionId)
     {
@@ -170,7 +152,6 @@ class ExamQuestionController extends Controller
             ]);
         }
 
-        // --- VALIDASI ---
         $request->validate([
             'category_id' => 'nullable|exists:exam_question_categories,id',
             'badan_soal' => 'required|string',
@@ -188,7 +169,6 @@ class ExamQuestionController extends Controller
             $imagePath = null;
         }
 
-        // --- UPLOAD GAMBAR ---
         if ($request->hasFile('image')) {
             if ($question->image && \Storage::disk('public')->exists($question->image)) {
                 \Storage::disk('public')->delete($question->image);
@@ -196,14 +176,12 @@ class ExamQuestionController extends Controller
             $imagePath = $request->file('image')->store('questions', 'public');
         }
 
-        // --- UPDATE SOAL ---
         $question->update([
             'badan_soal' => $request->badan_soal,
             'kalimat_tanya' => $request->kalimat_tanya,
             'image' => $imagePath,
         ]);
 
-        // --- UPDATE OPTIONS ---
         $correctOptionIds = [];
         foreach ($request->options as $id => $opt) {
             $option = ExamQuestionAnswer::find($id);
@@ -253,11 +231,8 @@ class ExamQuestionController extends Controller
         ]);
 
         $exam = Exam::where('exam_code', $examCode)->firstOrFail();
-
-        // Baca file Excel
         $rows = Excel::toArray([], $request->file('file'))[0];
 
-        // Hapus semua soal lama
         ExamQuestion::where('exam_id', $exam->id)->delete();
 
         // Loop data excel, skip header (row pertama)
@@ -282,7 +257,7 @@ class ExamQuestionController extends Controller
             // Insert options (A-E)
             $options = ['A', 'B', 'C', 'D', 'E'];
             foreach ($options as $i => $opt) {
-                if (!empty($row[4 + $i])) {
+                if (isset($row[4 + $i]) && $row[4 + $i] !== '') {
                     ExamQuestionAnswer::create([
                         'exam_question_id' => $question->id,
                         'option' => $opt,

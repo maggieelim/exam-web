@@ -1,11 +1,11 @@
 <div class="d-flex justify-content-between gap-2">
-    <div>
-        <a class="btn btn-sm btn-outline-info"
+    <div class="d-flex align-items-center gap-2">
+        <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="height:32px;width:32px"
             href="{{ route('admin.courses.downloadDaftarSiswa', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
             title="Download Excel">
             <i class="fas fa-download"></i>
         </a>
-        @hasrole('admin')
+
         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addStudentModal">
             + Siswa
         </button>
@@ -17,7 +17,6 @@
             href="{{ route('admin.courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
             Bentuk Grup
         </a>
-        @endhasrole
     </div>
     <div>
         <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
