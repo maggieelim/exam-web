@@ -19,13 +19,6 @@ use Str;
 
 class AttendanceSessionsController extends Controller
 {
-
-    private function getActiveSemester()
-    {
-        $today = Carbon::today();
-        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-    }
-
     public function getEvents()
     {
         $userId = Auth::id();

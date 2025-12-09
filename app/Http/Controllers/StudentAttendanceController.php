@@ -14,12 +14,6 @@ use Carbon\Carbon;
 
 class StudentAttendanceController extends Controller
 {
-    private function getActiveSemester()
-    {
-        $today = Carbon::today();
-        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-    }
-
     public function index(Request $request)
     {
         $userId = auth()->id();

@@ -13,11 +13,6 @@ class SemesterController extends Controller
     /**
      * Display a listing of the resource.
      */
-    private function getActiveSemester()
-    {
-        $today = Carbon::today();
-        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-    }
 
     public function index(Request $request)
     {

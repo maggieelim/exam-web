@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Exports\SkillsLabExport;
 use App\Models\Course;
-use App\Models\CourseLecturer;
 use App\Models\Semester;
 use App\Models\SkillslabDetails;
 use App\Models\TeachingSchedule;
@@ -30,7 +29,13 @@ class CourseSkillsLabController extends Controller
         $sorter = app(LecturerSortService::class);
 
         $semesterId = $request->query('semester_id');
-        $course = Course::with(['lecturers'])
+        $course = Course::with([
+            'courseLecturer' => function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId)
+                    ->whereHas('activities', fn($q) => $q->where('activity_id', 2))
+                    ->with(['lecturer.user', 'activities']);
+            }
+        ])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -56,8 +61,7 @@ class CourseSkillsLabController extends Controller
             ->groupBy('group_code')
             ->map(fn($items) => $items->pluck('kelompok_num')->unique()->values());
 
-        $lecturers = CourseLecturer::with('activities', 'lecturer.user')->where('course_id', $course->id)->where('semester_id', $semesterId)->whereHas('activities', fn($query) => $query->where('activity_id', 2))->get();
-        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
+        $lecturers = $sorter->sort($course->courseLecturer, $course->id, $semesterId);
 
         $unavailableSlots = [];
         foreach ($lecturers as $lecturer) {
@@ -167,6 +171,7 @@ class CourseSkillsLabController extends Controller
             );
         }
     }
+
     public function downloadExcel($courseSlug, $semesterId)
     {
         $course = Course::where('slug', $courseSlug)->firstOrFail();

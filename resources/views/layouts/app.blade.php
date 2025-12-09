@@ -37,10 +37,19 @@
     <!--     Fonts and icons     -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
     <!-- Nucleo Icons -->
-    <link href="{{ asset('assets/css/nucleo-icons.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet" />
+    <link rel="preload" href="{{ asset('assets/css/nucleo-icons.css') }}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('assets/css/nucleo-icons.css') }}">
+    </noscript>
+
+    <link rel="preload" href="{{ asset('assets/css/nucleo-svg.css') }}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('assets/css/nucleo-svg.css') }}">
+    </noscript>
     <!-- Font Awesome Icons -->
-    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+    {{-- <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script> --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet" />
@@ -51,51 +60,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
 
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('calendar');
-
-        if (!calendarEl) return;
-
-        // Deteksi jika device mobile
-        const isMobile = window.innerWidth <= 768;
-        
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: isMobile ? 'timeGridDay' : 'timeGridWeek', // Day untuk mobile, Week untuk desktop
-            nowIndicator: true,
-            allDaySlot: false,
-            slotMinTime: "07:00:00",
-            slotMaxTime: "17:00:00",
-            events: '{{ route('attendances.json') }}',
-            eventClick: function(info) {
-                info.jsEvent.preventDefault();
-                if (info.event.url) {
-                    window.location.href = info.event.url;
-                }
-            },
-            eventTimeFormat: {
-                hour: '2-digit',
-                minute: '2-digit',
-                meridiem: true
-            },
-            headerToolbar: {
-                right: 'prev,next today',
-                center: 'title',
-                left: isMobile ? '' : 'dayGridMonth,timeGridWeek,timeGridDay' // Sesuaikan toolbar
-            },
-            dayHeaderFormat: {
-            day: 'numeric',
-            month: 'short'
-              },
-            height: 'auto'
-        });
-
-        calendar.render();
-    });
-    </script>
 
 </head>
 
@@ -108,6 +73,8 @@
     @guest
     @yield('guest')
     @endguest
+
+    <script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
 
     <!--   Core JS Files   -->
     <script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
@@ -187,6 +154,7 @@
             });
         });
     </script>
+
 </body>
 
 </html>

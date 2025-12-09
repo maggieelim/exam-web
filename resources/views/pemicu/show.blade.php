@@ -23,7 +23,7 @@
         </div>
 
         <div class="collapse" id="filterCollapse">
-            <form method="GET" action="{{ route('tutors.show', ['course' => $course->id, 'kelompok' => $kel]) }}">
+            <form method="GET" action="{{ route('tutors.detail', ['course' => $course->id, 'kelompok' => $kel]) }}">
                 <div class="mx-3 my-2 py-2">
                     <div class="row g-2">
                         <input type="hidden" id="pemicu" name="pemicu" value="{{ $pemicusJson }}">
@@ -34,7 +34,7 @@
                         </div>
 
                         <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                            <a href="{{ route('tutors.show', ['course' => $course->id, 'kelompok' => $kel, 'pemicu'=>$pemicusJson]) }}"
+                            <a href="{{ route('tutors.detail', ['course' => $course->id, 'kelompok' => $kel, 'pemicu'=>$pemicusJson]) }}"
                                 class="btn btn-light btn-sm">
                                 Reset
                             </a>

@@ -228,6 +228,47 @@
 
     }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
 
+        if (!calendarEl) return;
+
+        // Deteksi jika device mobile
+        const isMobile = window.innerWidth <= 768;
+        
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: isMobile ? 'timeGridDay' : 'timeGridWeek', // Day untuk mobile, Week untuk desktop
+            nowIndicator: true,
+            allDaySlot: false,
+            slotMinTime: "07:00:00",
+            slotMaxTime: "17:00:00",
+            events: '{{ route('attendances.json') }}',
+            eventClick: function(info) {
+                info.jsEvent.preventDefault();
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                }
+            },
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                meridiem: true
+            },
+            headerToolbar: {
+                right: 'prev,next today',
+                center: 'title',
+                left: isMobile ? '' : 'dayGridMonth,timeGridWeek,timeGridDay' // Sesuaikan toolbar
+            },
+            dayHeaderFormat: {
+            day: 'numeric',
+            month: 'short'
+              },
+            height: 'auto'
+        });
+
+        calendar.render();
+    });
+</script>
 @push('dashboard')
 @endpush

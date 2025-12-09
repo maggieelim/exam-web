@@ -14,25 +14,7 @@ class SessionsController extends Controller
 
     private function redirectToRoleHome($user)
     {
-        if (session()->has('url.intended')) {
-            return redirect()->intended();
-        } elseif ($user->hasRole('student')) {
-            return redirect()->route('student.studentExams.index', ['status' => 'upcoming']);
-        }
-
-        if ($user->hasRole('koordinator')) {
-            return redirect()->route('courses.index');
-        }
-
-        if ($user->hasRole('lecturer')) {
-            return redirect()->route('attendance.index');
-        }
-
-        if ($user->hasRole('admin')) {
-            return redirect()->route('admin.users.index', ['type' => 'student']);
-        }
-
-        return redirect('/');
+        return redirect('/dashboard');
     }
 
     public function store()

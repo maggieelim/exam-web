@@ -98,7 +98,7 @@
                                 <x-sortable-th label="Name" field="name" :sort="$sort" :dir="$dir" />
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Email</th>
-                                @if ($type === 'lecturer')
+                                @if ($type === 'student')
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Role</th>
                                 @endif
@@ -122,7 +122,7 @@
                                 <td class="align-middle text-center text-sm font-weight-bold">
                                     {{ $user->email }}
                                 </td>
-                                @if ($type === 'lecturer')
+                                @if ($type === 'lecturer' || $type === 'admin')
                                 <td class="align-middle text-center text-sm font-weight-bold">
                                     {{$user->roles->pluck('name')->map('ucfirst')->implode(', ') ?? '-' }}
                                 </td>

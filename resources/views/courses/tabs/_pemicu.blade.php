@@ -74,9 +74,9 @@
                             </option>
                             @endforeach
                         </select>
-                        <input type="hidden"
+                        {{-- <input type="hidden"
                             name="assignments[{{ $lecturer->lecturer_id }}][{{ $tutor->id }}][assigned]"
-                            value="{{ $isAssigned ? '1' : '0' }}">
+                            value="{{ $isAssigned ? '1' : '0' }}"> --}}
                     </td>
                     @endif
                     @endforeach

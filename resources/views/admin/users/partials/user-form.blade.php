@@ -40,16 +40,19 @@ $genderValue = $user->gender;
         </select>
     </div>
 
+    @if (!$isCreate)
     <div class="col-md-4">
         <label class="form-label">Role</label>
         <select name="roles[]" class="form-select choices" multiple required>
             @foreach ($roles as $id => $name)
-            <option value="{{ $name }}" {{ $user->hasRole($name) ? 'selected' : '' }}>
+            <option value="{{ $name }}" {{ $user && $user->hasRole($name) ? 'selected' : '' }}>
                 {{ ucfirst($name) }}
             </option>
             @endforeach
         </select>
     </div>
+    @endif
+
 
     @if ($type === 'student')
     @include('admin.users.partials.student-fields', [

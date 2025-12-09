@@ -52,6 +52,7 @@ class LecturerAttendanceService
                 'course_lecturer_id' => $courseLecturer->id,
             ], [
                 'status' => 'pending',
+                'updated_at' => now(),
             ]);
 
             Log::info('Lecturer attendance synced successfully', [

@@ -12,7 +12,6 @@ use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -22,12 +21,6 @@ use Jenssegers\Agent\Agent;
 
 class CourseController extends Controller
 {
-    private function getActiveSemester()
-    {
-        $today = Carbon::today();
-        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-    }
-
     private function getSemesterId(Request $request)
     {
         $semesterId = $request->get('semester_id');
@@ -64,18 +57,11 @@ class CourseController extends Controller
         $user = auth()->user();
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
 
-        // if ($user->hasAnyRole('lecturer')) {
-        //     $lecturer = Lecturer::where('user_id', $user->id)->first();
-        //     if ($lecturer) {
-        //         $query->whereHas('courseLecturer', function ($q) use ($lecturer, $semesterId) {
-        //             $q->where('lecturer_id', $lecturer->id);
-        //             if ($semesterId) {
-        //                 $q->where('semester_id', $semesterId);
-        //             }
-        //         });
-        //     }
-        // } 
-        if ($user->hasAnyRole('koordinator')) {
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        if ($user->hasRole('koordinator')) {
             $lecturer = Lecturer::where('user_id', $user->id)->first();
             if ($lecturer) {
                 $query->whereHas('coordinators', function ($q) use ($lecturer, $semesterId) {

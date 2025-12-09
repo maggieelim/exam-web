@@ -35,7 +35,13 @@ class CoursePemicuController extends Controller
         $sorter = app(LecturerSortService::class);
 
         $semesterId = $request->query('semester_id');
-        $course = Course::with(['lecturers'])
+        $course = Course::with([
+            'courseLecturer' => function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId)
+                    ->whereHas('activities', fn($q) => $q->where('activity_id', 5))
+                    ->with(['lecturer.user', 'activities']);
+            }
+        ])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -60,15 +66,7 @@ class CoursePemicuController extends Controller
                 return $tutor;
             });
 
-        $lecturers = CourseLecturer::with('activities', 'lecturer.user')
-            ->where('course_id', $course->id)
-            ->where('semester_id', $semesterId)
-            ->whereHas('activities', function ($query) {
-                $query->where('activity_id', 5);
-            })
-            ->get();
-
-        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
+        $lecturers = $sorter->sort($course->courseLecturer, $course->id, $semesterId);
 
         $unavailableSlots = [];
 
@@ -116,11 +114,12 @@ class CoursePemicuController extends Controller
             $semesterId = $request->semester_id;
             $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
+            // \Log::info($assignments);
 
             foreach ($assignments as $lecturerId => $tutorAssignments) {
                 foreach ($tutorAssignments as $tutorId => $assignmentData) {
                     $kelompok = $assignmentData['kelompok'] ?? null;
-
+                    \Log::info($lecturerId . ' ' . $tutorId . ' ' . $kelompok);
                     if (!empty($kelompok)) {
                         PemicuDetails::updateOrCreate(
                             [
@@ -129,7 +128,6 @@ class CoursePemicuController extends Controller
                             ],
                             [
                                 'kelompok_num' => $kelompok,
-                                'practicum_group_id' => null,
                             ],
                         );
                         $this->attendanceService->syncLecturerAttendance(
@@ -140,7 +138,9 @@ class CoursePemicuController extends Controller
                             5
                         );
                     } else {
-                        PemicuDetails::where('teaching_schedule_id', $tutorId)->where('lecturer_id', $lecturerId)->delete();
+                        PemicuDetails::where('teaching_schedule_id', $tutorId)->where('lecturer_id', $lecturerId)->update([
+                            'kelompok_num' => null,
+                        ]);
                         $this->attendanceService->removeLecturerAttendance(
                             $tutorId,
                             $lecturerId,

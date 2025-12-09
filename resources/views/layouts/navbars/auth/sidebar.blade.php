@@ -11,14 +11,16 @@
     <hr class="horizontal dark mt-0">
     <div class="collapse navbar-collapse w-auto h-100 mb-4" id="sidenav-collapse-main">
         <ul class="navbar-nav">
-            <!-- <li class="nav-item">
-        <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('dashboard') }}">
-          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fas fa-tachometer-alt {{ Request::is('dashboard') ? 'text-white' : 'text-dark' }}"></i>
-          </div>
-          <span class="nav-link-text ms-1">Dashboard</span>
-        </a>
-      </li> -->
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('dashboard') }}">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i
+                            class="fas fa-tachometer-alt {{ Request::is('dashboard') ? 'text-white' : 'text-dark' }}"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Dashboard</span>
+                </a>
+            </li>
 
             @role('admin')
             <li class="nav-item mt-2">
@@ -91,7 +93,7 @@
                         <i
                             class="fas fa-clipboard-check {{ request()->is('attendance*') && !request()->is('attendances/report*') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
-                    <span class="nav-link-text ms-1">Attendance</span>
+                    <span class="nav-link-text ms-1">Schedule</span>
                 </a>
             </li>
             <li class="nav-item">

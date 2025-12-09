@@ -24,7 +24,7 @@ class ScheduleConflictService
         $skillslabConflict = $this->hasSkillslabConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $plenoConflict = $this->hasPlenoConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
 
-        return $teachingConflict || $practicumConflict || $skillslabConflict || $pemicuConflict || $plenoConflict; 
+        return $teachingConflict || $practicumConflict || $skillslabConflict || $pemicuConflict || $plenoConflict;
     }
 
     private function hasTeachingScheduleConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
@@ -156,7 +156,7 @@ class ScheduleConflictService
         // Get conflicts from practicum_details
         $practicumConflicts = $this->getPracticumConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $conflictingLecturers = $conflictingLecturers->merge($practicumConflicts);
-     
+
         // Get conflicts from pemicu_details
         $pemicuConflicts = $this->getPemicuConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $conflictingLecturers = $conflictingLecturers->merge($pemicuConflicts);
@@ -164,7 +164,7 @@ class ScheduleConflictService
         // Get conflicts from skillslab_details
         $skillslabConflicts = $this->getSkillslabConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $conflictingLecturers = $conflictingLecturers->merge($skillslabConflicts);
-        
+
         // Get conflicts from pleno_details
         $plenoConflicts = $this->getPlenoConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
         $conflictingLecturers = $conflictingLecturers->merge($plenoConflicts);
@@ -317,7 +317,7 @@ class ScheduleConflictService
                 if ($currentSkillslab) {
                     return true;
                 }
-               
+
                 $currentPleno = PlenoDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
                 if ($currentPleno) {
                     return true;

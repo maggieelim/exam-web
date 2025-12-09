@@ -12,7 +12,7 @@ $tipeDosenOptions = ['Asdos', 'CDT', 'DT', 'DTT'];
 </div>
 <div class="col-md-4">
     <label class="form-label">NIDN</label>
-    <input type="text" name="nidn" class="form-control" value="{{ old('nidn', $lecturer->nidn ?? '') }}" required>
+    <input type="text" name="nidn" class="form-control" value="{{ old('nidn', $lecturer->nidn ?? '') }}">
 </div>
 
 <div class="col-md-4">

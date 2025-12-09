@@ -265,8 +265,8 @@ class UserController extends Controller
             $rules['nim'] = 'required|string';
             $rules['angkatan'] = 'required|string';
         } elseif ($type === 'lecturer') {
-            $rules['nidn'] = 'string';
-            $rules['role'] = 'required|exists:roles,name';
+            $rules['nidn'] = 'nullable|string';
+            $rules['roles'] = 'required|exists:roles,name';
             $rules['strata'] = 'required';
             $rules['gelar'] = 'nullable|string|max:50';
             $rules['tipe_dosen'] = 'required|in:Asdos,CDT,DT,DTT';
@@ -287,14 +287,12 @@ class UserController extends Controller
             $user->student()->update([
                 'nim' => $request->nim,
                 'angkatan' => $request->angkatan,
-                'gender' => $request->gender,
             ]);
         } elseif ($type === 'lecturer') {
             if ($user->lecturer) {
                 $user->lecturer->update([
                     'nidn' => $request->nidn,
                     'faculty' => $request->faculty ?? null,
-                    'gender' => $request->gender,
                     'strata' => $request->strata,
                     'gelar' => $request->gelar,
                     'tipe_dosen' => $request->tipe_dosen,
@@ -305,7 +303,6 @@ class UserController extends Controller
                 $user->lecturer()->create([
                     'nidn' => $request->nidn,
                     'faculty' => $request->faculty ?? null,
-                    'gender' => $request->gender,
                     'strata' => $request->strata,
                     'gelar' => $request->gelar,
                     'tipe_dosen' => $request->tipe_dosen,

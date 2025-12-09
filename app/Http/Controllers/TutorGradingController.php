@@ -16,12 +16,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class TutorGradingController extends Controller
 {
-    private function getActiveSemester()
-    {
-        $today = Carbon::today();
-        return Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-    }
-
     public function index(Request $request)
     {
         $activeSemester = $this->getActiveSemester();
@@ -182,7 +176,7 @@ class TutorGradingController extends Controller
             ]
         );
 
-        return redirect()->route('tutors.show', [
+        return redirect()->route('tutors.detail', [
             'course' => $courseId,
             'kelompok' => $detail->kelompok_num,
             'pemicu' => json_encode($pemicus)

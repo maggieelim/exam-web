@@ -104,7 +104,7 @@
                                 {{ $tutor['student_count']}}
                             </td>
                             <td class="align-middle text-sm text-center">
-                                <a href="{{ route('tutors.show', [
+                                <a href="{{ route('tutors.detail', [
                                   'course' =>  $tutor['course']->id,
                                     'kelompok' => $tutor['kelompok'],
                                     'pemicu' => json_encode($tutor['pemicu_detail_ids'])
@@ -149,7 +149,7 @@
                 </p>
 
                 <div class="d-flex flex-wrap">
-                    <a href="{{ route('tutors.show', [
+                    <a href="{{ route('tutors.detail', [
                       'course' =>  $tutor['course']->id,
                         'kelompok' => $tutor['kelompok'],
                         'pemicu' => json_encode($tutor['pemicu_detail_ids'])

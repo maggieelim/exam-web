@@ -44,7 +44,7 @@ use App\Http\Controllers\TutorGradingController;
 // ==================== AUTH & DASHBOARD ====================
 Route::middleware('auth')->group(function () {
     Route::get('/', [HomeController::class, 'home']);
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [HomeController::class, 'home'])->name('dashboard');
 
     Route::get('static-sign-in', fn() => view('static-sign-in'))->name('sign-in');
     Route::get('static-sign-up', fn() => view('static-sign-up'))->name('sign-up');
@@ -149,8 +149,8 @@ Route::middleware(['auth', 'role:koordinator'])
 
 // ================= SHARED ADMIN & LECTURER =================
 Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function () {
-    Route::resource('tutors', TutorGradingController::class);
-    Route::get('/tutors/{course}/{kelompok}', [TutorGradingController::class, 'show'])->name('tutors.show');
+    Route::get('/tutors', [TutorGradingController::class, 'index'])->name('tutors');
+    Route::get('/tutors/{course}/{kelompok}', [TutorGradingController::class, 'show'])->name('tutors.detail');
     Route::get('/tutors/{pemicu}/{student}/edit', [TutorGradingController::class, 'edit'])->name('tutors.edit');
     Route::post('tutors/{pemicu}/{student}', [TutorGradingController::class, 'update'])->name('tutors.update');
     Route::get('tutors/{course}/{kelompok}/download', [TutorGradingController::class, 'downloadExcel'])->name('tutors.download');

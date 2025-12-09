@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Exports\PlenoExport;
 use App\Models\Course;
-use App\Models\CourseLecturer;
 use App\Models\PlenoDetails;
 use App\Models\Semester;
 use App\Models\TeachingSchedule;
@@ -31,13 +30,21 @@ class CoursePlenoController extends Controller
         $sorter = app(LecturerSortService::class);
 
         $semesterId = $request->query('semester_id');
-        $course = Course::with(['lecturers'])
+        $course = Course::with([
+            'courseLecturer' => function ($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId)
+                    ->whereHas('activities', fn($q) => $q->where('activity_id', 4))
+                    ->with(['lecturer.user', 'activities']);
+            }
+        ])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        $plenos = TeachingSchedule::where('activity_id', 4)
-            ->where('course_id', $course->id)
-            ->where('semester_id', $semesterId)
+        $plenos = TeachingSchedule::where([
+            ['course_id', $course->id],
+            ['semester_id', $semesterId],
+            ['activity_id', 4],
+        ])
             ->whereNotNull('scheduled_date')
             ->with('plenoDetails')
             ->orderBy('session_number')
@@ -49,17 +56,8 @@ class CoursePlenoController extends Controller
                 return $pleno;
             });
 
-        $lecturers = CourseLecturer::with('activities', 'lecturer.user')
-            ->where('course_id', $course->id)
-            ->where('semester_id', $semesterId)
-            ->whereHas('activities', function ($query) {
-                $query->where('activity_id', 4);
-            })
-            ->get();
+        $lecturers = $sorter->sort($course->courseLecturer, $course->id, $semesterId);
 
-        $lecturers = $sorter->sort($lecturers, $course->id, $semesterId);
-
-        // Get unavailable slots using single query
         $unavailableSlots = [];
 
         foreach ($lecturers as $lecturer) {
