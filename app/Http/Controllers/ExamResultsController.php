@@ -14,6 +14,7 @@ use App\Models\ExamAttempt;
 use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\Student;
+use App\Services\SemesterService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -53,13 +54,13 @@ class ExamResultsController extends Controller
         $semesterId = $request->get('semester_id');
         $agent = new Agent();
 
-        $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
+        $activeSemester = SemesterService::active();
 
         if (!$semesterId && $activeSemester) {
             $semesterId = $activeSemester->id;
         }
 
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+        $semesters = SemesterService::list();
 
         if (!$lecturer) {
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');

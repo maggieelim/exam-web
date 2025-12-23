@@ -105,7 +105,7 @@ $selectedSemester = $semesters->firstWhere('id', $semesterId);
                                         @endrole
                                         <a class="dropdown-item"
                                             href="{{ route('courses.edit', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
-                                            <i class="fas fa-cog me-2"></i>Atur Jadwal
+                                            <i class="fas fa-pen me-2"></i>Jadwal
                                         </a>
                                         <a class="dropdown-item"
                                             href="{{ route('attendances.report', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">

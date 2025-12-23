@@ -9,6 +9,7 @@ use App\Models\Lecturer;
 use App\Models\PemicuDetails;
 use App\Models\PemicuScore;
 use App\Models\Semester;
+use App\Services\SemesterService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,15 +19,16 @@ class TutorGradingController extends Controller
 {
     public function index(Request $request)
     {
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $semesterId = $request->query('semester_id', $activeSemester->id);
         $courseId   = $request->query('course_id');
 
-        $semesters = Semester::with('academicYear')->get();
+        $semesters = SemesterService::list();
         $lecturer  = Lecturer::where('user_id', Auth::id())->firstOrFail();
 
         $details = PemicuDetails::with('teachingSchedule.course')
             ->where('lecturer_id', $lecturer->id)
+            ->wherenotnull('kelompok_num')
             ->whereHas('teachingSchedule', function ($q) use ($semesterId, $courseId) {
                 $q->whereDate('scheduled_date', '<=', today())
                     ->where('semester_id', $semesterId)

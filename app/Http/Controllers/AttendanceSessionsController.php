@@ -11,6 +11,7 @@ use App\Models\CourseLecturer;
 use App\Models\Lecturer;
 use App\Models\LecturerAttendanceRecords;
 use App\Models\Semester;
+use App\Services\SemesterService;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
@@ -72,18 +73,13 @@ class AttendanceSessionsController extends Controller
     public function index(Request $request)
     {
         $userId = Auth::id();
-
         $lecturer = Lecturer::with('courseLecturers')->where('user_id', $userId)->first();
 
-        // Ambil semua course_lecturer_id milik dosen login
         $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
 
-        // Ambil semester aktif jika tidak dipilih
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $semesterId = $request->get('semester_id', $activeSemester?->id);
-
-        // Ambil semua semester (untuk dropdown)
-        $semesters = Semester::with('academicYear')->get();
+        $semesters = SemesterService::list();
 
         // Sorting
         $allowedSorts = ['kode_blok', 'start_time'];
@@ -144,9 +140,10 @@ class AttendanceSessionsController extends Controller
         $user = auth()->user();
         $today = Carbon::today();
         $lecturer = Lecturer::where('user_id', $user->id)->first();
-        $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
 
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+        $activeSemester = SemesterService::active();
+        $semesters = SemesterService::list();
+
         $lecturers = Lecturer::with('courseLecturers')->get();
         $activity = Activity::all();
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */

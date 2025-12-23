@@ -10,6 +10,7 @@ use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\SemesterService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -44,13 +45,12 @@ class UserController extends Controller
         $today = Carbon::today();
         $semesterId = $request->get('semester_id');
 
-        $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+        $activeSemester = SemesterService::active();
+        $semesters = SemesterService::list();
 
         // === ROLE FILTER ===
         if ($type === 'student') {
-            $query->role('student')->with('student.courseStudents.semester');
+            $query->role('student')->with('student');
         } elseif ($type === 'lecturer') {
             $query->role('lecturer')->with('lecturer');
         } elseif ($type === 'admin') {
@@ -58,7 +58,7 @@ class UserController extends Controller
         }
 
         // === FILTER TAMBAHAN ===
-        if ($semesterId) {
+        if ($semesterId && $type === 'student') {
             $query->whereHas('student.courseStudents', function ($q) use ($semesterId) {
                 $q->where('semester_id', $semesterId);
             });
@@ -89,9 +89,7 @@ class UserController extends Controller
         $dir = $request->get('dir', 'asc');
 
         if ($sort === 'nim') {
-            $query->whereHas('student')->join('students', 'users.id', '=', 'students.user_id')->orderBy('students.nim', $dir)->select('users.*');
-        } elseif ($sort === 'nidn') {
-            $query->whereHas('lecturer')->join('lecturers', 'users.id', '=', 'lecturers.user_id')->orderBy('lecturers.nidn', $dir)->select('users.*');
+            $query->orderBy(Student::select('nim')->whereColumn('students.user_id', 'users.id'), $dir);
         } else {
             $query->orderBy($sort, $dir);
         }
@@ -242,7 +240,7 @@ class UserController extends Controller
         if (in_array($type, ['student', 'lecturer'])) {
             $user = User::with($type)->findOrFail($id);
         } else {
-            $user = User::findOrFail($id); // untuk admin atau role lain
+            $user = User::findOrFail($id);
         }
 
         $roles = Role::where('name', '!=', 'koordinator')->pluck('name', 'id');

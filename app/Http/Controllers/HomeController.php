@@ -7,6 +7,7 @@ use App\Models\CourseCoordinator;
 use App\Models\Lecturer;
 use App\Models\TeachingSchedule;
 use App\Models\User;
+use App\Services\SemesterService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,7 +19,7 @@ class HomeController extends Controller
         $totalLecturers = User::role('lecturer')->count();
         $totalAdmins = User::role('admin')->count();
         $totalStudents = User::role('student')->count();
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $totalCourses = Course::whereIn('semester', [$activeSemester->semester_name, 'Ganjil/Genap'])->count();
         $semesterStart = Carbon::parse($activeSemester->start_date)->format('d M Y');
         $semesterEnd = Carbon::parse($activeSemester->end_date)->format('d M Y');

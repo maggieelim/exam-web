@@ -98,7 +98,7 @@
                                 <x-sortable-th label="Name" field="name" :sort="$sort" :dir="$dir" />
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Email</th>
-                                @if ($type === 'student')
+                                @if ($type !== 'student')
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Role</th>
                                 @endif

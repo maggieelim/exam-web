@@ -21,14 +21,7 @@ use PHPUnit\Framework\Attributes\Group;
 
 class CourseStudentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $course = Course::with('lecturers', 'students')->orderBy('name', 'asc')->get();
-        return view('students.courses.index', compact('course'));
-    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -150,54 +143,6 @@ class CourseStudentController extends Controller
         return back()->withErrors(['error' => 'Tidak ada data yang dikirim.']);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    // public function edit(Request $request, string $slug)
-    // {
-    //     $agent = new Agent();
-    //     $semesterId = $request->query('semester_id');
-    //     $course = Course::with(['lecturers'])
-    //         ->where('slug', $slug)
-    //         ->firstOrFail();
-    //     $lecturers = User::role('lecturer')->get();
-
-    //     $query = CourseStudent::with(['student.user'])->where('course_id', $course->id);
-
-    //     if ($semesterId) {
-    //         $query->where('semester_id', $semesterId);
-    //     }
-
-    //     if ($request->filled('nim')) {
-    //         $query->whereHas('student', function ($q) use ($request) {
-    //             $q->where('nim', 'like', '%' . $request->nim . '%');
-    //         });
-    //     }
-
-    //     if ($request->filled('name')) {
-    //         $query->whereHas('student.user', function ($q) use ($request) {
-    //             $q->where('name', 'like', '%' . $request->name . '%');
-    //         });
-    //     }
-
-    //     $sort = $request->get('sort', 'name');
-    //     $dir = $request->get('dir', 'asc');
-
-    //     if ($sort === 'nim') {
-    //         $query->join('students', 'course_students.student_id', '=', 'students.id')->orderBy('students.nim', $dir)->select('course_students.*');
-    //     } elseif ($sort === 'name') {
-    //         $query->join('students', 'course_students.student_id', '=', 'students.id')->join('users', 'students.user_id', '=', 'users.id')->orderBy('users.name', $dir)->select('course_students.*');
-    //     } else {
-    //         $query->orderBy('course_students.created_at', 'desc');
-    //     }
-
-    //     $students = $query->paginate(15)->appends($request->all());
-    //     if ($agent->isMobile()) {
-    //         return view('courses.Student.edit_mobile', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
-    //     }
-    //     return view('courses.tabs._siswa', compact('course', 'lecturers', 'students', 'sort', 'dir', 'semesterId'));
-    // }
-
     public function createGroup(string $slug, Request $request)
     {
         $course = Course::where('slug', $slug)->firstOrFail();
@@ -228,7 +173,6 @@ class CourseStudentController extends Controller
         $course = Course::with(['lecturers'])
             ->where('slug', $slug)
             ->firstOrFail();
-        $lecturers = User::role('lecturer')->get();
 
         $query = CourseStudent::with(['student.user'])
             ->where('course_id', $course->id)
@@ -266,7 +210,6 @@ class CourseStudentController extends Controller
 
         return (object) [
             'course' => $course,
-            'lecturers' => $lecturers,
             'students' => $students,
             'groupedStudents' => $groupedStudents,
             'sort' => $sort,

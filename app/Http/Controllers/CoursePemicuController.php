@@ -47,24 +47,23 @@ class CoursePemicuController extends Controller
 
         $kelompok = CourseStudent::where('course_id', $course->id)
             ->where('semester_id', $semesterId)
-            ->select('kelompok')
             ->distinct()
             ->orderBy('kelompok')
             ->pluck('kelompok');
 
-        $tutors = TeachingSchedule::whereIn('activity_id', [5])
+        $tutors = TeachingSchedule::where('activity_id', 5)
             ->where('course_id', $course->id)
             ->where('semester_id', $semesterId)
             ->whereNotNull('scheduled_date')
             ->with('pemicuDetails')
             ->orderBy('session_number')
-            ->get()
-            ->map(function ($tutor) {
-                $tutor->scheduled_date = Carbon::parse($tutor->scheduled_date)->translatedFormat('D d/M');
-                $tutor->start_time = Carbon::parse($tutor->start_time)->translatedFormat('H:i');
-                $tutor->end_time = Carbon::parse($tutor->end_time)->translatedFormat('H:i');
-                return $tutor;
-            });
+            ->get();
+
+        $tutors->each(function ($tutor) {
+            $tutor->formatted_date = Carbon::parse($tutor->scheduled_date)->translatedFormat('D d/M');
+            $tutor->formatted_start = Carbon::parse($tutor->start_time)->translatedFormat('H:i');
+            $tutor->formatted_end = Carbon::parse($tutor->end_time)->translatedFormat('H:i');
+        });
 
         $lecturers = $sorter->sort($course->courseLecturer, $course->id, $semesterId);
 
@@ -114,7 +113,6 @@ class CoursePemicuController extends Controller
             $semesterId = $request->semester_id;
             $courseId = $request->course_id;
             $assignments = $request->assignments ?? [];
-            // \Log::info($assignments);
 
             foreach ($assignments as $lecturerId => $tutorAssignments) {
                 foreach ($tutorAssignments as $tutorId => $assignmentData) {

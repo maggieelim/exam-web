@@ -1,7 +1,7 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-<div class="container-fluid">
+<div>
     {{-- Header Halaman + Tombol Upload Excel --}}
     <div class="card-header d-flex flex-row justify-content-between mb-0 pb-0 p-3">
         <div>

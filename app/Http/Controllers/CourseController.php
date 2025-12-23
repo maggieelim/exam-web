@@ -12,6 +12,7 @@ use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\User;
+use App\Services\SemesterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,34 +24,26 @@ class CourseController extends Controller
 {
     private function getSemesterId(Request $request)
     {
-        $semesterId = $request->get('semester_id');
-
-        if (!$semesterId) {
-            $activeSemester = $this->getActiveSemester();
-            $semesterId = $activeSemester ? $activeSemester->id : null;
-        }
-
-        return $semesterId;
+        return $request->get('semester_id')
+            ?? optional(SemesterService::active())->id;
     }
 
-    private function applySemesterFilter($query, $semesterId)
+    private function applySemesterFilter($query, $semester)
     {
-        if ($semesterId) {
-            $selectedSemester = Semester::find($semesterId);
-            if ($selectedSemester) {
-                $semesterName = strtolower($selectedSemester->semester_name);
-                $query->where(function ($q) use ($semesterName) {
-                    if ($semesterName === 'ganjil') {
-                        $q->where('semester', 'Ganjil')->orWhere('semester', 'Ganjil/Genap');
-                    } elseif ($semesterName === 'genap') {
-                        $q->where('semester', 'Genap')->orWhere('semester', 'Ganjil/Genap');
-                    }
-                });
-            }
-        }
+        if (!$semester) return $query;
 
-        return $query;
+        $semesterName = strtolower($semester->semester_name);
+
+        return $query->where(function ($q) use ($semesterName) {
+            if ($semesterName === 'ganjil') {
+                $q->whereIn('semester', ['Ganjil', 'Ganjil/Genap']);
+            } elseif ($semesterName === 'genap') {
+                $q->whereIn('semester', ['Genap', 'Ganjil/Genap']);
+            }
+        });
     }
+
+
 
     private function applyLecturerFilter($query, $semesterId)
     {
@@ -62,53 +55,40 @@ class CourseController extends Controller
         }
 
         if ($user->hasRole('koordinator')) {
-            $lecturer = Lecturer::where('user_id', $user->id)->first();
-            if ($lecturer) {
-                $query->whereHas('coordinators', function ($q) use ($lecturer, $semesterId) {
-                    $q->where('lecturer_id', $lecturer->id);
-                    if ($semesterId) {
-                        $q->where('semester_id', $semesterId);
-                    }
-                });
-            }
+            $query->whereHas('coordinators', function ($q) use ($user, $semesterId) {
+                $q->where('lecturer_id', $user->lecturer->id);
+                if ($semesterId) {
+                    $q->where('semester_id', $semesterId);
+                }
+            });
         }
         return $query;
     }
 
     private function applyCounts($query, $semesterId)
     {
-        $query->withCount([
-            'courseStudents as student_count' => function ($q) use ($semesterId) {
-                if ($semesterId) {
-                    $q->where('semester_id', $semesterId);
-                }
-            },
-        ]);
+        return $query->withCount([
+            'courseStudents as student_count' => fn($q) =>
+            $semesterId ? $q->where('semester_id', $semesterId) : $q,
 
-        $query->withCount([
-            'courseLecturer as lecturer_count' => function ($q) use ($semesterId) {
-                if ($semesterId) {
-                    $q->where('semester_id', $semesterId);
-                }
-            },
+            'courseLecturer as lecturer_count' => fn($q) =>
+            $semesterId ? $q->where('semester_id', $semesterId) : $q,
         ]);
-
-        return $query;
     }
 
     public function index(Request $request)
     {
         $agent = new Agent();
+        $semesters = SemesterService::list();
+        $activeSemester = SemesterService::active();
         $semesterId = $this->getSemesterId($request);
-        $activeSemester = $this->getActiveSemester();
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
 
         // Base query
         $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer', 'coordinators']);
 
         // Apply filters
         $query = $this->applyLecturerFilter($query, $semesterId);
-        $query = $this->applySemesterFilter($query, $semesterId);
+        $query = $this->applySemesterFilter($query, $activeSemester);
         $query = $this->applyCounts($query, $semesterId);
 
         // Search filter
@@ -141,22 +121,22 @@ class CourseController extends Controller
     {
         $semesterId = $request->query('semester_id');
         $semester = Semester::with('academicYear')->find($semesterId);
-        $course = Course::where('slug', $slug)->first();
+        $course = Course::where('slug', $slug)->firstOrFail();
 
-        $koordinator = CourseCoordinator::with('lecturer')
+        $coordinators = CourseCoordinator::with('lecturer.user')
             ->where('course_id', $course->id)
             ->where('semester_id', $semesterId)
-            ->where('role', 'koordinator')
-            ->first();
+            ->whereIn('role', ['koordinator', 'sekretaris'])
+            ->get()
+            ->keyBy('role');
 
-        $sekretaris = CourseCoordinator::with('lecturer')
-            ->where('course_id', $course->id)
-            ->where('semester_id', $semesterId)
-            ->where('role', 'sekretaris')
-            ->first();
+        $koordinator = $coordinators->get('koordinator');
+        $sekretaris = $coordinators->get('sekretaris');
 
-        $lecturers = Lecturer::with('user')->get();
-
+        $lecturers = Lecturer::select('id', 'user_id')
+            ->with('user:id,name')
+            ->orderBy('id')
+            ->get();
         return view('courses.editKoor', compact(
             'koordinator',
             'sekretaris',

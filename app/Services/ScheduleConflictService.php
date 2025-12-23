@@ -2,346 +2,224 @@
 
 namespace App\Services;
 
-use App\Models\PemicuDetails;
-use App\Models\PlenoDetails;
 use App\Models\TeachingSchedule;
 use App\Models\PracticumDetails;
+use App\Models\PemicuDetails;
 use App\Models\SkillslabDetails;
+use App\Models\PlenoDetails;
+use Illuminate\Support\Collection;
 
 class ScheduleConflictService
 {
     /**
-     * Check if a lecturer has schedule conflict for given time slot
+     * ============================
+     * PUBLIC API
+     * ============================
      */
-    public function hasScheduleConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
+
+    public function hasScheduleConflict(
+        int $lecturerId,
+        ?string $date,
+        ?string $startTime,
+        ?string $endTime,
+        ?int $excludeScheduleId = null,
+        ?int $semesterId = null
+    ): bool {
         if (!$date || !$startTime || !$endTime) {
             return false;
         }
-        $teachingConflict = $this->hasTeachingScheduleConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $practicumConflict = $this->hasPracticumConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $pemicuConflict = $this->hasPemicuConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $skillslabConflict = $this->hasSkillslabConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $plenoConflict = $this->hasPlenoConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId, $semesterId);
 
-        return $teachingConflict || $practicumConflict || $skillslabConflict || $pemicuConflict || $plenoConflict;
+        // Teaching Schedule langsung
+        if ($this->hasTeachingConflict(
+            $lecturerId,
+            $date,
+            $startTime,
+            $endTime,
+            $excludeScheduleId,
+            $semesterId
+        )) {
+            return true;
+        }
+
+        // Detail schedules (Practicum, Pemicu, Skillslab, Pleno)
+        foreach ($this->detailModels() as $model) {
+            if ($this->hasDetailConflict(
+                $model,
+                $lecturerId,
+                $date,
+                $startTime,
+                $endTime,
+                $excludeScheduleId,
+                $semesterId
+            )) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private function hasTeachingScheduleConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = TeachingSchedule::where('lecturer_id', $lecturerId)
-            ->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-            ->where('scheduled_date', $date)
-            ->where(function ($q) use ($startTime, $endTime) {
-                $q->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-            });
-
-        if ($excludeScheduleId) {
-            $query->where('id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->where('semester_id', $semesterId);
-        }
-
-        return $query->exists();
+    /**
+     * Digunakan untuk PEMICU view (bulk check)
+     */
+    public function getLecturerConflicts(
+        int $lecturerId,
+        string $date,
+        int $semesterId
+    ): Collection {
+        return TeachingSchedule::where('scheduled_date', $date)
+            ->where('semester_id', $semesterId)
+            ->whereNotNull(['start_time', 'end_time'])
+            ->where(function ($q) use ($lecturerId) {
+                $q->where('lecturer_id', $lecturerId)
+                    ->orWhereHas('practicumDetails', fn($q) => $q->where('lecturer_id', $lecturerId))
+                    ->orWhereHas('pemicuDetails', fn($q) => $q->where('lecturer_id', $lecturerId)->whereNotNull('kelompok_num'))
+                    ->orWhereHas('skillslabDetails', fn($q) => $q->where('lecturer_id', $lecturerId))
+                    ->orWhereHas('plenoDetails', fn($q) => $q->where('lecturer_id', $lecturerId));
+            })
+            ->get(['id', 'start_time', 'end_time']);
     }
 
-    private function hasPracticumConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = PracticumDetails::where('lecturer_id', $lecturerId)->whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->exists();
-    }
-
-    private function hasPemicuConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = PemicuDetails::where('lecturer_id', $lecturerId)->whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->exists();
-    }
-
-    private function hasSkillslabConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = SkillslabDetails::where('lecturer_id', $lecturerId)->whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->exists();
-    }
-
-    private function hasPlenoConflict($lecturerId, $date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = PlenoDetails::where('lecturer_id', $lecturerId)->whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->exists();
-    }
-
-    public function getConflictingLecturers($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
+    /**
+     * Ambil SEMUA lecturer yang bentrok
+     */
+    public function getConflictingLecturers(
+        string $date,
+        string $startTime,
+        string $endTime,
+        ?int $excludeScheduleId = null,
+        ?int $semesterId = null
+    ): Collection {
         if (!$date || !$startTime || !$endTime) {
             return collect();
         }
 
-        $conflictingLecturers = collect();
+        $conflicts = collect();
 
-        // Get conflicts from teaching_schedules
-        $teachingConflicts = $this->getTeachingScheduleConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $conflictingLecturers = $conflictingLecturers->merge($teachingConflicts);
+        // Teaching Schedule
+        $conflicts = $conflicts->merge(
+            $this->getTeachingConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId)
+        );
 
-        // Get conflicts from practicum_details
-        $practicumConflicts = $this->getPracticumConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $conflictingLecturers = $conflictingLecturers->merge($practicumConflicts);
-
-        // Get conflicts from pemicu_details
-        $pemicuConflicts = $this->getPemicuConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $conflictingLecturers = $conflictingLecturers->merge($pemicuConflicts);
-
-        // Get conflicts from skillslab_details
-        $skillslabConflicts = $this->getSkillslabConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $conflictingLecturers = $conflictingLecturers->merge($skillslabConflicts);
-
-        // Get conflicts from pleno_details
-        $plenoConflicts = $this->getPlenoConflicts($date, $startTime, $endTime, $excludeScheduleId, $semesterId);
-        $conflictingLecturers = $conflictingLecturers->merge($plenoConflicts);
-
-        return $conflictingLecturers->filter()->unique();
-    }
-
-    private function getTeachingScheduleConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = TeachingSchedule::whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-            ->where('scheduled_date', $date)
-            ->where(function ($q) use ($startTime, $endTime) {
-                $q->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-            });
-
-        if ($excludeScheduleId) {
-            $query->where('id', '!=', $excludeScheduleId);
+        // Detail tables
+        foreach ($this->detailModels() as $model) {
+            $conflicts = $conflicts->merge(
+                $this->getDetailConflicts($model, $date, $startTime, $endTime, $excludeScheduleId, $semesterId)
+            );
         }
 
-        if ($semesterId) {
-            $query->where('semester_id', $semesterId);
-        }
-
-        return $query->pluck('lecturer_id')->filter();
-    }
-
-    private function getPracticumConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = PracticumDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->pluck('lecturer_id')->filter();
-    }
-
-    private function getPemicuConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = PemicuDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->pluck('lecturer_id')->filter();
-    }
-
-    private function getSkillslabConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = SkillslabDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->pluck('lecturer_id')->filter();
-    }
-
-    private function getPlenoConflicts($date, $startTime, $endTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        $query = PlenoDetails::whereHas('teachingSchedule', function ($q) use ($date, $startTime, $endTime) {
-            $q->whereNotNull(['scheduled_date', 'start_time', 'end_time'])
-                ->where('scheduled_date', $date)
-                ->where(function ($innerQ) use ($startTime, $endTime) {
-                    $innerQ->where('start_time', '<', $endTime)->where('end_time', '>', $startTime);
-                });
-        });
-
-        if ($excludeScheduleId) {
-            $query->where('teaching_schedule_id', '!=', $excludeScheduleId);
-        }
-
-        if ($semesterId) {
-            $query->whereHas('teachingSchedule', function ($q) use ($semesterId) {
-                $q->where('semester_id', $semesterId);
-            });
-        }
-
-        return $query->pluck('lecturer_id')->filter();
-    }
-
-    public function getAvailableLecturers($lecturers, $scheduleDate, $scheduleStartTime, $scheduleEndTime, $excludeScheduleId = null, $semesterId = null)
-    {
-        if (!$scheduleDate || !$scheduleStartTime || !$scheduleEndTime) {
-            return $lecturers;
-        }
-
-        $conflictingLecturers = $this->getConflictingLecturers($scheduleDate, $scheduleStartTime, $scheduleEndTime, $excludeScheduleId, $semesterId);
-
-        return $lecturers->filter(function ($lecturer) use ($conflictingLecturers, $excludeScheduleId, $scheduleDate, $scheduleStartTime, $scheduleEndTime, $semesterId) {
-            // If this lecturer is already assigned to current schedule, keep them
-            if ($excludeScheduleId) {
-                $currentSchedule = TeachingSchedule::find($excludeScheduleId);
-                if ($currentSchedule && $currentSchedule->lecturer_id == $lecturer->id) {
-                    return true;
-                }
-
-                // Also check if lecturer is assigned in practicum_details for this schedule
-                $currentPracticum = PracticumDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
-                if ($currentPracticum) {
-                    return true;
-                }
-
-                $currentPemicu = PemicuDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
-                if ($currentPemicu) {
-                    return true;
-                }
-
-                // Also check if lecturer is assigned in skillslab_details for this schedule
-                $currentSkillslab = SkillslabDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
-                if ($currentSkillslab) {
-                    return true;
-                }
-
-                $currentPleno = PlenoDetails::where('teaching_schedule_id', $excludeScheduleId)->where('lecturer_id', $lecturer->id)->exists();
-                if ($currentPleno) {
-                    return true;
-                }
-            }
-
-            return !$conflictingLecturers->contains($lecturer->id);
-        });
+        return $conflicts->unique()->values();
     }
 
     /**
-     * Check time overlap between two time slots
+     * Filter lecturer yang tersedia
      */
-    public function hasTimeOverlap($date1, $start1, $end1, $date2, $start2, $end2)
+    public function getAvailableLecturers(
+        Collection $lecturers,
+        string $date,
+        string $startTime,
+        string $endTime,
+        ?int $excludeScheduleId = null,
+        ?int $semesterId = null
+    ): Collection {
+        $conflictingIds = $this
+            ->getConflictingLecturers($date, $startTime, $endTime, $excludeScheduleId, $semesterId)
+            ->flip();
+
+        return $lecturers->filter(fn($l) => !isset($conflictingIds[$l->id]));
+    }
+
+    /**
+     * ============================
+     * INTERNAL HELPERS
+     * ============================
+     */
+
+    private function hasTeachingConflict(
+        int $lecturerId,
+        string $date,
+        string $start,
+        string $end,
+        ?int $excludeId,
+        ?int $semesterId
+    ): bool {
+        return TeachingSchedule::where('lecturer_id', $lecturerId)
+            ->where('scheduled_date', $date)
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
+            ->exists();
+    }
+
+    private function hasDetailConflict(
+        string $model,
+        int $lecturerId,
+        string $date,
+        string $start,
+        string $end,
+        ?int $excludeId,
+        ?int $semesterId
+    ): bool {
+        return $model::where('lecturer_id', $lecturerId)
+            ->whereHas('teachingSchedule', function ($q) use ($date, $start, $end, $semesterId) {
+                $q->where('scheduled_date', $date)
+                    ->where('start_time', '<', $end)
+                    ->where('end_time', '>', $start);
+
+                if ($semesterId) {
+                    $q->where('semester_id', $semesterId);
+                }
+            })
+            ->when($excludeId, fn($q) => $q->where('teaching_schedule_id', '!=', $excludeId))
+            ->exists();
+    }
+
+    private function getTeachingConflicts(
+        string $date,
+        string $start,
+        string $end,
+        ?int $excludeId,
+        ?int $semesterId
+    ): Collection {
+        return TeachingSchedule::where('scheduled_date', $date)
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
+            ->pluck('lecturer_id')
+            ->filter();
+    }
+
+    private function getDetailConflicts(
+        string $model,
+        string $date,
+        string $start,
+        string $end,
+        ?int $excludeId,
+        ?int $semesterId
+    ): Collection {
+        return $model::whereHas('teachingSchedule', function ($q) use ($date, $start, $end, $semesterId) {
+            $q->where('scheduled_date', $date)
+                ->where('start_time', '<', $end)
+                ->where('end_time', '>', $start);
+
+            if ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            }
+        })
+            ->when($excludeId, fn($q) => $q->where('teaching_schedule_id', '!=', $excludeId))
+            ->pluck('lecturer_id')
+            ->filter();
+    }
+
+    private function detailModels(): array
     {
-        if ($date1 != $date2) {
-            return false;
-        }
-
-        $startTime1 = strtotime($start1);
-        $endTime1 = strtotime($end1);
-        $startTime2 = strtotime($start2);
-        $endTime2 = strtotime($end2);
-
-        return $startTime1 < $endTime2 && $endTime1 > $startTime2;
+        return [
+            PracticumDetails::class,
+            PemicuDetails::class,
+            SkillslabDetails::class,
+            PlenoDetails::class,
+        ];
     }
 }

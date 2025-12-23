@@ -8,149 +8,145 @@
 @endsection
 
 @section('content')
-    <div class="container-fluid py-4">
-        <div class="row">
-            <div class="col-md-9">
-                <div class="card p-3">
-                    <div class="mt-2">
-                        <p><strong>{{ $currentQuestion->badan_soal }}</strong></p>
-                        <p>{{ $currentQuestion->kalimat_tanya }}</p>
-                        @if ($currentQuestion->image)
-                            <div class="my-3">
-                                <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"
-                                    class="img-fluid " style="max-width: 600px;">
-                            </div>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card p-3">
+                <div class="mt-2">
+                    <p><strong>{{ $currentQuestion->badan_soal }}</strong></p>
+                    <p>{{ $currentQuestion->kalimat_tanya }}</p>
+                    @if ($currentQuestion->image)
+                    <div class="my-3">
+                        <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"
+                            class="img-fluid " style="max-width: 600px;">
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Form AJAX --}}
+                <form id="answerForm">
+                    @csrf
+                    <input type="hidden" name="question_id" value="{{ $currentQuestion->id }}">
+                    @foreach ($currentQuestion->options->shuffle() as $option)
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="radio" name="answer" id="option{{ $option->id }}"
+                            value="{{ $option->id }}" {{ isset($savedAnswer) && $savedAnswer->answer == $option->id ?
+                        'checked' : '' }}>
+                        <label class="form-check-label" for="option{{ $option->id }}">
+                            {{ $option->text }}
+                        </label>
+                    </div>
+                    @endforeach
+
+                    <div class="mt-4 d-flex justify-content-center align-items-center">
+                        @if ($prevQuestion)
+                        <button type="button" id="prevQuestion" class="btn bg-gradient-primary"> <i
+                                class="fas fa-chevron-left"> </i>
+                        </button>
+                        @else
+                        <button type="button" class="btn btn-secondary" disabled> <i class="fas fa-chevron-left"></i>
+                        </button>
+                        @endif
+
+                        {{-- Checkbox Ragu-Ragu --}}
+                        <div class="form-check mx-3">
+                            <input class="form-check-input" type="checkbox" name="mark_doubt" id="markDoubtCheckbox" {{
+                                isset($savedAnswer) && $savedAnswer->marked_doubt ? 'checked' : '' }}>
+                            <label class="form-check-label mb-0" for="markDoubtCheckbox">
+                                Tandai sebagai ragu-ragu
+                            </label>
+                        </div>
+
+                        @if ($nextQuestion)
+                        <button type="button" id="nextQuestion" class="btn bg-gradient-primary"><i
+                                class="fas fa-chevron-right"></i> </button>
+                        @else
+                        <button disabled type="button" id="nextQuestion" class="btn bg-gradient-primary"><i
+                                class="fas fa-chevron-right"></i></button>
                         @endif
                     </div>
-
-                    {{-- Form AJAX --}}
-                    <form id="answerForm">
-                        @csrf
-                        <input type="hidden" name="question_id" value="{{ $currentQuestion->id }}">
-                        @foreach ($currentQuestion->options->shuffle() as $option)
-                            <div class="form-check mt-3">
-                                <input class="form-check-input" type="radio" name="answer" id="option{{ $option->id }}"
-                                    value="{{ $option->id }}"
-                                    {{ isset($savedAnswer) && $savedAnswer->answer == $option->id ? 'checked' : '' }}>
-                                <label class="form-check-label" for="option{{ $option->id }}">
-                                    {{ $option->text }}
-                                </label>
-                            </div>
-                        @endforeach
-
-                        <div class="mt-4 d-flex justify-content-center align-items-center">
-                            @if ($prevQuestion)
-                                <button type="button" id="prevQuestion" class="btn bg-gradient-primary"> <i
-                                        class="fas fa-chevron-left"> </i>
-                                </button>
-                            @else
-                                <button type="button" class="btn btn-secondary" disabled> <i
-                                        class="fas fa-chevron-left"></i>
-                                </button>
-                            @endif
-
-                            {{-- Checkbox Ragu-Ragu --}}
-                            <div class="form-check mx-3">
-                                <input class="form-check-input" type="checkbox" name="mark_doubt" id="markDoubtCheckbox"
-                                    {{ isset($savedAnswer) && $savedAnswer->marked_doubt ? 'checked' : '' }}>
-                                <label class="form-check-label mb-0" for="markDoubtCheckbox">
-                                    Tandai sebagai ragu-ragu
-                                </label>
-                            </div>
-
-                            @if ($nextQuestion)
-                                <button type="button" id="nextQuestion" class="btn bg-gradient-primary"><i
-                                        class="fas fa-chevron-right"></i> </button>
-                            @else
-                                <button disabled type="button" id="nextQuestion" class="btn bg-gradient-primary"><i
-                                        class="fas fa-chevron-right"></i></button>
-                            @endif
-                        </div>
-                    </form>
-                </div>
+                </form>
             </div>
+        </div>
 
-            <div class="col-md-3">
-                <div class="card p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <strong>SISA WAKTU</strong>
-                        <span id="timer" class="badge bg-danger fs-6">00:00:00</span>
-                    </div>
-                    <hr>
-                    <div class="grid-container" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
-                        @foreach ($questions as $index => $q)
-                            <button type="button"
-                                class="btn btn-xs d-flex align-items-center justify-content-center question-nav
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <strong>SISA WAKTU</strong>
+                    <span id="timer" class="badge bg-danger fs-6">00:00:00</span>
+                </div>
+                <hr>
+                <div class="grid-container" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
+                    @foreach ($questions as $index => $q)
+                    <button type="button" class="btn btn-xs d-flex align-items-center justify-content-center question-nav
             @if ($q->id == $currentQuestion->id) border border-2 border-primary
             @elseif($q->isDoubtBy(auth()->id())) btn-warning
             @elseif(isset($userAnswers[$q->id]) && $userAnswers[$q->id] !== null) btn-success
-            @else btn-secondary @endif"
-                                style="min-width: 28px; height: 35px; font-size: 0.9rem; padding: 0;"
-                                data-kode-soal="{{ $q->kode_soal }}"
-                                data-is-current="{{ $q->id == $currentQuestion->id ? 'true' : 'false' }}">
-                                {{ $loop->iteration }}
-                            </button>
-                        @endforeach
-                    </div>
-                    <hr>
-                    <div id="finishExamContainer" style="display: {{ $allAnswered ? 'block' : 'none' }};">
-                        <form action="{{ route('student.exams.finish', $exam->exam_code) }}" method="POST"
-                            id="finishForm">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100">
-                                Selesaikan Ujian
-                            </button>
-                        </form>
-                    </div>
-                    <form id="autoFinishForm" action="{{ route('student.exams.finish', $exam->exam_code) }}" method="POST"
-                        style="display: none;">
+            @else btn-secondary @endif" style="min-width: 28px; height: 35px; font-size: 0.9rem; padding: 0;"
+                        data-kode-soal="{{ $q->kode_soal }}"
+                        data-is-current="{{ $q->id == $currentQuestion->id ? 'true' : 'false' }}">
+                        {{ $loop->iteration }}
+                    </button>
+                    @endforeach
+                </div>
+                <hr>
+                <div id="finishExamContainer" style="display: {{ $allAnswered ? 'block' : 'none' }};">
+                    <form action="{{ route('student.exams.finish', $exam->exam_code) }}" method="POST" id="finishForm">
                         @csrf
-                        <input type="hidden" name="auto_finish" value="1">
+                        <button type="submit" class="btn btn-success w-100">
+                            Selesaikan Ujian
+                        </button>
                     </form>
                 </div>
+                <form id="autoFinishForm" action="{{ route('student.exams.finish', $exam->exam_code) }}" method="POST"
+                    style="display: none;">
+                    @csrf
+                    <input type="hidden" name="auto_finish" value="1">
+                </form>
             </div>
         </div>
-
-        {{-- Modal Konfirmasi --}}
-        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmModalLabel">Konfirmasi</h5>
-                    </div>
-                    <div class="modal-body" id="confirmModalBody">
-                        <!-- Konten modal akan diisi secara dinamis -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="button" class="btn btn-sm btn-primary" id="confirmModalAction">Ya</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Modal Alert --}}
-        <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="alertModalLabel">Pemberitahuan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body" id="alertModalBody">
-                        <!-- Konten modal akan diisi secara dinamis -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <script>
-        history.pushState(null, null, location.href);
+    {{-- Modal Konfirmasi --}}
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">Konfirmasi</h5>
+                </div>
+                <div class="modal-body" id="confirmModalBody">
+                    <!-- Konten modal akan diisi secara dinamis -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="confirmModalAction">Ya</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Alert --}}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">Pemberitahuan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="alertModalBody">
+                    <!-- Konten modal akan diisi secara dinamis -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    history.pushState(null, null, location.href);
         window.onpopstate = function() {
             history.go(1);
             alert("Navigasi kembali dinonaktifkan selama ujian.");
@@ -567,5 +563,5 @@
                 clearInterval(statusCheckInterval);
             })
         });
-    </script>
+</script>
 @endsection

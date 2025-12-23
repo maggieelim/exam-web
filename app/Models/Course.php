@@ -22,10 +22,6 @@ class Course extends Model
         });
     }
 
-    // public function questions()
-    // {
-    //     return $this->hasMany(CourseQuestion::class, 'course_id', 'id');
-    // }
     public function getRouteKeyName()
     {
         return 'slug';

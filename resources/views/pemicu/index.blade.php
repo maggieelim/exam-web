@@ -160,8 +160,8 @@
             </div>
         </div>
         @empty
-        <div class="text-center py-4">
-            <div class="text-muted">
+        <div class="card text-center py-4">
+            <div class="card-body text-muted">
                 <i class="fas fa-inbox fa-2x mb-2"></i>
                 <p>Tidak ada Tutor yang ditemukan</p>
                 <a href="{{ 'tutors' }}" class="btn btn-sm btn-outline-primary">

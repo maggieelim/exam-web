@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Semester;
+use App\Services\SemesterService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Jenssegers\Agent\Agent;
@@ -17,7 +18,7 @@ class SemesterController extends Controller
     public function index(Request $request)
     {
         $agent = new Agent();
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $sort = $request->get('sort', 'start_date'); // default sort
         $dir = $request->get('dir', 'desc');
 
@@ -49,7 +50,7 @@ class SemesterController extends Controller
      */
     public function create()
     {
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->paginate(15);
         $currentYear = date('Y');
         $academicYears = [];
@@ -141,9 +142,9 @@ class SemesterController extends Controller
      */
     public function edit(string $id)
     {
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $semester = Semester::with('academicYear')->findOrFail($id);
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
+        $semesters = SemesterService::list();
         $currentYear = date('Y');
         $academicYears = [];
 

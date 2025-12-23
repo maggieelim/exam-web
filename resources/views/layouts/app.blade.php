@@ -15,27 +15,38 @@
 -->
 <!DOCTYPE html>
 
-@if (\Request::is('rtl'))
-<html dir="rtl" lang="ar">
-@else
+
 <html lang="en">
-@endif
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    @if (env('IS_DEMO'))
-    <x-demo-metas></x-demo-metas>
-    @endif
 
     <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('assets/img/UNTAR.png') }}">
     <link rel="icon" type="image/png" href="{{ asset('assets/img/UNTAR.png') }}">
     <title>
         Fakultas Kedokteran Universitas Tarumanagara
     </title>
-    <!--     Fonts and icons     -->
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+    <!-- ===================== -->
+    <!-- 1. PRECONNECT (Fonts) -->
+    <!-- ===================== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Optimized Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- ===================== -->
+    <!-- 2. CRITICAL CSS (INLINE) -->
+    <!-- ===================== -->
+    <style>
+        h4.text-uppercase {
+            font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            text-transform: uppercase;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+    </style>
     <!-- Nucleo Icons -->
     <link rel="preload" href="{{ asset('assets/css/nucleo-icons.css') }}" as="style"
         onload="this.onload=null;this.rel='stylesheet'">
@@ -64,8 +75,7 @@
 
 </head>
 
-<body
-    class="g-sidenav-show  bg-gray-100 {{ \Request::is('rtl') ? 'rtl' : (Request::is('virtual-reality') ? 'virtual-reality' : '') }} ">
+<body class="g-sidenav-show bg-gray-100">
 
     @auth
     @yield('auth')

@@ -57,7 +57,7 @@ $hideFooter = View::hasSection('hideFooter') ? true : false;
     @include('layouts.navbars.auth.nav')
     @endif
 
-    <div class="container-fluid py-2">
+    <div class="container-fluid py-0">
         @yield('content')
 
         {{-- Hanya tampilkan footer jika tidak dihide --}}

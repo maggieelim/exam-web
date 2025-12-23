@@ -9,6 +9,7 @@ use App\Models\AttendanceTokens;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\SemesterService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -17,7 +18,7 @@ class StudentAttendanceController extends Controller
     public function index(Request $request)
     {
         $userId = auth()->id();
-        $activeSemester = $this->getActiveSemester();
+        $activeSemester = SemesterService::active();
         $semesterId = $request->query('semester_id', $activeSemester->id);
         $statusFilter = $request->query('status');
         $courseStudent = CourseStudent::where('user_id', $userId)->pluck('id');
@@ -34,7 +35,7 @@ class StudentAttendanceController extends Controller
         }
 
         $attendances = $attendances->orderBy('scanned_at', 'desc')->paginate(20);
-        $semesters = Semester::with('academicYear')->get();
+        $semesters = SemesterService::list();
 
         return view(
             'students.attendance.index',

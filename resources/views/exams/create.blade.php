@@ -1,7 +1,7 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-<div class="container-fluid py-4">
+<div>
     <div class="card">
         <div class="card-header pb-0 px-3">
             <h6 class="mb-0">Buat Jadwal Ujian</h6>

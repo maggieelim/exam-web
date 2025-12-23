@@ -11,6 +11,7 @@ use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\Lecturer;
 use App\Models\Semester;
+use App\Services\SemesterService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,9 +20,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ExamController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
 
     public function start(Exam $exam)
     {
@@ -78,69 +76,120 @@ class ExamController extends Controller
         $agent = new Agent();
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $user = auth()->user();
+
+        // ===== Semester handling =====
+        $activeSemester = SemesterService::active();
+        $semesterId = $request->get('semester_id') ?? optional($activeSemester)->id;
+        $semesters = SemesterService::list();
+
+        // ===== Base Exam Query =====
+        $query = Exam::query()
+            ->with([
+                'course:id,name',
+                'creator:id,name',
+                'updater:id,name',
+                'semester:id,semester_name',
+                'attempts' => fn($q) => $q->where('user_id', $user->id),
+            ])
+            ->withCount('questions');
+
         $courses = collect();
-        $lecturer = Lecturer::where('user_id', $user->id)->first();
-        $today = Carbon::today();
-        $semesterId = $request->get('semester_id');
 
-        $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
-
-        if (!$semesterId && $activeSemester) {
-            $semesterId = $activeSemester->id;
-        }
-
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
-        // Base query
-        $query = Exam::with(['course', 'creator', 'updater', 'attempts' => fn($q) => $q->where('user_id', $user->id), 'semester'])->withCount('questions');
-
+        // ===== ROLE BASED FILTER =====
         if ($user->hasRole('koordinator')) {
-            $coordinatedCourseIds = CourseCoordinator::where('lecturer_id', $lecturer->id)->pluck('course_id');
+            $lecturerId = Lecturer::where('user_id', $user->id)->value('id');
 
-            $courses = Course::whereIn('id', $coordinatedCourseIds)->get();
+            $courseIds = CourseCoordinator::where('lecturer_id', $lecturerId)
+                ->pluck('course_id');
 
-            $query->whereIn('course_id', $coordinatedCourseIds);
+            $courses = Course::whereIn('id', $courseIds)->get();
+            $query->whereIn('course_id', $courseIds);
         } elseif ($user->hasRole('student')) {
-            $courses = CourseStudent::where('user_id', $user->id)->with('course')->get()->pluck('course');
-            $query->whereNotNull('exam_date')->whereHas('course.courseStudents', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            });
+            $courses = CourseStudent::where('user_id', $user->id)
+                ->with('course')
+                ->get()
+                ->pluck('course');
+
+            $query->whereNotNull('exam_date')
+                ->whereHas(
+                    'course.courseStudents',
+                    fn($q) =>
+                    $q->where('user_id', $user->id)
+                );
         } else {
             $courses = Course::whereHas('exams')->get();
         }
 
-        // Status filter dari request/URL
+        // ===== STATUS & SEMESTER =====
         $this->applyStatusFilter($query, $user, $status);
+
         if ($semesterId) {
             $query->where('semester_id', $semesterId);
         }
 
-        // Additional filters
-        $query->when($request->filled('title'), fn($q) => $q->where('title', 'like', "%{$request->title}%"))->when($request->filled('course_id'), fn($q) => $q->where('course_id', $request->course_id));
+        // ===== SEARCH FILTER =====
+        $query
+            ->when(
+                $request->filled('title'),
+                fn($q) => $q->where('title', 'like', "%{$request->title}%")
+            )
+            ->when(
+                $request->filled('course_id'),
+                fn($q) => $q->where('course_id', $request->course_id)
+            );
 
-        // Sorting + pagination
-        $exams = $query->orderBy($request->get('sort', 'exam_date'), $request->get('dir', 'desc'))->paginate(15)->appends($request->query());
+        // ===== SORTING (safe) =====
+        $allowedSorts = ['exam_date', 'title', 'created_at'];
+        $sort = in_array($request->get('sort'), $allowedSorts)
+            ? $request->get('sort')
+            : 'exam_date';
 
-        // Mapping status ended → previous di tiap exam
-        $exams->getCollection()->transform(function ($exam) {
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+
+        // ===== PAGINATION =====
+        $exams = $query
+            ->orderBy($sort, $dir)
+            ->paginate(15)
+            ->appends($request->query());
+
+        // ===== TRANSFORM =====
+        $exams->through(function ($exam) {
             if ($exam->status === 'ended') {
                 $exam->status = 'previous';
             }
             return $this->mapExamAttributes($exam);
         });
 
-        // Pilih view
-        $view = $user->hasRole('student') ? 'students.exams.index' : 'exams.index';
-        $viewMobile = $user->hasRole('student') ? 'students.exams.index' : 'exams.mobile.index_mobile';
+        // ===== VIEW =====
+        $view = $user->hasRole('student')
+            ? 'students.exams.index'
+            : 'exams.index';
+
+        $viewMobile = $user->hasRole('student')
+            ? 'students.exams.index'
+            : 'exams.mobile.index_mobile';
 
         if ($agent->isMobile()) {
-            return view($viewMobile, compact('exams', 'courses', 'status', 'semesters', 'semesterId', 'activeSemester'));
+            return view($viewMobile, compact(
+                'exams',
+                'courses',
+                'status',
+                'semesters',
+                'semesterId',
+                'activeSemester'
+            ));
         }
-        return view($view, compact('exams', 'courses', 'status', 'semesters', 'semesterId', 'activeSemester'))->with(['sort' => $request->get('sort', 'exam_date'), 'dir' => $request->get('dir', 'desc')]);
+
+        return view($view, compact(
+            'exams',
+            'courses',
+            'status',
+            'semesters',
+            'semesterId',
+            'activeSemester'
+        ))->with(compact('sort', 'dir'));
     }
 
-    /**
-     * Apply status filter based on role
-     */
     private function applyStatusFilter($query, $user, &$status)
     {
         if ($user->hasRole('lecturer|admin|koordinator')) {
@@ -164,9 +213,6 @@ class ExamController extends Controller
         }
     }
 
-    /**
-     * Transform attributes for exam
-     */
     private function mapExamAttributes($exam)
     {
         $examStart = Carbon::parse($exam->exam_date);
@@ -186,17 +232,14 @@ class ExamController extends Controller
         return $exam;
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
         $today = now();
 
-        $semesters = Semester::with('academicYear')->orderBy('start_date', 'desc')->get();
-        $activeSemester = Semester::where('start_date', '<=', $today)->where('end_date', '>=', $today)->first();
+        $semesters = SemesterService::list();
+        $activeSemester = SemesterService::active();
 
         if (!$activeSemester) {
             return back()->with('error', 'Tidak ada semester aktif saat ini.');
@@ -247,14 +290,8 @@ class ExamController extends Controller
             ->with('success', 'Soal berhasil diimport dari Excel');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request) {}
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Request $request, string $exam_code)
     {
         $agent = new Agent();
@@ -286,9 +323,6 @@ class ExamController extends Controller
         return view('exams.show', compact('exam', 'questions', 'status', 'total_participants'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($status, string $exam_code)
     {
         $user = auth()->user();
@@ -309,9 +343,6 @@ class ExamController extends Controller
         return view('exams.edit', compact('status', 'exam', 'courses'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $status, $exam_code)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
@@ -340,9 +371,6 @@ class ExamController extends Controller
             ->with('success', 'Exam berhasil diperbarui');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($examCode)
     {
         $exam = Exam::where('exam_code', $examCode)->firstOrFail();
