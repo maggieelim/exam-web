@@ -237,5 +237,4 @@
   @endforelse
 </div>
 @endhasallroles
-
 @endsection

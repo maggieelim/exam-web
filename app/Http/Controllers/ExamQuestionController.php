@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Exports\ExamQuestionsExport;
 use App\Imports\ExamQuestionTemplateImport;
+use App\Models\Category;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use App\Models\ExamQuestionCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -104,16 +106,11 @@ class ExamQuestionController extends Controller
         return Excel::download(new ExamQuestionsExport($exam), $fileName);
     }
 
-    public function show(string $id)
-    {
-        $questions = ExamQuestion::where('kode_soal', $id)->get();
-        return view('exams.questions.show', compact('questions', 'kode'));
-    }
-
     public function edit(string $id)
     {
         //
     }
+    public function newQuestion(Request $request, $examCode) {}
 
     public function update(Request $request, $examCode, $questionId)
     {
@@ -156,7 +153,8 @@ class ExamQuestionController extends Controller
             'category_id' => 'nullable|exists:exam_question_categories,id',
             'badan_soal' => 'required|string',
             'kalimat_tanya' => 'required|string',
-            'options.*.text' => 'required|string',
+            'options.*.text' => 'nullable|string',
+            'options.*.image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
@@ -185,17 +183,44 @@ class ExamQuestionController extends Controller
         $correctOptionIds = [];
         foreach ($request->options as $id => $opt) {
             $option = ExamQuestionAnswer::find($id);
-            if ($option && $option->exam_question_id == $question->id) {
-                $isCorrect = isset($opt['is_correct']) ? 1 : 0;
-                $option->update([
-                    'text' => $opt['text'],
-                    'is_correct' => $isCorrect,
-                ]);
 
-                if ($isCorrect) {
-                    $correctOptionIds[] = $option->id;
-                }
+            if (!$option || $option->exam_question_id != $question->id) {
+                continue;
             }
+
+            $isCorrect = isset($opt['is_correct']) ? 1 : 0;
+            $imagePath1 = $option->image;
+
+            // --- DELETE IMAGE ---
+            if (isset($opt['delete_image']) && $opt['delete_image'] == 1) {
+                if ($option->image && \Storage::disk('public')->exists($option->image)) {
+                    \Storage::disk('public')->delete($option->image);
+                }
+                $imagePath1 = null;
+            }
+
+            // --- UPLOAD IMAGE BARU ---
+            if ($request->hasFile("options.$id.image")) {
+                if ($option->image && \Storage::disk('public')->exists($option->image)) {
+                    \Storage::disk('public')->delete($option->image);
+                }
+
+                $imagePath1 = $request->file("options.$id.image")
+                    ->store('question-options', 'public');
+            }
+
+            $option->update([
+                'text' => $opt['text'],
+                'image' => $imagePath1,
+                'is_correct' => $isCorrect,
+            ]);
+
+            if ($isCorrect) {
+                $correctOptionIds[] = $option->id;
+            }
+            $optionImages[$option->id] = $imagePath1
+                ? asset('storage/' . $imagePath1)
+                : null;
         }
 
         // --- UPDATE JAWABAN MAHASISWA SESUAI OPSI BARU ---
@@ -220,7 +245,15 @@ class ExamQuestionController extends Controller
                 'action' => 'update',
                 'image_url' => $imagePath ? asset('storage/' . $imagePath) : null,
                 'has_image' => !empty($imagePath),
-            ],
+                'options' => $question->options->mapWithKeys(function ($option) {
+                    return [
+                        $option->id => [
+                            'image_url' => $option->image ? asset('storage/' . $option->image) : null,
+                            'has_image' => !empty($option->image)
+                        ]
+                    ];
+                })->toArray()
+            ]
         ]);
     }
 

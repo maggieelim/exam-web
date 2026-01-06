@@ -13,6 +13,7 @@ class ExamQuestionAnswer extends Model
         'exam_question_id',
         'option',
         'text',
+        'image',
         'is_correct',
     ];
 

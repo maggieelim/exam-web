@@ -18,9 +18,21 @@
                     @if ($currentQuestion->image)
                     <div class="my-3">
                         <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"
-                            class="img-fluid " style="max-width: 600px;">
+                            class="img-fluid rounded shadow-sm zoomable-image"
+                            style="max-width: 600px; cursor: zoom-in;" data-bs-toggle="modal"
+                            data-bs-target="#imageZoomModal"
+                            data-image="{{ asset('storage/' . $currentQuestion->image) }}">
                     </div>
                     @endif
+                </div>
+                <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">
+                        <div class="modal-content bg-transparent border-0">
+                            <div class="modal-body text-center p-0">
+                                <img id="zoomedImage" src="" class="img-fluid rounded shadow" style="max-height: 90vh;">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Form AJAX --}}
@@ -35,6 +47,14 @@
                         <label class="form-check-label" for="option{{ $option->id }}">
                             {{ $option->text }}
                         </label>
+                        @if ($option->image)
+                        <div class="mt-0">
+                            <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Soal"
+                                class="img-fluid rounded shadow-sm zoomable-image"
+                                style="max-width: 200px; cursor: zoom-in;" data-bs-toggle="modal"
+                                data-bs-target="#imageZoomModal" data-image="{{ asset('storage/' . $option->image) }}">
+                        </div>
+                        @endif
                     </div>
                     @endforeach
 
@@ -144,6 +164,16 @@
     </div>
 
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.zoomable-image').forEach(img => {
+        img.addEventListener('click', function () {
+            document.getElementById('zoomedImage').src = this.dataset.image;
+        });
+    });
+});
+</script>
 
 <script>
     history.pushState(null, null, location.href);

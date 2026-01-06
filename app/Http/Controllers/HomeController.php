@@ -25,7 +25,7 @@ class HomeController extends Controller
         $semesterEnd = Carbon::parse($activeSemester->end_date)->format('d M Y');
 
         $lecturerId = Lecturer::where('user_id', $user->id)->value('id');
-        $koordinatorCourses = CourseCoordinator::where('lecturer_id', $lecturerId)->get();
+        $koordinatorCourses = CourseCoordinator::where('lecturer_id', $lecturerId)->where('semester_id', $activeSemester->id)->get();
         $koordinatorCourseIds = $koordinatorCourses->pluck('course_id');
         // Controller
         $summary = TeachingSchedule::with('course', 'activity')

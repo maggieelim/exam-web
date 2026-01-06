@@ -106,7 +106,7 @@
                 </a>
             </li>
             @endhasanyrole
-            @hasexactroles(['koordinator', 'lecturer'])
+            @hasrole('koordinator')
             <li class="nav-item mt-2">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
             </li>
@@ -178,7 +178,7 @@
                     <span class="nav-link-text ms-1">Published</span>
                 </a>
             </li>
-            @endhasexactroles
+            @endhasrole
 
             @role('student')
             <li class="nav-item mt-2">
