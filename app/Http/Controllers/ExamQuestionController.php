@@ -4,13 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\ExamQuestionsExport;
 use App\Imports\ExamQuestionTemplateImport;
-use App\Models\Category;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use App\Models\ExamQuestionCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -51,41 +49,73 @@ class ExamQuestionController extends Controller
         return view('exams.questions', compact('exam', 'questions', 'categories', 'status'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function newQuestionModal(Request $request, $examCode)
     {
-        $this->authorize('create', ExamQuestion::class);
+        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
 
-        $request->validate([
-            'exam_id' => 'required|exists:exams,id',
-            'category_name' => 'required|string|max:255', // pakai nama kategori dari form
+        // VALIDASI
+        $validated = $request->validate([
+            'category_name' => 'required|string|max:255',
             'badan_soal' => 'required|string',
             'kalimat_tanya' => 'required|string',
-            'opsi_a' => 'required|string',
-            'opsi_b' => 'required|string',
-            'opsi_c' => 'required|string',
-            'opsi_d' => 'required|string',
-            'opsi_e' => 'nullable|string',
-            'jawaban' => 'required|string',
-            'kode_soal' => 'required|string|max:50',
+            'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+
+            'options' => 'required|array|min:1',
+            'options.*.text' => 'required|string',
+            'options.*.image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'options.*.is_correct' => 'required',
         ]);
 
-        // cari kategori atau buat baru
-        $category = ExamQuestionCategory::firstOrCreate(['exam_id' => $request->exam_id, 'name' => $request->category_name]);
-
-        ExamQuestion::create([
-            'exam_id' => $request->exam_id,
+        $category = ExamQuestionCategory::firstOrCreate([
+            'exam_id' => $exam->id,
+            'name' => trim($validated['category_name']),
+        ]);
+        // SIMPAN SOAL
+        $question = ExamQuestion::create([
+            'exam_id' => $exam->id,
             'category_id' => $category->id,
-            'badan_soal' => $request->badan_soal,
-            'kalimat_tanya' => $request->kalimat_tanya,
-            'kode_soal' => $request->kode_soal,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
+            'badan_soal' => $validated['badan_soal'],
+            'kalimat_tanya' => $validated['kalimat_tanya'],
+            'kode_soal' => $exam->exam_code . '-' .
+                str_pad(
+                    ExamQuestion::where('exam_id', $exam->id)->count() + 1,
+                    3,
+                    '0',
+                    STR_PAD_LEFT
+                ),
+            'image' => isset($validated['image'])
+                ? $validated['image']->store('questions', 'public')
+                : null,
         ]);
 
-        return redirect()->route('exams.questions.index')->with('success', 'Soal berhasil dibuat');
+        // SIMPAN OPSI JAWABAN
+        $optionImages = [];
+        $optionIndex = 0;
+
+        foreach ($validated['options'] as $opt) {
+            $imagePath = isset($opt['image'])
+                ? $opt['image']->store('question-options', 'public')
+                : null;
+
+            $option = ExamQuestionAnswer::create([
+                'exam_question_id' => $question->id,
+                'option' => chr(65 + $optionIndex), // A, B, C, ...
+                'text' => $opt['text'],
+                'image' => $imagePath,
+                'is_correct' => isset($opt['is_correct']) ? 1 : 0,
+            ]);
+
+            $optionImages[$option->id] = [
+                'image_url' => $imagePath ? asset('storage/' . $imagePath) : null,
+                'has_image' => !empty($imagePath),
+            ];
+
+            $optionIndex++;
+        }
+
+        return redirect()
+            ->route('exams.questions.' . $exam->status, $exam->exam_code)
+            ->with('success', 'Soal baru berhasil ditambahkan!');
     }
 
     //dipakai atau tidak??

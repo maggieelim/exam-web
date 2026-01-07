@@ -4,7 +4,7 @@
 <div class="row">
   <div class="col-12">
     <!-- Card Detail Exam -->
-    <div class="card mb-4 p-3">
+    <div class="card mb-3 p-3">
       <div class="d-flex justify-content-between align-items-center">
         <h5>{{ $exam->title }}</h5>
         <!-- Form Delete Exam (terpisah) -->
@@ -41,7 +41,7 @@
     </div>
 
     <!-- Card List Soal -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center ">
       <h4 class="mb-0">Daftar Soal</h4>
       <div class="d-flex gap-3">
         <a href="{{ route('exams.questions.download', $exam->exam_code) }}" class="btn btn-sm bg-gradient-success">
@@ -77,51 +77,57 @@
     </div>
 
     <div>
-      @if($questions->count() > 0)
-      @foreach($questions as $index => $question)
+      @forelse ($questions as $index => $question)
       <div class="card mb-3 shadow-sm">
         <div class="card-body">
           <div class="d-flex justify-content-between">
-            <p class="fw-bold mb-1">{{ $index + 1 }}. {{ $question->badan_soal }}</p>
+            <p class="fw-bold mb-1">
+              {{ $index + 1 }}. {{ $question->badan_soal }}
+            </p>
             <small class="text-muted">
-              Category: {{ $question->category ? $question->category->name : 'Tidak ada kategori' }}
+              Kategori: {{ $question->category->name ?? 'Tidak ada kategori' }}
             </small>
           </div>
-          <!-- Kalimat tanya -->
-          <p class="mb-2">{{ $question->kalimat_tanya }}</p>
-          @if($question->image)
-          <div class="my-3">
-            <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal" class="img-fluid rounded shadow-sm"
-              style="max-width: 400px;">
-          </div>
+
+          <p class="my-0 mx-3">{{ $question->kalimat_tanya }}</p>
+
+          @if ($question->image)
+          <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal"
+            class="mx-3 my-1 img-fluid rounded shadow-sm" style="max-width: 150px;">
           @endif
-          <!-- Pilihan jawaban dalam 2 kolom -->
-          @if($question->options->count() > 0)
-          <div class="row mt-2">
-            @foreach($question->options as $option)
+
+          <small class="fw-bold d-block mt-2">Jawaban:</small>
+
+          <div class="row">
+            @foreach ($question->options as $option)
             <div class="col-6 mb-2">
               <span class="fw-bold">{{ $option->option }}.</span>
-              <span>
-                {{ $option->text }}
-              </span>
-              @if($option->is_correct)
+              <span>{{ $option->text }}</span>
+
+              @if ($option->is_correct)
               <span class="ms-1 text-success">✔</span>
+              @endif
+
+              @if ($option->image)
+              <div class="ps-3 mt-1">
+                <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Opsi"
+                  class="img-fluid rounded shadow-sm" style="max-width: 150px;">
+              </div>
               @endif
             </div>
             @endforeach
           </div>
-          @endif
         </div>
       </div>
-      @endforeach
-      @else
+      @empty
       <div class="card">
         <div class="card-body">
-          <p class="text-muted">Belum ada soal untuk exam ini.</p>
+          <p class="text-muted mb-0">Belum ada soal untuk exam ini.</p>
         </div>
       </div>
-      @endif
+      @endforelse
     </div>
+
     <div class="d-flex justify-content-center mt-3">
       <x-pagination :paginator="$questions" />
     </div>

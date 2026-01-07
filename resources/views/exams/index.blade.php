@@ -142,33 +142,20 @@
                                     </button>
                                     <a href="{{ route('exams.ongoing', [$exam->exam_code]) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Exam Participants">
-                                        <i class="fas fa-users me-1"></i> </a>
+                                        <i class="fas fa-users"></i> </a>
                                     @else
                                     <span class="badge bg-secondary">Ended</span>
                                     @endif
-                                    <div class="btn-group">
-                                        <button class="btn bg-gradient-warning dropdown-toggle m-1 p-2 px-3"
-                                            type="button" id="examManagementDropdown" data-bs-toggle="dropdown"
-                                            aria-expanded="false">
-                                            <i class="fas fa-cog me-1"></i>
-                                        </button>
-                                        <ul class="dropdown-menu shadow" aria-labelledby="examManagementDropdown">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                    href="{{ route('exams.edit', [$status, $exam->exam_code]) }}">
-                                                    <i class="fas fa-cog text-primary me-2"></i> Exam Settings
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                    href="{{ route('exams.questions.' . $status, $exam->exam_code) }}">
-                                                    <i class="fas fa-edit text-warning me-2"></i> Manage Questions
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    <a class="btn bg-gradient-info m-1 p-2 px-3" title="Exam Setting"
+                                        href="{{ route('exams.edit', [$status, $exam->exam_code]) }}">
+                                        <i class="fas fa-cog"></i>
+                                    </a>
+                                    <a class="btn bg-gradient-warning m-1 p-2 px-3" title="Edit Questions"
+                                        href="{{ route('exams.questions.' . $status, $exam->exam_code) }}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                     <a href="{{ route('exams.show.' . $status, [$exam->exam_code]) }}"
-                                        class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
+                                        class="btn bg-gradient-secondary m-1 p-2 px-3" title="Exam Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </td>

@@ -15,8 +15,7 @@
                 <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('dashboard') }}">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-tachometer-alt {{ Request::is('dashboard') ? 'text-white' : 'text-dark' }}"></i>
+                        <i class="fas fa-chart-line {{ Request::is('dashboard') ? 'text-white' : 'text-dark' }}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Dashboard</span>
                 </a>
@@ -54,7 +53,7 @@
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i
-                            class="fas fa-user-shield {{ request()->is('admin/users/admin*') ? 'text-white' : 'text-dark' }}"></i>
+                            class="fas fa-user-gear {{ request()->is('admin/users/admin*') ? 'text-white' : 'text-dark'}}"></i>
                     </div>
                     <span class="nav-link-text ms-1">Admin</span>
                 </a>

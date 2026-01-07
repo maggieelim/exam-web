@@ -1,53 +1,29 @@
 @extends('layouts.user_type.auth')
-
 @section('content')
+@include('exams.newQuestion')
+
 <div>
     {{-- Header Halaman + Tombol Upload Excel --}}
-    <div class="card-header d-flex flex-row justify-content-between mb-0 pb-0 p-3">
+    <div class="card d-flex flex-row justify-content-between mb-2 pb-0 p-3">
         <div>
             <h5 class="mb-0">Manage Questions - {{ $exam->title }}</h5>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-                <i class="fas fa-filter"></i> Filter
-            </button>
             @if ($exam->status === 'upcoming')
+            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#newQuestionModal">
+                + Question
+            </button>
             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reuploadModal">
                 {{ $questions->count() === 0 ? 'Upload Questions' : 'Reupload Questions' }}
             </button>
             @endif
-
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                <i class="fas fa-filter"></i> Filter
+            </button>
         </div>
     </div>
 
-    <!-- Modal Upload Excel -->
-    <div class="modal fade" id="reuploadModal" tabindex="-1" aria-labelledby="reuploadModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="reuploadModalLabel">
-                        {{ $questions->count() === 0 ? 'Upload' : 'Reupload' }}
-                        Questions via Excel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('exams.questions.updateByExcel', $exam->exam_code) }}" method="POST"
-                    enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Pilih File Excel (.xls, .xlsx)</label>
-                            <input type="file" name="file" class="form-control" accept=".xls,.xlsx" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary btn-sm">Upload</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <div class="collapse" id="filterCollapse">
         <form method="GET" action="{{ route('exams.questions.' . $status, $exam->exam_code) }}">
@@ -86,8 +62,8 @@
     $startNumber = ($currentPage - 1) * $perPage + 1;
     @endphp
 
-    @foreach ($questions as $index => $question)
-    <div class="card mb-4 question-card" id="question-{{ $question->id }}">
+    @forelse ($questions as $index => $question)
+    <div class="card px-3 mb-4 question-card" id="question-{{ $question->id }}">
         <div class="card-header pb-0 px-3 d-flex justify-content-between align-items-center">
             <h6 class="mb-0">Soal {{ $startNumber + $index }}</h6>
             <div class="d-flex gap-3">
@@ -115,32 +91,38 @@
                         class="form-control auto-resize">{{ $question->badan_soal }}</textarea>
                 </div>
 
-                <div class=" mb-2">
+                <div class="mb-2">
                     <label class="form-label">Kalimat Tanya</label>
-                    <textarea name="kalimat_tanya" class="form-control auto-resize"
-                        rows="1">{{ $question->kalimat_tanya }}</textarea>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <textarea name="kalimat_tanya" class="form-control auto-resize"
+                            rows="1">{{ $question->kalimat_tanya }}</textarea>
+                        @unless ($question->image)
+                        <label class="d-flex align-items-center p-0 mb-0 " style="cursor: pointer;">
+                            <div class="position-relative">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <i class="fa-regular fa-image" style="color: #5f6368; font-size: 23px;"></i>
+                                </div>
+                                <input type="file" name="image" id="image-{{ $question->id }}"
+                                    class="d-none option-image-input" accept="image/*">
+                            </div>
+                        </label>
+                        @endunless
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="image" class="form-label">Upload Gambar (Opsional)</label>
-                    <input type="file" name="image" id="image-{{ $question->id }}" class="form-control"
-                        accept="image/*">
-
-                    <!-- Container untuk gambar -->
-                    <div id="image-container-{{ $question->id }}" class="mt-3">
-                        @if (!empty($question->image))
-                        <div class="position-relative d-inline-block existing-image">
-                            <img src="{{ asset('storage/' . $question->image) }}" alt="Soal Image" width="300"
-                                class="border rounded">
-                            <button type="button"
-                                class="btn btn-danger btn-sm rounded-circle align-items-center justify-content-center position-absolute delete-image-btn"
-                                style="width: 30px; height: 30px; padding: 0; top: -10px; right: -10px;"
-                                data-question-id="{{ $question->id }}">
-                                x
-                            </button>
-                        </div>
-                        @endif
+                <!-- Container untuk gambar -->
+                <div id="image-container-{{ $question->id }}" class="my-3">
+                    @if (!empty($question->image))
+                    <div class="position-relative d-inline-block existing-image">
+                        <img src="{{ asset('storage/' . $question->image) }}" alt="Soal Image" width="150"
+                            class="border rounded">
+                        <button type="button"
+                            class="btn btn-danger btn-sm rounded-circle align-items-center justify-content-center position-absolute delete-image-btn"
+                            style="position:absolute; top:-8px; right:-8px; width:24px; height:24px; padding:0;"
+                            data-question-id="{{ $question->id }}">
+                            <i class="fas fa-times" style="font-size: 15px"></i> </button>
                     </div>
+                    @endif
                 </div>
                 <input type="hidden" name="delete_image" id="delete_image-{{ $question->id }}" value="0">
 
@@ -149,43 +131,47 @@
 
                     <div class="row">
                         @foreach ($question->options as $option)
-                        <div class="col-md-6 mb-3" data-option-container="{{ $option->id }}">
+                        <div class="col-md-12 mb-3" data-option-container="{{ $option->id }}">
                             {{-- HEADER --}}
-                            <div class="d-flex align-items-start mb-1">
-                                <div class="form-check me-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="form-check">
                                     <input type="checkbox" name="options[{{ $option->id }}][is_correct]"
                                         class="form-check-input" {{ $option->is_correct ? 'checked' : '' }}>
                                 </div>
-
                                 <span class="fw-bold me-2">{{ $option->option }}.</span>
                                 <textarea name="options[{{ $option->id }}][text]" rows=1
-                                    class="form-control auto-resize mb-2">{{ $option->text }}</textarea>
-
+                                    class="form-control auto-resize me-2">{{ $option->text }}</textarea>
+                                @unless ($option->image)
+                                <label class="d-flex align-items-center p-0 mb-0 " style="cursor: pointer;">
+                                    <div class="position-relative">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <i class="fa-regular fa-image" style="color: #5f6368; font-size: 23px;"></i>
+                                        </div>
+                                        <input type="file" name="options[{{ $option->id }}][image]"
+                                            class="d-none option-image-input" accept="image/*"
+                                            data-preview="preview-{{ $option->id }}" data-option-id="{{ $option->id }}">
+                                    </div>
+                                </label>
+                                @endunless
                             </div>
 
-                            {{-- IMAGE UPLOAD --}}
-                            <div class="d-flex align-items-start justify-content-end gap-2">
-                                <input type="file" name="options[{{ $option->id }}][image]" class="form-control w-50"
-                                    accept="image/*" data-preview="preview-{{ $option->id }}">
-                                <input type="hidden" name="options[{{ $option->id }}][delete_image]"
-                                    id="delete-image-{{ $option->id }}" value="0">
-                                {{-- IMAGE PREVIEW --}}
-                                @if ($option->image)
-                                <div class="align-items-end position-relative d-inline-block option-image-container"
-                                    id="option-container-{{ $option->id }}"> <img id="preview-{{ $option->id }}"
-                                        src="{{ asset('storage/' . $option->image) }}" class="img-thumbnail"
-                                        style="max-height:140px; cursor: zoom-in;">
+                            <input type="hidden" name="options[{{ $option->id }}][delete_image]"
+                                id="delete-image-{{ $option->id }}" value="0">
+                            {{-- IMAGE PREVIEW --}}
+                            @if ($option->image)
+                            <div class="mx-5 position-relative d-inline-block option-image-container mt-2"
+                                id="option-container-{{ $option->id }}"> <img id="preview-{{ $option->id }}"
+                                    src="{{ asset('storage/' . $option->image) }}" class="img-thumbnail"
+                                    style="max-height:120px; cursor: zoom-in;">
 
-                                    {{-- DELETE BUTTON --}}
-                                    <button type="button"
-                                        class="btn btn-danger btn-sm rounded-circle delete-option-image"
-                                        style="position:absolute; top:-8px; right:-8px; width:26px; height:26px; padding:0;"
-                                        data-option-id="{{ $option->id }}">
-                                        ✕
-                                    </button>
-                                </div>
-                                @endif
+                                {{-- DELETE BUTTON --}}
+                                <button type="button" class="btn btn-danger btn-sm rounded-circle delete-option-image"
+                                    style="position:absolute; top:-8px; right:-8px; width:24px; height:24px; padding:0;"
+                                    data-option-id="{{ $option->id }}">
+                                    <i class="fas fa-times" style="font-size: 15px"></i> </button>
+                                </button>
                             </div>
+                            @endif
                         </div>
                         @endforeach
                     </div>
@@ -200,7 +186,13 @@
             </form>
         </div>
     </div>
-    @endforeach
+    @empty
+    <div class="card">
+        <div class="card-body text-center">
+            <p class="mb-0">Tidak ada soal ditemukan.</p>
+        </div>
+    </div>
+    @endforelse
 
     <div class="d-flex justify-content-center mt-3">
         <x-pagination :paginator="$questions" />
@@ -210,9 +202,96 @@
 <script>
     function autoResize(el) {
             el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
+            el.style.height = el.scrollHeight + 2 + 'px';
         }
         document.addEventListener('DOMContentLoaded', function() {
+            // Fungsi untuk handle upload gambar opsi (tanpa tombol update)
+            document.querySelectorAll('.option-image-input').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const optionId = this.dataset.optionId;
+                    const previewId = this.dataset.preview;
+                    const form = this.closest('.question-form');
+                    const deleteInput = document.getElementById(`delete-image-${optionId}`);
+
+                    // Reset delete flag jika ada gambar baru
+                    if (deleteInput) {
+                        deleteInput.value = '0';
+                    }
+
+                    const file = this.files[0];
+                    if (!file) return;
+
+                    // Tampilkan preview sementara
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Hapus gambar lama jika ada
+                        const existingContainer = document.getElementById(
+                            `option-container-${optionId}`);
+                        if (existingContainer) {
+                            existingContainer.remove();
+                        }
+
+                        // Cari container untuk menempatkan preview
+                        const optionDiv = document.querySelector(
+                                `div[data-option-container="${optionId}"]`)?.closest(
+                                '.col-md-12') ||
+                            document.querySelector(
+                                `textarea[name="options[${optionId}][text]"]`)?.closest(
+                                '.col-md-12');
+
+                        if (optionDiv) {
+                            const imageHtml = `
+                    <div class="mx-5 position-relative d-inline-block option-image-container mt-2" id="option-container-${optionId}">
+                        <img id="preview-${optionId}" src="${e.target.result}" class="img-thumbnail" style="max-height:120px; cursor: zoom-in;">
+                    
+                        <!-- DELETE BUTTON -->
+                        <button type="button" class="btn btn-danger btn-sm rounded-circle delete-option-image"
+                            style="position:absolute; top:-9px; right:-8px; width:24px; height:24px; padding:0;"
+                            data-option-id="${optionId}">
+                                                            <i class="fas fa-times" style="font-size: 15px"></i> </button>
+                        </button>
+                    </div>
+                `;
+
+                            // Tambahkan preview setelah input file
+                            const fileInputWrapper = optionDiv.querySelector(
+                                '.d-flex.align-items-center.gap-2');
+                            if (fileInputWrapper) {
+                                fileInputWrapper.insertAdjacentHTML('afterend', imageHtml);
+                            } else {
+                                optionDiv.insertAdjacentHTML('beforeend', imageHtml);
+                            }
+
+                            // Re-attach event listener untuk tombol delete
+                            const newDeleteBtn = document.querySelector(
+                                `#option-container-${optionId} .delete-option-image`);
+                            if (newDeleteBtn) {
+                                newDeleteBtn.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    const optionId = this.dataset.optionId;
+                                    const deleteInput = document.getElementById(
+                                        `delete-image-${optionId}`);
+                                    const fileInput = form.querySelector(
+                                        `input[name="options[${optionId}][image]"]`);
+
+                                    if (deleteInput) deleteInput.value = '1';
+                                    if (fileInput) fileInput.value = '';
+                                    this.closest('.option-image-container').remove();
+
+                                    // Auto submit form untuk menghapus gambar
+                                    form.dispatchEvent(new Event('submit'));
+                                });
+                            }
+
+                            // Auto submit form untuk upload gambar baru
+                            setTimeout(() => {
+                                form.dispatchEvent(new Event('submit'));
+                            }, 300);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
             document.querySelectorAll('.auto-resize').forEach(textarea => {
                 autoResize(textarea);
 
@@ -221,125 +300,67 @@
                 });
             });
 
-            function updateOptionImageDisplay(optionId, imageUrl, hasImage) {
-                // Cari container option
-                const optionContainer = document.getElementById(`option-container-${optionId}`);
-                const fileInput = document.querySelector(`input[name="options[${optionId}][image]"]`);
-                const deleteInput = document.getElementById(`delete-image-${optionId}`);
+            document.querySelectorAll('input[name="image"]').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const questionId = this.id.split('-')[1];
+                    const form = document.querySelector(
+                        `.question-form[data-question-id="${questionId}"]`);
+                    const imageContainer = document.getElementById(`image-container-${questionId}`);
+                    const deleteInput = document.getElementById(`delete_image-${questionId}`);
 
-                // Reset file input
-                if (fileInput) fileInput.value = '';
-
-                // Reset delete input jika ada gambar baru
-                if (hasImage) {
+                    // Reset delete flag jika ada gambar baru
                     deleteInput.value = '0';
-                }
 
-                // Hapus preview yang ada
-                if (optionContainer) {
-                    optionContainer.remove();
-                }
+                    const file = this.files[0];
+                    if (!file) return;
 
-                // Jika ada gambar baru, tampilkan
-                if (hasImage && imageUrl) {
-                    const containerDiv = document.querySelector(`div[data-option-container="${optionId}"]`)
-                        ?.closest('.col-md-6') ||
-                        document.querySelector(`textarea[name="options[${optionId}][text]"]`)?.closest('.col-md-6');
-
-                    if (containerDiv) {
-                        const imageHtml = `
-                            <div class="align-items-end position-relative d-inline-block option-image-container"
-                                    id="option-container-${optionId}"> <img id="preview-${optionId}"
-                                        src="${imageUrl}" class="img-thumbnail"
-                                        style="max-height:140px; cursor: zoom-in;">
-
-                                    {{-- DELETE BUTTON --}}
-                                    <button type="button"
-                                        class="btn btn-danger btn-sm rounded-circle delete-option-image"
-                                        style="position:absolute; top:-8px; right:-8px; width:26px; height:26px; padding:0;"
-                                        data-option-id="${optionId}">
-                                        ✕
-                                    </button>
-                                </div>
-            `;
-
-                        // Tambahkan gambar setelah input file
-                        const fileInputWrapper = containerDiv.querySelector('.d-flex.align-items-center.gap-2');
-                        if (fileInputWrapper) {
-                            fileInputWrapper.insertAdjacentHTML('afterend', imageHtml);
-                        } else {
-                            containerDiv.insertAdjacentHTML('beforeend', imageHtml);
+                    // Tampilkan preview sementara
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Hapus gambar lama jika ada
+                        const existingImage = imageContainer.querySelector('.existing-image');
+                        if (existingImage) {
+                            existingImage.remove();
                         }
 
-                        // Re-attach event listener untuk tombol delete yang baru
-                        const newDeleteBtn = document.querySelector(
-                            `#option-container-${optionId} .delete-option-image`);
-                        if (newDeleteBtn) {
-                            newDeleteBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                const optionId = this.dataset.optionId;
-                                const form = this.closest('.question-form');
-
-                                document.getElementById(`delete-image-${optionId}`).value = '1';
-                                this.closest('.option-image-container').remove();
-
-                                // Auto submit form untuk menghapus gambar
-                                form.dispatchEvent(new Event('submit'));
-                            });
-                        }
-                    }
-                }
-            }
-            // Fungsi untuk update tampilan gambar
-            function updateImageDisplay(questionId, imageUrl, hasImage) {
-                const imageContainer = document.getElementById(`image-container-${questionId}`);
-                const deleteInput = document.getElementById(`delete_image-${questionId}`);
-                const fileInput = document.getElementById(`image-${questionId}`);
-
-                // Reset file input
-                fileInput.value = '';
-
-                // Reset delete input jika ada gambar baru
-                if (hasImage) {
-                    deleteInput.value = '0';
-                }
-
-                // Hapus gambar yang ada
-                const existingImage = imageContainer.querySelector('.existing-image');
-                if (existingImage) {
-                    existingImage.remove();
-                }
-
-                // Jika ada gambar baru, tampilkan
-                if (hasImage && imageUrl) {
-                    const imageHtml = `
+                        // Tambahkan preview sementara
+                        const previewHtml = `
                 <div class="position-relative d-inline-block existing-image">
-                    <img src="${imageUrl}" alt="Soal Image" width="300" class="border rounded">
+                    <img src="${e.target.result}" alt="Preview Image" width="150" class="border rounded">
                     <button type="button" class="btn btn-danger btn-sm rounded-circle align-items-center justify-content-center position-absolute delete-image-btn" 
-                        style="width: 30px; height: 30px; padding: 0; top: -10px; right: -10px;" 
+                        style="position:absolute; top:-9px; right:-8px; width:24px; height:24px; padding:0;"
                         data-question-id="${questionId}">
-                        x
+                                                        <i class="fas fa-times" style="font-size: 15px"></i> </button>
                     </button>
                 </div>
             `;
-                    imageContainer.insertAdjacentHTML('beforeend', imageHtml);
+                        imageContainer.insertAdjacentHTML('beforeend', previewHtml);
 
-                    // Re-attach event listener untuk tombol delete yang baru
-                    const newDeleteBtn = imageContainer.querySelector('.delete-image-btn');
-                    newDeleteBtn.addEventListener('click', function() {
-                        const questionId = this.dataset.questionId;
-                        const deleteInput = document.getElementById(`delete_image-${questionId}`);
-                        const form = document.querySelector(
-                            `.question-form[data-question-id="${questionId}"]`);
+                        // Re-attach event listener untuk tombol delete
+                        const newDeleteBtn = imageContainer.querySelector('.delete-image-btn');
+                        newDeleteBtn.addEventListener('click', function() {
+                            const questionId = this.dataset.questionId;
+                            const deleteInput = document.getElementById(
+                                `delete_image-${questionId}`);
+                            const fileInput = document.getElementById(
+                                `image-${questionId}`);
 
-                        deleteInput.value = '1';
-                        this.closest('.existing-image').remove();
+                            deleteInput.value = '1';
+                            fileInput.value = '';
+                            this.closest('.existing-image').remove();
 
-                        // Auto submit form untuk menghapus gambar
-                        form.dispatchEvent(new Event('submit'));
-                    });
-                }
-            }
+                            // Auto submit form untuk menghapus gambar
+                            form.dispatchEvent(new Event('submit'));
+                        });
+
+                        // Auto submit form untuk upload gambar baru
+                        setTimeout(() => {
+                            form.dispatchEvent(new Event('submit'));
+                        }, 300);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
 
             // Handle update soal
             document.querySelectorAll('.question-form').forEach(form => {
@@ -367,22 +388,6 @@
                             if (data.success) {
                                 showNotification(data.message, 'success');
                                 // Update tampilan gambar jika ada perubahan
-                                if (data.data && data.data.image_url !== undefined) {
-                                    updateImageDisplay(questionId, data.data.image_url, data
-                                        .data.has_image);
-                                }
-
-                                // Update tampilan gambar option jika ada perubahan
-                                if (data.data && data.data.options) {
-                                    Object.keys(data.data.options).forEach(optionId => {
-                                        const optionData = data.data.options[optionId];
-                                        if (optionData.image_url !== undefined) {
-                                            updateOptionImageDisplay(optionId,
-                                                optionData.image_url, optionData
-                                                .has_image);
-                                        }
-                                    });
-                                }
                             } else {
                                 showNotification('Terjadi kesalahan saat update soal', 'error');
                             }
