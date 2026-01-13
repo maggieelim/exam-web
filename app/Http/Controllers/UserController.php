@@ -50,7 +50,11 @@ class UserController extends Controller
 
         // === ROLE FILTER ===
         if ($type === 'student') {
-            $query->role('student')->with('student');
+            $query->role('student')
+                ->with('student')
+                ->whereHas('student', function ($q) {
+                    $q->where('type', session('context'));
+                });
         } elseif ($type === 'lecturer') {
             $query->role('lecturer')->with('lecturer');
         } elseif ($type === 'admin') {
@@ -104,10 +108,11 @@ class UserController extends Controller
 
     public function create($type)
     {
+        $session = session('context');
         if (!in_array($type, ['student', 'lecturer', 'admin'])) {
             abort(404);
         }
-        return view('admin.users.create', compact('type'));
+        return view('admin.users.create', compact('type', 'session'));
     }
 
     public function store(Request $request, $type)
@@ -138,7 +143,7 @@ class UserController extends Controller
             // Ambil dua digit tahun dari NIM
             $nim = $request->nim;
             $angkatan = null;
-
+            $session = session('context');
             if (preg_match('/^.{3}(\d{2})/', $nim, $matches)) {
                 $tahun = intval($matches[1]);
                 $angkatan = 2000 + $tahun; // misal 18 -> 2018
@@ -147,6 +152,7 @@ class UserController extends Controller
             Student::create([
                 'user_id' => $user->id,
                 'nim' => $nim,
+                'type' => $session,
                 'angkatan' => $angkatan,
                 'gender' => $request->gender,
             ]);
@@ -199,8 +205,9 @@ class UserController extends Controller
             'file' => 'required|mimes:xlsx,xls',
         ]);
 
+        $studentType = session('context');
         try {
-            Excel::import(new UsersImport($type), $request->file('file'));
+            Excel::import(new UsersImport($type, $studentType), $request->file('file'));
             return redirect()
                 ->route('admin.users.index', $type)
                 ->with('success', 'Data ' . $type . ' berhasil diimport.');

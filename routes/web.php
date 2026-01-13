@@ -41,6 +41,18 @@ use App\Http\Controllers\TutorGradingController;
 |
 */
 
+Route::get('/set-context/{type}', function ($type) {
+    if (!in_array($type, ['pssk', 'pspd'])) {
+        abort(404);
+    }
+    session(['context' => $type]);
+    // return redirect('/' . $type);
+    if ($type == 'pssk')
+        return redirect('/dashboard');
+    else
+        return redirect('/dashboard');
+})->name('set.context');
+
 // ==================== AUTH & DASHBOARD ====================
 Route::middleware('auth')->group(function () {
     Route::get('/', [HomeController::class, 'home']);
@@ -53,8 +65,6 @@ Route::middleware('auth')->group(function () {
     Route::get('user-profile', [InfoUserController::class, 'create']);
     Route::post('user-profile', [InfoUserController::class, 'store']);
 });
-
-Route::get('profile', [ProfileController::class, 'index'])->name('profile');
 
 Route::middleware('guest')->group(function () {
     Route::controller(RegisterController::class)->group(function () {
@@ -76,27 +86,25 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
 });
 
+// Route::middleware(['auth', 'context'])->prefix('{context}')->group(function () {
 // ================= ADMIN ONLY =================
-Route::middleware(['auth', 'role:admin'])
-    ->name('admin.')
-    ->group(function () {
-        Route::prefix('admin/users/{type}')
-            ->name('users.')
-            ->group(function () {
-                Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
-                Route::get('create', [UserController::class, 'create'])->name('create');
-                Route::get('download-template', [UserController::class, 'downloadTemplate'])->name('download-template');
-                Route::get('export', [UserController::class, 'export'])->name('export');
-                Route::post('store', [UserController::class, 'store'])->name('store');
-                Route::post('import', [UserController::class, 'import'])->name('import');
-                Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
-                Route::post('update/{id}', [UserController::class, 'update'])->name('update');
-                Route::get('{id}', [UserController::class, 'show'])->name('show');
-                Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
-            });
-        Route::resource('semester', SemesterController::class);
+Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+
+    Route::prefix('users/{type}')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
+        Route::get('create', [UserController::class, 'create'])->name('create');
+        Route::get('download-template', [UserController::class, 'downloadTemplate'])->name('download-template');
+        Route::get('export', [UserController::class, 'export'])->name('export');
+        Route::post('store', [UserController::class, 'store'])->name('store');
+        Route::post('import', [UserController::class, 'import'])->name('import');
+        Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
+        Route::post('update/{id}', [UserController::class, 'update'])->name('update');
+        Route::get('{id}', [UserController::class, 'show'])->name('show');
+        Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
     });
-Route::middleware(['auth', 'role:admin,koordinator'])->name('admin.')
+    Route::resource('semester', SemesterController::class);
+});
+Route::middleware(['role:admin,koordinator'])->name('admin.')
     ->group(function () {
         Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
         Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
@@ -129,7 +137,7 @@ Route::middleware(['auth', 'role:admin,koordinator'])->name('admin.')
         Route::get('/courses/{course}/semester/{semesterId}/download-kelas', [CourseScheduleController::class, 'downloadExcel'])->name('courses.downloadPerkuliahan');
     });
 
-Route::middleware(['auth', 'role:koordinator'])
+Route::middleware(['role:koordinator'])
     ->name('lecturer.')
     ->group(function () {
         Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])
@@ -148,7 +156,7 @@ Route::middleware(['auth', 'role:koordinator'])
     });
 
 // ================= SHARED ADMIN & LECTURER =================
-Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function () {
+Route::middleware(['role:admin,lecturer,koordinator'])->group(function () {
     Route::get('/tutors', [TutorGradingController::class, 'index'])->name('tutors');
     Route::get('/tutors/{course}/{kelompok}', [TutorGradingController::class, 'show'])->name('tutors.detail');
     Route::get('/tutors/{pemicu}/{student}/edit', [TutorGradingController::class, 'edit'])->name('tutors.edit');
@@ -218,7 +226,7 @@ Route::middleware(['auth', 'role:admin,lecturer,koordinator'])->group(function (
 });
 
 // ================= STUDENT =================
-Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
+Route::middleware(['role:student'])->prefix('student')->name('student.')->group(function () {
     Route::get('/exams/{status?}', [ExamController::class, 'index'])
         ->where('status', '(previous|upcoming|ongoing)')
         ->name('studentExams.index');
@@ -236,5 +244,5 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     Route::get('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'showAttendanceForm'])->name('attendance.form');
     Route::post('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'submitAttendance'])->name('attendance.submit');
 });
-
+// });
 Route::view('login', 'session/login-session')->name('login');

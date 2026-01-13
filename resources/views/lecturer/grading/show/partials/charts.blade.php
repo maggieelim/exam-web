@@ -1,37 +1,35 @@
 @php
-    $charts = [
-        [
-            'id' => 'scoreDistributionChart',
-            'title' => 'Score Distribution',
-            'type' => 'bar',
-            'data' => $chartData['scores'] ?? [],
-        ],
-        [
-            'id' => 'difficultyChart',
-            'title' => 'Question Difficulty Level',
-            'type' => 'doughnut',
-            'data' => $chartData['difficulty'] ?? [],
-        ],
-        [
-            'id' => 'discriminationChart',
-            'title' => 'Discrimination Index',
-            'type' => 'pie',
-            'data' => $chartData['discrimination'] ?? [],
-        ],
-    ];
+$charts = [
+[
+'id' => 'scoreDistributionChart',
+'title' => 'Score Distribution',
+'type' => 'bar',
+'data' => $chartData['scores'] ?? [],
+],
+[
+'id' => 'difficultyChart',
+'title' => 'Question Difficulty Level',
+'type' => 'doughnut',
+'data' => $chartData['difficulty'] ?? [],
+],
+[
+'id' => 'discriminationChart',
+'title' => 'Discrimination Index',
+'type' => 'pie',
+'data' => $chartData['discrimination'] ?? [],
+],
+];
 @endphp
 
 @foreach ($charts as $chart)
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header mb-0 pb-0">
-                <h6 class="card-title mb-0">{{ $chart['title'] }}</h6>
-            </div>
-            <div class="card-body">
-                <canvas id="{{ $chart['id'] }}" height="300"></canvas>
-            </div>
+<div class="col-md-4 mb-3">
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">{{ $chart['title'] }}</h6>
+            <canvas id="{{ $chart['id'] }}" height="300"></canvas>
         </div>
     </div>
+</div>
 @endforeach
 
 <script>

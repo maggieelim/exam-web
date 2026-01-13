@@ -18,7 +18,7 @@ $tabs = [
 <div class="nav-wrapper position-relative end-0 my-4">
     <ul class="nav nav-pills nav-fill p-1" id="examTabs" role="tablist">
         @foreach ($tabs as $tab)
-        <li class="nav-item w-50" role="presentation">
+        <li class="nav-item w-100 w-md-50" role="presentation">
             <a class="nav-link {{ $tab['active'] ? 'active' : '' }}" href="{{ $tab['route'] }}"
                 aria-selected="{{ $tab['active'] ? 'true' : 'false' }}">
                 {{ $tab['label'] }}

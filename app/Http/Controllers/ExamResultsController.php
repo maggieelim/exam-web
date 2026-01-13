@@ -117,7 +117,6 @@ class ExamResultsController extends Controller
 
     public function grade($examCode, Request $request)
     {
-        $agent = new Agent();
         $exam = Exam::with(['course.lecturers', 'course.coordinators.lecturer.user', 'questions.category', 'attempts.user.student', 'answers.question.category'])
             ->where('exam_code', $examCode)
             ->withCount('questions')
@@ -166,15 +165,11 @@ class ExamResultsController extends Controller
         }
 
         $status = $this->determineStatus($exam);
-        if ($agent->isMobile()) {
-            return view('lecturer.grading.mobile.grade_mobile', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir'));
-        }
         return view('lecturer.grading.grade', compact('exam', 'results', 'attempts', 'status', 'sort', 'dir', 'lecturers'));
     }
 
     public function edit($examCode, $nim)
     {
-        $agent = new Agent();
         $exam = Exam::with(['questions.category', 'questions.options', 'attempts.user.student'])
             ->where('exam_code', $examCode)
             ->firstOrFail();
@@ -234,6 +229,7 @@ class ExamResultsController extends Controller
                         'text' => $option->text,
                         'is_correct' => $isCorrectOption,
                         'is_student_answer' => $isStudentAnswer,
+                        'image' => $option->image,
                     ];
                 }
             }
@@ -262,9 +258,6 @@ class ExamResultsController extends Controller
         ]);
 
         $status = $this->determineStatus($exam);
-        if ($agent->isMobile()) {
-            return view('lecturer.grading.mobile.feedback_mobile', compact('exam', 'attempt', 'allUserAnswers', 'paginatedQuestions', 'student', 'user', 'status'));
-        }
         return view('lecturer.grading.feedback', compact('exam', 'attempt', 'allUserAnswers', 'paginatedQuestions', 'student', 'user', 'status'));
     }
 

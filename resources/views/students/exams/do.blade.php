@@ -8,9 +8,9 @@
 @endsection
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-md-9">
+<div class="py-4 px-0">
+    <div class="row justify-content-center g-3">
+        <div class="col-12 col-md-7">
             <div class="card p-3">
                 <div class="mt-2">
                     <p><strong>{{ $currentQuestion->badan_soal }}</strong></p>

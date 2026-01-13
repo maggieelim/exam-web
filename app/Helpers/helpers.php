@@ -5,33 +5,21 @@ use Illuminate\Support\Facades\Request;
 if (!function_exists('getActiveSidebarTitle')) {
   function getActiveSidebarTitle()
   {
-    $map = [
-      'admin/users/student*' => 'Students',
-      'admin/users/lecturer*' => 'Lecturers',
-      'admin/users/admin*' => 'Admin',
+    $menu = config('sidebar');
 
-      'courses*' => 'Manage Courses',
+    foreach ($menu as $section) {
 
-      'exams/upcoming*' => 'Upcoming Exam',
-      'exams/ongoing*' => 'Ongoing Exams',
-      'exams/previous*' => 'Previous Exam',
+      if (!isset($section['items'])) continue;
 
-      'lecturer/ungraded*' => 'Ungraded',
-      'lecturer/published*' => 'Published',
+      foreach ($section['items'] as $item) {
 
-      'student/exams/upcoming*' => 'Upcoming Exam',
-      'student/exams/previous*' => 'Previous Exam',
-      'student/results*' => 'Exam Results',
-
-      'profile' => 'Profile',
-    ];
-
-    foreach ($map as $pattern => $title) {
-      if (Request::is($pattern)) {
-        return $title;
+        if (request()->is($item['pattern'])) {
+          return $section['title']
+            ? $section['title'] . ' / ' . $item['label']
+            : $item['label'];
+        }
       }
     }
-
     return 'Dashboard';
   }
 }

@@ -17,7 +17,6 @@ class ExamQuestionController extends Controller
 
     public function index(Request $request, $exam_code)
     {
-        $agent = new Agent();
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
         $categories = ExamQuestionCategory::where('exam_id', $exam->id)->get();
         $query = $exam->questions()->with('options');
@@ -43,9 +42,7 @@ class ExamQuestionController extends Controller
 
         // default urut berdasarkan id ASC
         $questions = $query->orderBy('id', 'asc')->paginate(10);
-        if ($agent->isMobile()) {
-            return view('exams.mobile.questions_mobile', compact('exam', 'questions', 'categories', 'status'));
-        }
+
         return view('exams.questions', compact('exam', 'questions', 'categories', 'status'));
     }
 

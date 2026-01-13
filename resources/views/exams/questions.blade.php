@@ -17,9 +17,10 @@
                 {{ $questions->count() === 0 ? 'Upload Questions' : 'Reupload Questions' }}
             </button>
             @endif
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-                <i class="fas fa-filter"></i> Filter
+            <button class="btn btn-sm btn-outline-secondary px-3 d-inline-flex align-items-center" type="button"
+                data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                <i class="fas fa-filter"></i>
+                <span class="d-none d-md-inline ms-1">Filter</span>
             </button>
         </div>
     </div>
@@ -63,8 +64,8 @@
     @endphp
 
     @forelse ($questions as $index => $question)
-    <div class="card px-3 mb-4 question-card" id="question-{{ $question->id }}">
-        <div class="card-header pb-0 px-3 d-flex justify-content-between align-items-center">
+    <div class="card px-md-3 mb-4 question-card" id="question-{{ $question->id }}">
+        <div class="card-header pb-0 p-3 d-flex justify-content-between align-items-center">
             <h6 class="mb-0">Soal {{ $startNumber + $index }}</h6>
             <div class="d-flex gap-3">
                 <div class="d-flex flex-column text-end">
@@ -114,8 +115,8 @@
                 <div id="image-container-{{ $question->id }}" class="my-3">
                     @if (!empty($question->image))
                     <div class="position-relative d-inline-block existing-image">
-                        <img src="{{ asset('storage/' . $question->image) }}" alt="Soal Image" width="150"
-                            class="border rounded">
+                        <img src="{{ asset('storage/' . $question->image) }}" alt="Soal Image"
+                            style="max-width: 200px; object-fit: contain;" class="border rounded">
                         <button type="button"
                             class="btn btn-danger btn-sm rounded-circle align-items-center justify-content-center position-absolute delete-image-btn"
                             style="position:absolute; top:-8px; right:-8px; width:24px; height:24px; padding:0;"
@@ -178,8 +179,8 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-sm btn-primary update-btn">Update Soal</button>
-                    <button type="button" class="btn btn-sm btn-warning anulir-btn"
+                    <button type="submit" class="btn px-4 btn-sm btn-primary update-btn">Update Soal</button>
+                    <button type="button" class="btn px-4 btn-sm btn-warning anulir-btn"
                         data-question-id="{{ $question->id }}">Anulir
                         Soal</button>
                 </div>

@@ -1,225 +1,77 @@
-<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-0 fixed-start"
-    id="sidenav-main" style="height: 100vh;">
-    <div class="sidenav-header text-center">
-        <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
-            aria-hidden="true" id="iconSidenav"></i>
-        <a class="navbar-brand m-0 d-flex justify-content-center" href="{{ route('dashboard') }}">
-            <img src="{{ asset('assets/img/Logo-kedokteran-untar.png') }}" class="navbar-brand-img h-100" alt="Logo">
-        </a>
+@php
+$menu = config('sidebar');
+$context = session('context', 'pssk'); // default
+@endphp
+
+<aside id="sidenav-main"
+    class="sidenav navbar navbar-vertical navbar-expand-xs bg-white border-0 border-radius-xl fixed-start overflow-y-hidden h-100vh">
+    <div class="sidenav-sticky-header sticky-top bg-white">
+        <div class="sidenav-header text-center">
+            <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
+                aria-hidden="true" id="iconSidenav"></i>
+            <a class="navbar-brand m-0 d-flex justify-content-center" href="{{ route('dashboard') }}">
+                <img src="{{ asset('assets/img/Logo-kedokteran-untar.png') }}" class="navbar-brand-img h-100"
+                    alt="Logo">
+            </a>
+        </div>
+        @hasanyrole('admin|lecturer|koordinator')
+        @php
+        $currentContext = request()->route('context') ?? session('context');
+        @endphp
+
+        <ul class="nav d-flex justify-content-between flex-nowrap mx-4">
+            @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label)
+            <li class="nav-item mx-2 flex-fill">
+                <a href="{{ route('set.context', $key) }}" class="nav-link text-center shadow border-radius-md d-flex align-items-center justify-content-center fw-semibold
+           {{ $currentContext === $key ? 'fw-bold text-primary bg-white' : 'text-muted' }}">
+                    {{ $label }}
+                </a>
+            </li>
+            @endforeach
+        </ul>
+        @endhasanyrole
     </div>
-
-    <hr class="horizontal dark mt-0">
-    <div class="collapse navbar-collapse w-auto h-100 mb-4" id="sidenav-collapse-main">
+    <div id="sidenav-collapse-main" class="collapse navbar-collapse ">
         <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('dashboard') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-chart-line {{ Request::is('dashboard') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Dashboard</span>
-                </a>
-            </li>
+            <!-- User Dropdown - Desktop Only -->
+            @foreach($menu as $section)
+            @if(
+            auth()->user()->hasAnyRole($section['roles']) &&
+            (
+            !isset($section['context']) ||
+            in_array($context, $section['context'])
+            )
+            )
+            @if($section['title'])
+            <x-sidebar-title title="{{ $section['title'] }}" />
+            @endif
 
-            @role('admin')
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">User Management</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('admin/users/student*') ? 'active' : '' }}"
-                    href="{{ url('admin/users/student') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-user-graduate {{ request()->is('admin/users/student*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Students</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('admin/users/lecturer*') ? 'active' : '' }}"
-                    href="{{ url('admin/users/lecturer') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-chalkboard-teacher {{ request()->is('admin/users/lecturer*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Lecturers</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('admin/users/admin*') ? 'active' : '' }}"
-                    href="{{ url('admin/users/admin') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-user-gear {{ request()->is('admin/users/admin*') ? 'text-white' : 'text-dark'}}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Admin</span>
-                </a>
-            </li>
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('course*') ? 'active' : '' }}" href="{{ url('courses') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-book {{ request()->is('course*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Manage Courses</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('semester*') ? 'active' : '' }}" href="{{ url('semester') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-calendar {{ request()->is('semester*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Academic Year</span>
-                </a>
-            </li>
-            @endrole
-            @hasanyrole([ 'lecturer'])
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Assessment</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('attendance*') && !request()->is('attendances/report*') ? 'active' : '' }}"
-                    href="{{ url('attendance') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-clipboard-check {{ request()->is('attendance*') && !request()->is('attendances/report*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Schedule</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('tutor*') ? 'active' : '' }}" href="{{ url('tutors') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-star {{ request()->is('tutor*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Nilai Tutor</span>
-                </a>
-            </li>
-            @endhasanyrole
-            @hasrole('koordinator')
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Course</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('course*') ? 'active' : '' }}" href="{{ url('courses') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-book {{ request()->is('course*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Manage Courses</span>
-                </a>
-            </li>
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exams</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('exams/upcoming*') ? 'active' : '' }}"
-                    href="{{ url('exams/upcoming') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-calendar-alt {{ request()->is('exams/upcoming*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Upcoming Exam</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('exams/ongoing*') ? 'active' : '' }}"
-                    href="{{ url('exams/ongoing') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-clipboard-list {{ request()->is('exams/ongoing*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Ongoing Exams</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('exams/previous*') ? 'active' : '' }}"
-                    href="{{ url('exams/previous') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-history {{ request()->is('exams/previous*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Previous Exam</span>
-                </a>
-            </li>
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exams Report</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('ungraded*') ? 'active' : '' }}" href="{{ url('ungraded') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-clipboard-list {{ request()->is('ungraded*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Ungraded</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('published*') ? 'active' : '' }}" href="{{ url('published') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-clipboard-list {{ request()->is('published*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Published</span>
-                </a>
-            </li>
-            @endhasrole
+            @foreach($section['items'] as $item)
+            @if(!isset($item['roles']) || auth()->user()->hasAnyRole($item['roles']))
+            @php
+            $active = request()->is($item['pattern']);
+            // Menyesuaikan pattern dengan context jika ada placeholder {context}
+            $pattern = isset($item['pattern'])
+            ? str_replace('{context}', $context, $item['pattern'])
+            : '';
+            @endphp
 
-            @role('student')
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Exams</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('student/exams/upcoming') ? 'active' : '' }}"
-                    href="{{ url('student/exams/upcoming') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-file {{ request()->is('student/exams/upcoming') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Upcoming Exam</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('student/exams/previous*') ? 'active' : '' }}"
-                    href="{{ url('student/exams/previous') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-history {{ request()->is('student/exams/previous*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Previous Exam</span>
-                </a>
-            </li>
-            <li class="nav-item mt-2">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Attendance</h6>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('student/attendance*') ? 'active' : '' }}"
-                    href="{{ url('student/attendance') }}">
-                    <div
-                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i
-                            class="fas fa-calendar-alt {{ request()->is('student/attendance*') ? 'text-white' : 'text-dark' }}"></i>
-                    </div>
-                    <span class="nav-link-text ms-1">Previous Attendance</span>
-                </a>
-            </li>
-            @endrole
+            @if(isset($item['route']))
+            {{-- Menggunakan route --}}
+            <x-sidebar-item :route="$item['route']" :params="$item['params'] ?? []" :pattern="$pattern"
+                :icon="$item['icon']" :label="$item['label']" />
+            @elseif(isset($item['url']))
+            {{-- Fallback untuk URL lama --}}
+            @php
+            $url = str_replace('{context}', $context, $item['url']);
+            @endphp
+            <x-sidebar-item :url="$url" :pattern="$pattern" :icon="$item['icon']" :label="$item['label']" />
+            @endif
+            @endif
+            @endforeach
+            @endif
+            @endforeach
+
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Account</h6>
             </li>

@@ -1,30 +1,39 @@
-<div class="d-flex justify-content-between gap-2">
-    <div class="d-flex align-items-center gap-2">
-        <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="height:32px;width:32px"
+<div class="d-flex flex-wrap justify-content-between gap-2">
+    <div class="d-flex flex-wrap align-items-end gap-2">
+        <a class="btn btn-outline-info px-3 py-2"
             href="{{ route('admin.courses.downloadDaftarSiswa', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
             title="Download Excel">
             <i class="fas fa-download"></i>
         </a>
 
-        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-            + Siswa
+        <button class="btn btn-primary px-3 py-2" type="button" data-bs-toggle="modal"
+            data-bs-target="#addStudentModal">
+            <i class="fas fa-user-plus"></i>
+            <span class="d-none d-md-inline ms-1">Siswa</span>
         </button>
-        <a class="btn btn-primary btn-sm"
+
+        <a class="btn btn-primary px-3 py-2"
             href="{{ route('admin.courses.createKelompok', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
-            Bentuk Kelompok
+            <i class="fas fa-users d-none d-md-inline"></i>
+            <span class="ms-md-1">Kelompok</span>
         </a>
-        <a class="btn btn-primary btn-sm"
+
+        <a class="btn btn-primary px-3 py-2"
             href="{{ route('admin.courses.createGroup', ['course' => $course->slug, 'semester_id' => $semesterId]) }}">
-            Bentuk Grup
+            <i class="fas fa-user-group d-none d-md-inline"></i>
+            <span class="ms-md-1">Grup</span>
         </a>
     </div>
+
     <div>
-        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-            data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-            <i class="fas fa-filter"></i> Filter
+        <button class="btn px-3 py-2 btn-outline-secondary" type="button" data-bs-toggle="collapse"
+            data-bs-target="#filterCollapse">
+            <i class="fas fa-filter"></i>
+            <span class="d-none d-md-inline ms-1">Filter</span>
         </button>
     </div>
 </div>
+
 
 <!-- Collapse Form -->
 <div class="collapse" id="filterCollapse">

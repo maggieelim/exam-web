@@ -16,7 +16,8 @@
             <p><strong class="text-uppercase text-sm">NIM:</strong> {{ $student->nim }}</p>
         </div>
         <div class="col-md-6">
-            <p><strong class="text-uppercase text-sm">Exam Date:</strong> {{ $exam->formatted_date }}</p>
+            <p><strong class="text-uppercase text-sm">Exam Date:</strong> {{
+                \Carbon\Carbon::parse($attempt->created_at)->format('d M Y') }}</p>
         </div>
         <div class="col-md-6">
             <p><strong class="text-uppercase text-sm">Total Questions:</strong> {{ $totalQuestions }}</p>

@@ -12,10 +12,12 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class UsersImport implements ToModel, WithHeadingRow
 {
     protected $type;
+    protected $studentType;
 
-    public function __construct($type)
+    public function __construct($type, $studentType)
     {
         $this->type = $type;
+        $this->studentType = $studentType;
     }
 
     public function model(array $row)
@@ -74,6 +76,7 @@ class UsersImport implements ToModel, WithHeadingRow
             Student::create([
                 'user_id' => $user->id,
                 'nim' => $nim,
+                'type' => $this->studentType,
                 'angkatan' => $angkatan,
                 'gender' => $row['gender'],
             ]);

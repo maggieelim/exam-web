@@ -15,13 +15,13 @@
                     </li>
                 </ol>
             </nav>
-            <h6 class="font-weight-bolder mb-0 text-capitalize">{{ getActiveSidebarTitle() }}</h6>
         </div>
 
         <!-- Right Section (User Info + Dropdown) -->
         <div class="d-flex align-items-center">
             <ul class="navbar-nav d-flex flex-row align-items-center mb-0">
-                <!-- User Dropdown - Desktop Only -->
+
+
                 <li class="nav-item dropdown d-none d-lg-block">
                     <a class="nav-link d-flex align-items-center p-0" href="#" id="userDropdown" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false">

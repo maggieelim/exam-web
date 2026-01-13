@@ -4,10 +4,10 @@
 <div class="row">
     <div class="col-12">
         <div class="card mb-4">
-            <div
+            {{-- <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
-                    {{-- <h5 class="mb-0">List Attendance</h5>
+                    <h5 class="mb-0">List Attendance</h5>
                     @if ($semesterId)
                     @php
                     $selectedSemester = $semesters->firstWhere('id', $semesterId);
@@ -21,20 +21,20 @@
                         @endif
                     </span>
                     @endif
-                    @endif --}}
+                    @endif
                 </div>
 
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
-                    {{-- <a href="{{ route('attendance.create') }}" class="btn btn-primary btn-sm"
+                    <a href="{{ route('attendance.create') }}" class="btn btn-primary btn-sm"
                         style="white-space: nowrap;">
                         +&nbsp; New attendance
-                    </a> --}}
-                    {{-- <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
-                    </button> --}}
+                    </button>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Collapse Form -->
             <div class="collapse {{ request()->hasAny(['semester_id', 'name']) }}" id="filterCollapse">

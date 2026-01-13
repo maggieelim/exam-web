@@ -6,7 +6,7 @@
   <div class="col-12 mb-4">
     <div class="card">
       <div class="card-header pb-0">
-        <h5 class="mb-0">Import {{ ucfirst($type) }} via Excel</h5>
+        <h5 class="mb-0">Import {{ strtoupper($session) }} {{ ucfirst($type) }} via Excel</h5>
       </div>
       <div class="card-body px-4 pt-2 pb-2">
         <form method="POST" action="{{ route('admin.users.import', $type) }}" enctype="multipart/form-data">
@@ -34,7 +34,7 @@
   <div class="col-12 mb-4">
     <div class="card">
       <div class="card-header pb-0">
-        <h5 class="mb-0">Create New {{ ucfirst($type) }}</h5>
+        <h5 class="mb-0">Create New {{ strtoupper($session) }} {{ ucfirst($type) }}</h5>
       </div>
       <div class="card-body px-4 pt-2 pb-2">
         <form method="POST" action="{{ route('admin.users.store', $type) }}">

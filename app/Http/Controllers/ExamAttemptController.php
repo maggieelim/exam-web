@@ -190,10 +190,10 @@ class ExamAttemptController extends Controller
             $totalQuestions = $exam->questions()->count();
             $answeredCount = ExamAnswer::where('exam_id', $exam->id)->where('user_id', $user->id)->count();
 
-            $iscomplete = $totalQuestions >= $answeredCount;
+            $iscomplete = $answeredCount >= $totalQuestions;
             $attempt->update([
                 'finished_at' => now(),
-                'status' => $iscomplete ? 'completed' : 'time_out',
+                'status' => $iscomplete ? 'completed' : 'timeout',
             ]);
         }
 
@@ -211,7 +211,7 @@ class ExamAttemptController extends Controller
             ->first();
 
         return response()->json([
-            'user'=> auth()->id(),
+            'user' => auth()->id(),
             'status' => $attempt->status ?? 'in_progress',
             'message' => $attempt->status === 'completed' ? 'Exam has been completed' : 'Exam in progress',
         ]);

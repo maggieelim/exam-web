@@ -317,9 +317,6 @@ class ExamController extends Controller
         // ambil data hasil query
         $questions = $query->paginate(15)->withQueryString();
 
-        if ($agent->isMobile()) {
-            return view('exams.mobile.show_mobile', compact('exam', 'questions', 'status', 'total_participants'));
-        }
         return view('exams.show', compact('exam', 'questions', 'status', 'total_participants'));
     }
 
