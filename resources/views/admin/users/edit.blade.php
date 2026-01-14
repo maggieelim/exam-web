@@ -8,7 +8,7 @@
         <h5 class="mb-0">Edit {{ ucfirst($type) }}</h5>
       </div>
       <div class="card-body px-4 pt-2 pb-2">
-        <form method="POST" action="{{ route('admin.users.update', [$type, $user->id]) }}">
+        <form method="POST" action="{{ route(session('context').'.admin.users.update', [$type, $user->id]) }}">
           @csrf
           @include('admin.users.partials.user-form', ['isCreate' => false])
 

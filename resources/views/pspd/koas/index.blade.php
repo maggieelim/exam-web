@@ -6,74 +6,52 @@
         <div class="card mb-4">
             <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
-                <div>
-                    <h5 class="mb-0">List {{ ucfirst($type ?? 'User') }}</h5>
+                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+                    <h5 class="mb-0">List Mahasiswa Koas</h5>
+                    @if ($semesterId)
+                    @php
+                    $selectedSemester = $semesters->firstWhere('id', $semesterId);
+                    @endphp
+                    <x-semester-badge :semester="$selectedSemester" :activeSemester="$activeSemester" />
+                    @endif
                 </div>
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
-                    <!-- Tombol toggle collapse -->
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-                    <a href="{{ route(session('context').'.admin.users.export', array_merge(['type' => $type], request()->query())) }}"
-                        class="btn btn-success btn-sm">
-                        <i class="fas fa-file-excel"></i> Export
-                    </a>
-                    <a href="{{ route(session('context').'.admin.users.create', $type) }}"
-                        class="btn btn-primary btn-sm" style="white-space: nowrap;">
-                        + New {{ ucfirst($type ?? 'User') }}
+                    <a href="{{ route('mahasiswa-koas.create') }}" class="btn btn-primary btn-sm"
+                        style="white-space: nowrap;">
+                        + Mahasiswa Koas
                     </a>
                 </div>
             </div>
 
             <!-- Collapse Form -->
             <div class="collapse" id="filterCollapse">
-                <form method="GET" action="{{ route(session('context').'.admin.users.index', $type) }}">
+                <form method="GET" action="{{ route('mahasiswa-koas.index') }}">
                     <div class="mx-3 my-2 py-2">
                         <div class="row g-2 align-items-end">
-
-                            @if ($type === 'student')
-                            <div class="col-md-4">
-                                <label for="nim" class="form-label mb-1">NIM</label>
-                                <input type="text" class="form-control " name="nim" value="{{ request('nim') }}">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label mb-1">Rumah Sakit</label>
+                                <input type="text" class="form-control " name="name" value="{{ request('name') }}">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label for="semester_id" class="form-label mb-1">Semester</label>
                                 <select name="semester_id" id="semester_id" class="form-select">
-                                    <option value="">-- Semua Mahasiswa --</option>
                                     @foreach ($semesters as $semester)
                                     <option value="{{ $semester->id }}" {{ $semesterId==$semester->id ? 'selected' : ''
                                         }}>
-                                        {{ $semester->semester_name }} -
-                                        {{ $semester->academicYear->year_name }}
+                                        {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
                                         @if ($activeSemester && $semester->id == $activeSemester->id)
                                         (Aktif)
                                         @endif
                                     </option>
                                     @endforeach
                                 </select>
-
                             </div>
-                            @elseif($type === 'lecturer')
-                            <div class="col-md-4">
-                                <label for="nidn" class="form-label mb-1">NIDN</label>
-                                <input type="text" class="form-control " name="nidn" value="{{ request('nidn') }}">
-                            </div>
-                            @endif
-
-                            <div class="col-md-4">
-                                <label for="name" class="form-label mb-1">Nama</label>
-                                <input type="text" class="form-control " name="name" value="{{ request('name') }}">
-                            </div>
-
-                            <div class="col-md-4">
-                                <label for="email" class="form-label mb-1">Email</label>
-                                <input type="text" class="form-control " name="email" value="{{ request('email') }}">
-                            </div>
-
                             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route(session('context').'.admin.users.index', ['type' => $type, 'reset' => true]) }}"
-                                    class="btn btn-light btn-sm">Reset</a>
+                                <a href="{{ route('mahasiswa-koas.index') }}" class="btn btn-light btn-sm">Reset</a>
                                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                             </div>
 
@@ -92,47 +70,45 @@
 
                         <thead>
                             <tr>
-                                @if ($type === 'student')
-                                <x-sortable-th label="NIM" field="nim" :sort="$sort" :dir="$dir" />
-                                @endif
-                                <x-sortable-th label="Name" field="name" :sort="$sort" :dir="$dir" />
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Email</th>
-                                @if ($type !== 'student')
+                                    Rumah Sakit</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Role</th>
-                                @endif
+                                    Stase</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Jumlah Peserta</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Start Date</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    End Date</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Action</th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            @foreach ($users as $user)
+                            @foreach ($students as $student)
                             <tr>
-                                {{-- NIM / NIDN hanya jika student/lecturer --}}
-                                @if ($user->hasRole('student'))
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $student->user->name }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $student }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $student }}
+                                </td>
+                                {{-- <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $student->start_date->format('d, M Y') }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $student->end_date->format('d, M Y') }}
+                                </td> --}}
                                 <td class="align-middle text-center">
-                                    <span class="text-sm font-weight-bold">{{ $user->student->nim ?? '-' }}</span>
-                                </td>
-                                @endif
-                                <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $user->name }}
-                                </td>
-                                <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $user->email }}
-                                </td>
-                                @if ($type === 'lecturer' || $type === 'admin')
-                                <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{$user->roles->pluck('name')->map('ucfirst')->implode(', ') ?? '-' }}
-                                </td>
-                                @endif
-                                <td class="align-middle text-center">
-                                    <a href="{{ route(session('context').'.admin.users.edit', [$type, $user->id]) }}"
+                                    <a href="{{ route('mahasiswa-koas.edit', $student->id) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    <a href="{{ route(session('context').'.admin.users.show', [$type, $user->id]) }}"
+                                    <a href="{{ route('mahasiswa-koas.show', $student->id) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
@@ -144,7 +120,7 @@
 
                     {{-- Pagination --}}
                     <div class="d-flex justify-content-center mt-3">
-                        <x-pagination :paginator="$users" />
+                        <x-pagination :paginator="$students" />
                     </div>
                 </div>
             </div>
@@ -152,4 +128,3 @@
     </div>
 </div>
 @endsection
-@push('dashboard')

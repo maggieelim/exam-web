@@ -95,7 +95,7 @@
             <i class="fas fa-hourglass-half me-2"></i> Waiting for Grading
           </div>
           @endif
-          @elseif( optional($exam->attempts->first())->status ==='in_progress')
+          @elseif( $exam->has_ongoing )
           <button class="btn btn-sm btn-warning w-100" data-bs-toggle="modal"
             data-bs-target="#examPasswordModal-{{ $exam->exam_code }}">
             <i class="fas fa-play me-1"></i> Lanjutkan Ujian

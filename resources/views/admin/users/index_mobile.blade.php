@@ -6,12 +6,12 @@
         <h5 class="mb-0">List {{ ucfirst($type ?? 'User') }}</h5>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ route('admin.users.create', $type) }}"
+        <a href="{{ route(session('context').'.admin.users.create', $type) }}"
             class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
             title="Tambah {{ ucfirst($type ?? 'User') }}">
             <i class="fas fa-plus"></i>
         </a>
-        <a href="{{ route('admin.users.export', array_merge(['type' => $type], request()->query())) }}"
+        <a href="{{ route(session('context').'.admin.users.export', array_merge(['type' => $type], request()->query())) }}"
             class="btn btn-success d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
             title="Export Data">
             <i class="fas fa-download"></i>
@@ -26,7 +26,7 @@
 
 <!-- Collapse Form -->
 <div class="collapse" id="filterCollapse">
-    <form method="GET" action="{{ route('admin.users.index', $type) }}">
+    <form method="GET" action="{{ route(session('context').'.admin.users.index', $type) }}">
         <div class=" my-2">
             <div class="row g-2 align-items-end">
 
@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                    <a href="{{ route('admin.users.index', ['type' => $type, 'reset' => true]) }}"
+                    <a href="{{ route(session('context').'.admin.users.index', ['type' => $type, 'reset' => true]) }}"
                         class="btn btn-light btn-sm">Reset</a>
                     <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                 </div>
@@ -106,11 +106,11 @@
                     {{-- Tombol Aksi --}}
                     <div class="my-auto pt-2">
                         <div class="d-flex gap-2">
-                            <a href="{{ route('admin.users.edit', [$type, $user->id]) }}"
+                            <a href="{{ route(session('context').'.admin.users.edit', [$type, $user->id]) }}"
                                 class="btn btn-sm bg-gradient-primary flex-fill" title="Edit">
                                 <i class="fa-solid fa-pen me-1"></i> Edit
                             </a>
-                            <a href="{{ route('admin.users.show', [$type, $user->id]) }}"
+                            <a href="{{ route(session('context').'.admin.users.show', [$type, $user->id]) }}"
                                 class="btn btn-sm bg-gradient-secondary flex-fill" title="Info">
                                 <i class="fas fa-info-circle me-1"></i> Info
                             </a>

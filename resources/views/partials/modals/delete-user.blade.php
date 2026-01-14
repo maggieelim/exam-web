@@ -10,7 +10,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-        <form method="POST" action="{{ route('admin.users.destroy', [$type, $user->id]) }}">
+        <form method="POST" action="{{ route(session('context').'.admin.users.destroy', [$type, $user->id]) }}">
           @csrf
           @method('DELETE')
           <button type="submit" class="btn btn-danger btn-sm">Delete</button>

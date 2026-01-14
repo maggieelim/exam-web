@@ -32,4 +32,9 @@ class Student extends Model
     {
         return $this->hasMany(CourseStudent::class);
     }
+
+    public function studentKoas()
+    {
+        return $this->hasMany(StudentKoas::class);
+    }
 }

@@ -154,7 +154,6 @@ class UserController extends Controller
                 'nim' => $nim,
                 'type' => $session,
                 'angkatan' => $angkatan,
-                'gender' => $request->gender,
             ]);
         } elseif ($type === 'lecturer') {
             Lecturer::create([
@@ -162,7 +161,6 @@ class UserController extends Controller
                 'nidn' => $request['nidn'],
                 'bagian' => $request['bagian'] ?? null,
                 'faculty' => $request['faculty'] ?? null,
-                'gender' => $request['gender'],
                 'strata' => $request['strata'],
                 'gelar' => $request['gelar'],
                 'tipe_dosen' => $request['tipe_dosen'],
@@ -177,7 +175,7 @@ class UserController extends Controller
         }
 
         return redirect()
-            ->route('admin.users.index', $type)
+            ->route(session('context') . '.admin.users.index', $type)
             ->with('success', ucfirst($type) . ' berhasil ditambahkan.');
     }
 
@@ -209,7 +207,7 @@ class UserController extends Controller
         try {
             Excel::import(new UsersImport($type, $studentType), $request->file('file'));
             return redirect()
-                ->route('admin.users.index', $type)
+                ->route(session('context') . '.admin.users.index', $type)
                 ->with('success', 'Data ' . $type . ' berhasil diimport.');
         } catch (\Exception $e) {
             // log error supaya bisa dicek di storage/logs/laravel.log
@@ -319,7 +317,7 @@ class UserController extends Controller
         $user->syncRoles($request->roles);
 
         return redirect()
-            ->route('admin.users.index', $type)
+            ->route(session('context') . '.admin.users.index', $type)
             ->with('success', ucfirst($type) . ' updated successfully.');
     }
 
@@ -371,6 +369,6 @@ class UserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('admin.users.index', $type)->with('success', 'User berhasil dihapus.');
+        return redirect()->route(session('context') . '.admin.users.index', $type)->with('success', 'User berhasil dihapus.');
     }
 }

@@ -5,11 +5,25 @@ return [
         'title' => null,
         'key' => 'dashboard',
         'roles' => ['admin', 'lecturer', 'student', 'koordinator'],
-        'context' => ['pssk', 'pspd'],
+        'context' => ['pssk'],
         'items' => [
             [
                 'label' => 'Dashboard',
-                'route' => 'dashboard',
+                'route' => 'dashboard.pssk',
+                'pattern' => 'dashboard',
+                'icon' => 'fa-chart-line',
+            ],
+        ]
+    ],
+    [
+        'title' => null,
+        'key' => 'dashboard',
+        'roles' => ['admin', 'lecturer', 'student', 'koordinator'],
+        'context' => ['pspd'],
+        'items' => [
+            [
+                'label' => 'Dashboard',
+                'route' => 'dashboard.pspd',
                 'pattern' => 'dashboard',
                 'icon' => 'fa-chart-line',
             ],
@@ -23,21 +37,21 @@ return [
         'items' => [
             [
                 'label' => 'Students',
-                'route' => 'admin.users.index',
+                'route' => 'pssk.admin.users.index',
                 'params' => ['type' => 'student'],
                 'pattern' => 'admin/users/student*',
                 'icon' => 'fa-user-graduate'
             ],
             [
                 'label' => 'Lecturers',
-                'route' => 'admin.users.index',
+                'route' => 'pssk.admin.users.index',
                 'params' => ['type' => 'lecturer'],
                 'pattern' => 'admin/users/lecturer*',
                 'icon' => 'fa-chalkboard-teacher'
             ],
             [
                 'label' => 'Admin',
-                'route' => 'admin.users.index',
+                'route' => 'pssk.admin.users.index',
                 'params' => ['type' => 'admin'],
                 'pattern' => 'admin/users/admin*',
                 'icon' => 'fa-user-gear'
@@ -78,7 +92,7 @@ return [
             ],
             [
                 'label' => 'Academic Year',
-                'route' => 'admin.semester.index',
+                'route' => 'pssk.admin.semester.index',
                 'pattern' => 'semester*',
                 'icon' => 'fa-calendar',
                 'roles' => ['admin']
@@ -159,21 +173,53 @@ return [
         ]
     ],
 
+    // [
+    //     'title' => 'Attendance',
+    //     'roles' => ['student'],
+    //     'context' => ['pssk'],
+    //     'items' => [
+    //         [
+    //             'label' => 'Previous Attendance',
+    //             'route' => 'student.attendance.index',
+    //             'pattern' => 'student/attendance*',
+    //             'icon' => 'fa-calendar-alt'
+    //         ],
+    //     ]
+    // ],
+    //PSPD
+    //admin/lecturer pspd
     [
-        'title' => 'Attendance',
-        'roles' => ['student'],
-        'context' => ['pssk'],
+        'title' => 'Master Data',
+        'roles' => ['admin'],
+        'context' => ['pspd'],
         'items' => [
             [
-                'label' => 'Previous Attendance',
-                'route' => 'student.attendance.index',
-                'pattern' => 'student/attendance*',
-                'icon' => 'fa-calendar-alt'
+                'label' => 'Rumah Sakit',
+                'route' => 'rumah-sakit.index',
+                'pattern' => 'rumah-sakit*',
+                'icon' => 'fa-hospital'
+            ],
+            [
+                'label' => 'Stase',
+                'route' => 'stase.index',
+                'pattern' => 'stase*',
+                'icon' => 'fa-stethoscope'
+            ],
+            [
+                'label' => 'Kepaniteraan',
+                'route' => 'kepaniteraan.index',
+                'pattern' => 'kepaniteraan*',
+                'icon' => 'fa-stethoscope'
+            ],
+            [
+                'label' => 'Lecturers',
+                'route' => 'pspd.admin.users.index',
+                'params' => ['type' => 'lecturer'],
+                'pattern' => 'admin/users/lecturer*',
+                'icon' => 'fa-chalkboard-teacher'
             ],
         ]
     ],
-    //PSPD
-    //admin/lecturer pspd
     [
         'title' => 'Student Management',
         'roles' => ['admin'],
@@ -181,10 +227,44 @@ return [
         'items' => [
             [
                 'label' => 'Students',
-                'route' => 'admin.users.index',
+                'route' => 'pspd.admin.users.index',
                 'params' => ['type' => 'student'],
                 'pattern' => 'admin/users/student*',
                 'icon' => 'fa-user-graduate'
+            ],
+            [
+                'label' => 'Penempatan Koas',
+                'route' => 'mahasiswa-koas.index',
+                'pattern' => 'mahasiswa-koas*',
+                'icon' => 'fa-briefcase-medical'
+            ],
+            [
+                'label' => 'Riwayat Kepaniteraan',
+                'route' => 'pspd.admin.users.index',
+                'params' => ['type' => 'student'],
+                'pattern' => 'admin/users/student*',
+                'icon' => 'fa-clock-rotate-left'
+            ],
+        ]
+    ],
+    [
+        'title' => 'Monitoring',
+        'roles' => ['admin'],
+        'context' => ['pspd'],
+        'items' => [
+            [
+                'label' => 'Logbook Mahasiswa',
+                'route' => 'pspd.admin.users.index',
+                'params' => ['type' => 'student'],
+                'pattern' => 'admin/users/student*',
+                'icon' => 'fa-book-medical'
+            ],
+            [
+                'label' => 'Rekap Kepaniteraan',
+                'route' => 'pspd.admin.users.index',
+                'params' => ['type' => 'student'],
+                'pattern' => 'admin/users/student*',
+                'icon' => 'fa-file-medical'
             ],
         ]
     ],
@@ -220,7 +300,26 @@ return [
         'context' => ['pspd'],
         'items' => [
             [
-                'label' => 'Student Logbook',
+                'label' => 'Input Logbook',
+                'route' => 'student.attendance.index',
+                'pattern' => 'student/attendance*',
+                'icon' => 'fa-calendar-alt'
+            ],
+        ]
+    ],
+    [
+        'title' => 'Kepaniteraan',
+        'roles' => ['student'],
+        'context' => ['pspd'],
+        'items' => [
+            [
+                'label' => 'Kepaniteraan Aktif',
+                'route' => 'student.attendance.index',
+                'pattern' => 'student/attendance*',
+                'icon' => 'fa-calendar-alt'
+            ],
+            [
+                'label' => 'Riwayat Kepaniteraan',
                 'route' => 'student.attendance.index',
                 'pattern' => 'student/attendance*',
                 'icon' => 'fa-calendar-alt'
