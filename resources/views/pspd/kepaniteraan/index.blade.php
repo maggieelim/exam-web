@@ -95,7 +95,7 @@
                                     {{ $rotation->ClinicalRotation->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $rotation->student_koas_count??'0' }}
+                                    {{ $rotation->total_active_koas??'0' }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
                                     {{ $rotation->start_date->format('d, M Y') }}
@@ -104,12 +104,16 @@
                                     {{ $rotation->end_date->format('d, M Y') }}
                                 </td>
                                 <td class="align-middle text-center">
+                                    <a href="{{ route('mahasiswa-koas.assign', $rotation->id) }}"
+                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Tambah Mahasiswa Koas">
+                                        <i class="fa-solid fa-plus"></i> <i class="fa-solid fa-user"></i>
+                                    </a>
                                     <a href="{{ route('kepaniteraan.edit', $rotation->id) }}"
-                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
+                                        class="btn bg-gradient-warning m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
                                     <a href="{{ route('kepaniteraan.show', $rotation->id) }}"
-                                        class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
+                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </td>

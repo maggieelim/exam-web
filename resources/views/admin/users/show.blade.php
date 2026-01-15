@@ -43,6 +43,24 @@
                     @endif
 
                     <!-- Tabel Courses (Common untuk kedua tipe) -->
+                    {{-- ================= STUDENT ================= --}}
+                    @if ($type === 'student' && $user->student)
+
+                    {{-- STUDENT PSPD → Kepaniteraan --}}
+                    @if ($user->student->type === 'PSPD')
+
+                    @if (count($kepaniteraan) > 0)
+                    @include('admin.users.partials.kepaniteraan-table', [
+                    'kepaniteraan' => $kepaniteraan
+                    ])
+                    @else
+                    <div class="col-12">
+                        <p class="text-muted text-center">Belum ada data kepaniteraan</p>
+                    </div>
+                    @endif
+
+                    {{-- STUDENT NON PSPD → Courses --}}
+                    @else
                     @if (count($courses) > 0)
                     @include('admin.users.partials.courses-table', [
                     'courses' => $courses,
@@ -53,6 +71,18 @@
                         <p class="text-muted text-center">Tidak ada data courses</p>
                     </div>
                     @endif
+                    @endif
+
+                    @endif
+
+                    {{-- ================= LECTURER ================= --}}
+                    @if ($type === 'lecturer' && count($courses) > 0)
+                    @include('admin.users.partials.courses-table', [
+                    'courses' => $courses,
+                    'type' => $type,
+                    ])
+                    @endif
+
                 </div>
             </div>
         </div>

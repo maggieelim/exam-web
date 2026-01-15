@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Models\AttendanceSessions;
+use App\Models\StudentKoas;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -34,6 +35,15 @@ class Kernel extends ConsoleKernel
                     }
                 });
         })->everyMinute();
+
+        $schedule->call(function () {
+            StudentKoas::where('status', 'active')
+                ->whereDate('end_date', '<', now()->toDateString())
+                ->update([
+                    'status' => 'completed',
+                    'updated_at' => now(),
+                ]);
+        })->dailyAt('00:05');
     }
 
 

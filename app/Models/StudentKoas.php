@@ -4,9 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StudentKoas extends Model
 {
+    use HasFactory, SoftDeletes;
+
+    protected $guarded = [
+        'id',
+    ];
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
@@ -15,8 +21,10 @@ class StudentKoas extends Model
         'student_id',
         'hospital_rotation_id',
         'semester_id',
+        'status',
         'start_date',
-        'end_date'
+        'end_date',
+        'created_at',
     ];
 
     public function student()

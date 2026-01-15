@@ -9,6 +9,7 @@ use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Models\Student;
+use App\Models\StudentKoas;
 use App\Models\User;
 use App\Services\SemesterService;
 use Carbon\Carbon;
@@ -326,13 +327,18 @@ class UserController extends Controller
         $user = User::with(['student', 'lecturer'])->findOrFail($id);
 
         $courses = collect(); // gunakan plural untuk lebih jelas
+        $kepaniteraan = collect();
 
         if ($type === 'student') {
             $student = $user->student;
-            if ($student) {
+            if ($student->type === 'PSSK') {
                 $courses = CourseStudent::with(['student', 'semester'])
                     ->where('student_id', $student->id)
                     ->orderByDesc('semester_id')
+                    ->paginate(15);
+            } else {
+                $kepaniteraan = StudentKoas::with('hospitalRotation.hospital', 'hospitalRotation.clinicalRotation', 'semester')
+                    ->where('student_id', $student->id)->orderByDesc('semester_id')
                     ->paginate(15);
             }
         } elseif ($type === 'lecturer') {
@@ -344,7 +350,7 @@ class UserController extends Controller
                     ->paginate(15);
             }
         }
-        return view('admin.users.show', compact('user', 'type', 'courses'));
+        return view('admin.users.show', compact('user', 'type', 'courses', 'kepaniteraan'));
     }
 
     public function destroy($type, $id)

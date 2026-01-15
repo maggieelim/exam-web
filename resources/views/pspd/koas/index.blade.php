@@ -20,10 +20,7 @@
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-                    <a href="{{ route('mahasiswa-koas.create') }}" class="btn btn-primary btn-sm"
-                        style="white-space: nowrap;">
-                        + Mahasiswa Koas
-                    </a>
+
                 </div>
             </div>
 
@@ -89,20 +86,21 @@
                             @foreach ($students as $student)
                             <tr>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->user->name }}
+                                    {{ $student->student->user->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student }}
+                                    {{ $student->student->nim }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student }}
-                                </td>
-                                {{-- <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->start_date->format('d, M Y') }}
+                                    {{ $student->hospitalRotation->hospital->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->end_date->format('d, M Y') }}
-                                </td> --}}
+                                    {{ $student->hospitalRotation->clinicalRotation->name }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $student->start_date->format('d M Y') }} - {{ $student->end_date->format('d M
+                                    Y') }}
+                                </td>
                                 <td class="align-middle text-center">
                                     <a href="{{ route('mahasiswa-koas.edit', $student->id) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">

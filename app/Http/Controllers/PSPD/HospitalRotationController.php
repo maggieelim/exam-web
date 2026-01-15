@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClinicalRotation;
 use App\Models\Hospital;
 use App\Models\HospitalRotation;
+use App\Models\StudentKoas;
 use App\Services\SemesterService;
 use Illuminate\Http\Request;
 
@@ -94,7 +95,10 @@ class HospitalRotationController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $rotation = HospitalRotation::findOrFail($id);
+        $students = StudentKoas::with('student.user')->where('hospital_rotation_id', $id)->paginate(20);
+
+        return view('pspd.kepaniteraan.show', compact('rotation', 'students'));
     }
 
     /**
@@ -102,7 +106,13 @@ class HospitalRotationController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $rotation = HospitalRotation::findOrFail($id);
+        $semesters = SemesterService::list();
+        $activeSemester = SemesterService::active();
+        $semesterId = optional($activeSemester)->id;
+        $hospitals = Hospital::get();
+        $stases = ClinicalRotation::get();
+        return view('pspd.kepaniteraan.edit', compact('rotation', 'semesters', 'activeSemester', 'semesterId', 'hospitals', 'stases'));
     }
 
     /**
@@ -110,7 +120,34 @@ class HospitalRotationController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $rotation = HospitalRotation::findOrFail($id);
+        $request->validate([
+            'hospital' => ['required', 'string'],
+            'stase' => ['required', 'string'],
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $hospital = Hospital::where('name', $request->hospital)->first();
+        $stase = ClinicalRotation::where('name', $request->stase)->first();
+        if (!$hospital) {
+            return back()->withErrors(['hospital' => 'Rumah Sakit Tidak Ditemukan'])
+                ->withInput();
+        }
+        if (!$stase) {
+            return back()->withErrors(['stase' => 'Stase Sakit Tidak Ditemukan'])
+                ->withInput();
+        }
+        $rotation->update([
+            'hospital_id' => $hospital->id,
+            'clinical_rotation_id' => $stase->id,
+            'semester_id' => $request->semester_id,
+            'end_date' => $request->end_date,
+            'start_date' => $request->start_date,
+        ]);
+
+        return redirect()->route('kepaniteraan.index')->with('success', 'Kepaniteraan Berhasil Diperbarui');
     }
 
     /**
@@ -118,6 +155,8 @@ class HospitalRotationController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $rotation = HospitalRotation::findOrFail($id);
+        $rotation->delete();
+        return redirect()->route('kepaniteraan.index')->with('success', 'Kepaniteraan Berhasil Dihapus');
     }
 }

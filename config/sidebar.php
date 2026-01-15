@@ -189,6 +189,27 @@ return [
     //PSPD
     //admin/lecturer pspd
     [
+        'title' => 'User Management',
+        'roles' => ['admin'],
+        'context' => ['pspd'],
+        'items' => [
+            [
+                'label' => 'Students',
+                'route' => 'pspd.admin.users.index',
+                'params' => ['type' => 'student'],
+                'pattern' => 'admin/users/student*',
+                'icon' => 'fa-user-graduate'
+            ],
+            [
+                'label' => 'Lecturers',
+                'route' => 'pspd.admin.users.index',
+                'params' => ['type' => 'lecturer'],
+                'pattern' => 'admin/users/lecturer*',
+                'icon' => 'fa-chalkboard-teacher'
+            ],
+        ],
+    ],
+    [
         'title' => 'Master Data',
         'roles' => ['admin'],
         'context' => ['pspd'],
@@ -209,41 +230,7 @@ return [
                 'label' => 'Kepaniteraan',
                 'route' => 'kepaniteraan.index',
                 'pattern' => 'kepaniteraan*',
-                'icon' => 'fa-stethoscope'
-            ],
-            [
-                'label' => 'Lecturers',
-                'route' => 'pspd.admin.users.index',
-                'params' => ['type' => 'lecturer'],
-                'pattern' => 'admin/users/lecturer*',
-                'icon' => 'fa-chalkboard-teacher'
-            ],
-        ]
-    ],
-    [
-        'title' => 'Student Management',
-        'roles' => ['admin'],
-        'context' => ['pspd'],
-        'items' => [
-            [
-                'label' => 'Students',
-                'route' => 'pspd.admin.users.index',
-                'params' => ['type' => 'student'],
-                'pattern' => 'admin/users/student*',
-                'icon' => 'fa-user-graduate'
-            ],
-            [
-                'label' => 'Penempatan Koas',
-                'route' => 'mahasiswa-koas.index',
-                'pattern' => 'mahasiswa-koas*',
                 'icon' => 'fa-briefcase-medical'
-            ],
-            [
-                'label' => 'Riwayat Kepaniteraan',
-                'route' => 'pspd.admin.users.index',
-                'params' => ['type' => 'student'],
-                'pattern' => 'admin/users/student*',
-                'icon' => 'fa-clock-rotate-left'
             ],
         ]
     ],
