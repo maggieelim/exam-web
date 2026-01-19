@@ -24,8 +24,9 @@ class TutorGradingController extends Controller
         $semesterId = $request->query('semester_id', $activeSemester->id);
         $courseId   = $request->query('course_id');
 
+        $user = Auth::id();
         $semesters = SemesterService::list();
-        $lecturer  = Lecturer::where('user_id', Auth::id())->firstOrFail();
+        $lecturer  = Lecturer::where('user_id', $user)->firstOrFail();
 
         $details = PemicuDetails::with('teachingSchedule.course')
             ->where('lecturer_id', $lecturer->id)
@@ -65,9 +66,11 @@ class TutorGradingController extends Controller
 
             $studentCount = CourseStudent::where('course_id', $courseId)
                 ->where('kelompok', $kelompok)
+                ->where('semester_id', $schedule->semester_id)
                 ->count();
 
             $students = CourseStudent::where('course_id', $courseId)
+                ->where('semester_id', $schedule->semester_id)
                 ->where('kelompok', $kelompok)
                 ->get();
 
@@ -106,7 +109,6 @@ class TutorGradingController extends Controller
                 'pemicu_detail_ids' => $group->pluck('id')->values(),
             ];
         })->values();
-
         return view('pssk.pemicu.index', compact('tutors', 'semesterId', 'semesters', 'activeSemester', 'courses'));
     }
 
@@ -121,11 +123,15 @@ class TutorGradingController extends Controller
 
         $students = PemicuScore::with(['courseStudent.student.user', 'pemicuDetail'])
             ->whereIn('pemicu_detail_id', $pemicu)
+            ->whereHas('courseStudent', function ($q) use ($courseId, $kelompok) {
+                $q->where('course_id', $courseId)
+                    ->where('kelompok', $kelompok);
+            })
             ->when($search, function ($q) use ($search) {
                 $q->whereHas('courseStudent.student', function ($q2) use ($search) {
-                    $q2->where('nim', 'LIKE', "%$search%")
+                    $q2->where('nim', 'LIKE', "%{$search}%")
                         ->orWhereHas('user', function ($q3) use ($search) {
-                            $q3->where('name', 'LIKE', "%$search%");
+                            $q3->where('name', 'LIKE', "%{$search}%");
                         });
                 });
             })

@@ -18,19 +18,40 @@ $context = session('context', 'pssk'); // default
         @hasanyrole('admin|lecturer|koordinator')
         @php
         $currentContext = request()->route('context') ?? session('context');
+        $lecturerType = auth()->user()->lecturer->type ?? null; // pssk | pspd | both
         @endphp
 
         <ul class="nav d-flex justify-content-between flex-nowrap mx-4">
+
+            {{-- PRIORITAS 1: ADMIN --}}
+            @hasrole('admin')
             @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label)
             <li class="nav-item mx-2 flex-fill">
                 <a href="{{ route('set.context', $key) }}" class="nav-link text-center shadow border-radius-md d-flex align-items-center justify-content-center fw-semibold
-           {{ $currentContext === $key ? 'fw-bold text-primary bg-white' : 'text-muted' }}">
+                   {{ $currentContext === $key ? 'fw-bold text-primary bg-white' : 'text-muted' }}">
                     {{ $label }}
                 </a>
             </li>
             @endforeach
+
+            {{-- PRIORITAS 2: LECTURER / KOORDINATOR --}}
+            @elseif(auth()->user()->hasAnyRole(['lecturer', 'koordinator']))
+            @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label)
+            @if ($lecturerType === 'both' || $lecturerType === $key)
+            <li class="nav-item mx-2 flex-fill">
+                <a href="{{ route('set.context', $key) }}" class="nav-link text-center shadow border-radius-md d-flex align-items-center justify-content-center fw-semibold
+                       {{ $currentContext === $key ? 'fw-bold text-primary bg-white' : 'text-muted' }}">
+                    {{ $label }}
+                </a>
+            </li>
+            @endif
+            @endforeach
+            @endhasrole
+
         </ul>
+
         @endhasanyrole
+
     </div>
     <div id="sidenav-collapse-main" class="collapse navbar-collapse ">
         <ul class="navbar-nav">

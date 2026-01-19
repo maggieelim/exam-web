@@ -29,8 +29,14 @@ class SessionsController extends Controller
             session()->regenerate();
             $user = Auth::user();
 
-            if ($user->hasAnyRole('admin', 'lecturer', 'koordinator')) {
+            if ($user->hasAnyRole('admin', 'koordinator')) {
                 session(['context' => 'pssk']);
+            } elseif ($user->hasRole('lecturer') && $user->lecturer) {
+                $type = strtolower($user->lecturer->type);
+
+                session([
+                    'context' => $type === 'both' ? 'pssk' : $type
+                ]);
             } elseif ($user->hasRole('student')) {
                 $student = Student::where('user_id', $user->id)->first();
                 $type = $student->type;

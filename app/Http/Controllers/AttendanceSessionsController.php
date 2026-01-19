@@ -40,7 +40,7 @@ class AttendanceSessionsController extends Controller
 
                 // Tambahkan pengecekan jika sudah finished
                 if ($attendance->status === 'finished') {
-                    $url = route('attendances.report.show1', [
+                    $url = route('attendances.report.show', [
                         'course'      => $attendance->course->slug,
                         'semester_id' => $attendance->semester_id,
                         'session'     => $attendance->id

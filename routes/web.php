@@ -10,61 +10,52 @@ use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
-
+// ==================== CONTEXT SWITCH ====================
 Route::get('/set-context/{type}', function ($type) {
-    if (!in_array($type, ['pssk', 'pspd'])) {
-        abort(404);
-    }
+    if (!in_array($type, ['pssk', 'pspd'])) abort(404);
     session(['context' => $type]);
     return redirect($type . '/dashboard');
 })->name('set.context');
 
-Route::middleware(['auth', 'role:admin', 'context'])
-    ->group(function () {
+// ==================== ADMIN ROUTES ====================
+Route::middleware(['auth', 'role:admin', 'context'])->group(function () {
 
-        Route::prefix('pssk/admin')
-            ->middleware('context:pssk')
-            ->name('pssk.admin.')
-            ->group(function () {
-                adminRoutes();
-            });
+    // PSSK ADMIN
+    Route::prefix('pssk/admin')->middleware('context:pssk')->name('pssk.admin.')->group(function () {
+        Route::prefix('users/{type}')->name('users.')->group(function () {
+            Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
+            Route::get('create', [UserController::class, 'create'])->name('create');
+            Route::get('download-template', [UserController::class, 'downloadTemplate'])->name('download-template');
+            Route::get('export', [UserController::class, 'export'])->name('export');
+            Route::post('store', [UserController::class, 'store'])->name('store');
+            Route::post('import', [UserController::class, 'import'])->name('import');
+            Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
+            Route::post('update/{id}', [UserController::class, 'update'])->name('update');
+            Route::get('{id}', [UserController::class, 'show'])->name('show');
+            Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
+        });
 
-        Route::prefix('pspd/admin')
-            ->middleware('context:pspd')
-            ->name('pspd.admin.')
-            ->group(function () {
-                adminRoutes();
-            });
+        Route::resource('semester', SemesterController::class);
     });
 
-function adminRoutes()
-{
-    Route::prefix('users/{type}')->name('users.')->group(function () {
-        Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
-        Route::get('create', [UserController::class, 'create'])->name('create');
-        Route::get('download-template', [UserController::class, 'downloadTemplate'])->name('download-template');
-        Route::get('export', [UserController::class, 'export'])->name('export');
-        Route::post('store', [UserController::class, 'store'])->name('store');
-        Route::post('import', [UserController::class, 'import'])->name('import');
-        Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
-        Route::post('update/{id}', [UserController::class, 'update'])->name('update');
-        Route::get('{id}', [UserController::class, 'show'])->name('show');
-        Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
-    });
+    // PSPD ADMIN
+    Route::prefix('pspd/admin')->middleware('context:pspd')->name('pspd.admin.')->group(function () {
+        Route::prefix('users/{type}')->name('users.')->group(function () {
+            Route::get('/', [UserController::class, 'indexAdmin'])->name('index');
+            Route::get('create', [UserController::class, 'create'])->name('create');
+            Route::get('download-template', [UserController::class, 'downloadTemplate'])->name('download-template');
+            Route::get('export', [UserController::class, 'export'])->name('export');
+            Route::post('store', [UserController::class, 'store'])->name('store');
+            Route::post('import', [UserController::class, 'import'])->name('import');
+            Route::get('edit/{id}', [UserController::class, 'edit'])->name('edit');
+            Route::post('update/{id}', [UserController::class, 'update'])->name('update');
+            Route::get('{id}', [UserController::class, 'show'])->name('show');
+            Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
+        });
 
-    Route::resource('semester', SemesterController::class);
-}
+        Route::resource('semester', SemesterController::class);
+    });
+});
 
 // ==================== AUTH & DASHBOARD ====================
 Route::middleware('auth')->group(function () {

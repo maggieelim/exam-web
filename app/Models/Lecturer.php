@@ -10,7 +10,7 @@ class Lecturer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'bagian', 'nidn', 'faculty', 'gender', 'strata', 'gelar', 'tipe_dosen', 'min_sks', 'max_sks'];
+    protected $fillable = ['user_id', 'bagian', 'nidn', 'faculty', 'gender', 'type', 'strata', 'gelar', 'tipe_dosen', 'min_sks', 'max_sks'];
 
     protected static function boot()
     {
@@ -35,5 +35,13 @@ class Lecturer extends Model
     public function courseLecturers()
     {
         return $this->hasMany(CourseLecturer::class, 'lecturer_id');
+    }
+    public function canAccessPssk(): bool
+    {
+        return in_array($this->type, ['pssk', 'both']);
+    }
+    public function canAccessPspd(): bool
+    {
+        return in_array($this->type, ['pspd', 'both']);
     }
 }
