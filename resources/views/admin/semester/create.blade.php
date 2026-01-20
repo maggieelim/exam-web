@@ -8,7 +8,7 @@
         <h5 class="mb-0">Buat Tahun Akademik Baru</h5>
       </div>
       <div class="card-body px-4 pt-3 pb-3">
-        <form method="POST" action="{{ route('admin.semester.store') }}">
+        <form method="POST" action="{{ route(session('context').'.admin.semester.store') }}">
           @csrf
 
           {{-- Informasi Tahun Akademik --}}
@@ -28,14 +28,14 @@
 
             <div class="col-md-4 mb-3">
               <label for="start_date" class="form-label fw-bold">Tanggal Mulai Tahun Akademik</label>
-              <input type="date" name="start_date" id="start_date" class="form-control"
-                required value="{{ old('start_date') }}">
+              <input type="date" name="start_date" id="start_date" class="form-control" required
+                value="{{ old('start_date') }}">
             </div>
 
             <div class="col-md-4 mb-3">
               <label for="end_date" class="form-label fw-bold">Tanggal Selesai Tahun Akademik</label>
-              <input type="date" name="end_date" id="end_date" class="form-control"
-                required value="{{ old('end_date') }}">
+              <input type="date" name="end_date" id="end_date" class="form-control" required
+                value="{{ old('end_date') }}">
             </div>
           </div>
 
@@ -44,13 +44,12 @@
           <div class="row mb-4">
             <div class="col-md-6 mb-3">
               <label for="odd_start" class="form-label">Tanggal Mulai Ganjil</label>
-              <input type="date" name="odd_start" id="odd_start" class="form-control"
-                required value="{{ old('odd_start') }}">
+              <input type="date" name="odd_start" id="odd_start" class="form-control" required
+                value="{{ old('odd_start') }}">
             </div>
             <div class="col-md-6 mb-3">
               <label for="odd_end" class="form-label">Tanggal Selesai Ganjil</label>
-              <input type="date" name="odd_end" id="odd_end" class="form-control"
-                required value="{{ old('odd_end') }}">
+              <input type="date" name="odd_end" id="odd_end" class="form-control" required value="{{ old('odd_end') }}">
             </div>
           </div>
 
@@ -59,13 +58,13 @@
           <div class="row mb-4">
             <div class="col-md-6 mb-3">
               <label for="even_start" class="form-label">Tanggal Mulai Genap</label>
-              <input type="date" name="even_start" id="even_start" class="form-control"
-                required value="{{ old('even_start') }}">
+              <input type="date" name="even_start" id="even_start" class="form-control" required
+                value="{{ old('even_start') }}">
             </div>
             <div class="col-md-6 mb-3">
               <label for="even_end" class="form-label">Tanggal Selesai Genap</label>
-              <input type="date" name="even_end" id="even_end" class="form-control"
-                required value="{{ old('even_end') }}">
+              <input type="date" name="even_end" id="even_end" class="form-control" required
+                value="{{ old('even_end') }}">
             </div>
           </div>
 

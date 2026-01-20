@@ -11,7 +11,7 @@
                 </div>
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
 
-                    <a href="{{ route('admin.semester.create') }}" class="btn btn-primary btn-sm"
+                    <a href="{{ route(session('context') . '.admin.semester.create') }}" class="btn btn-primary btn-sm"
                         style="white-space: nowrap;">
                         + New Academic Year
                     </a>
@@ -42,11 +42,12 @@
                                         }}</span>
                                 </td>
                                 <td class="align-middle text-center">
-                                    <a href="{{ route('admin.semester.edit', $semester->id) }}"
+                                    <a href="{{ route(session('context') . '.admin.semester.edit', $semester->id) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    <a href="{{ route('admin.semester.show', $semester->id) }}"
+
+                                    <a href="{{ route(session('context') . '.admin.semester.show', $semester->id) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>

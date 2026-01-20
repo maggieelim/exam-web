@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use App\Models\Semester;
 use App\Services\SemesterService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Jenssegers\Agent\Agent;
 
@@ -125,7 +124,7 @@ class SemesterController extends Controller
             ],
         ]);
 
-        return redirect()->route('admin.semester.index')->with('success', 'Tahun Akademik dan Semester berhasil dibuat.');
+        return redirect()->route(session('context') . '.admin.semester.index')->with('success', 'Tahun Akademik dan Semester berhasil dibuat.');
     }
 
     /**
@@ -190,7 +189,7 @@ class SemesterController extends Controller
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
         ]);
-        return redirect()->route('admin.semester.edit', $id)->with('success', 'Tahun Akademik dan Semester berhasil diperbarui.');
+        return redirect()->route(session('context') . '.admin.semester.edit', $id)->with('success', 'Tahun Akademik dan Semester berhasil diperbarui.');
     }
 
     /**
@@ -198,6 +197,10 @@ class SemesterController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $semester = Semester::findorfail($id);
+        $academicYear = AcademicYear::findOrFail($semester->academic_year_id);
+        $semester->delete();
+        $academicYear->delete();
+        return redirect()->route(session('context') . '.admin.semester.index')->with('success', 'Semester Berhasil Dihapus');
     }
 }
