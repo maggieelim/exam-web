@@ -85,6 +85,7 @@
             <form class="question-form" data-question-id="{{ $question->id }}">
                 @csrf
                 @method('PUT')
+                <input type="hidden" id="context" value="{{ session('context') }}">
 
                 <div class="mb-2">
                     <label class="form-label">Badan Soal</label>
@@ -170,7 +171,6 @@
                                     style="position:absolute; top:-8px; right:-8px; width:24px; height:24px; padding:0;"
                                     data-option-id="{{ $option->id }}">
                                     <i class="fas fa-times" style="font-size: 15px"></i> </button>
-                                </button>
                             </div>
                             @endif
                         </div>
@@ -206,6 +206,7 @@
             el.style.height = el.scrollHeight + 2 + 'px';
         }
         document.addEventListener('DOMContentLoaded', function() {
+                       const context = document.getElementById('context').value;
             // Fungsi untuk handle upload gambar opsi (tanpa tombol update)
             document.querySelectorAll('.option-image-input').forEach(input => {
                 input.addEventListener('change', function(e) {
@@ -234,11 +235,8 @@
 
                         // Cari container untuk menempatkan preview
                         const optionDiv = document.querySelector(
-                                `div[data-option-container="${optionId}"]`)?.closest(
-                                '.col-md-12') ||
-                            document.querySelector(
-                                `textarea[name="options[${optionId}][text]"]`)?.closest(
-                                '.col-md-12');
+                            `div[data-option-container="${optionId}"]`
+                        );
 
                         if (optionDiv) {
                             const imageHtml = `
@@ -376,7 +374,7 @@
                     updateBtn.disabled = true;
                     updateBtn.textContent = 'Updating...';
 
-                    fetch(`/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
+                    fetch(`/${context}/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
                             method: 'POST',
                             body: formData,
                             headers: {
@@ -424,7 +422,7 @@
                     this.disabled = true;
                     this.textContent = 'Menganulir...';
 
-                    fetch(`/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
+                    fetch(`/${context}/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
                             method: 'POST',
                             body: formData,
                             headers: {
@@ -510,7 +508,7 @@
                         return;
                     }
 
-                    fetch(`{{ url('exams/' . $exam->exam_code) }}/questions/${questionId}`, {
+                    fetch(`{{ url('${context}/exams/' . $exam->exam_code) }}/questions/${questionId}`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',

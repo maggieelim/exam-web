@@ -104,6 +104,10 @@
                                     {{ $rotation->end_date->format('d, M Y') }}
                                 </td>
                                 <td class="align-middle text-center">
+                                    <a href="{{ route('lecturer-koas.assign', $rotation->id) }}"
+                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Tambah Mahasiswa Koas">
+                                        <i class="fa-solid fa-plus"></i> <i class="fa-solid fa-user"></i>
+                                    </a>
                                     <a href="{{ route('mahasiswa-koas.assign', $rotation->id) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Tambah Mahasiswa Koas">
                                         <i class="fa-solid fa-plus"></i> <i class="fa-solid fa-user"></i>

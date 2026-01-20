@@ -262,8 +262,8 @@ return [
         'items' => [
             [
                 'label' => 'Waiting for Approval',
-                'route' => 'attendance.index',
-                'pattern' => 'attendance*',
+                'route' => 'logbook.index',
+                'pattern' => 'logbook*',
                 'icon' => 'fa-clipboard-list'
             ],
             [
@@ -288,8 +288,8 @@ return [
         'items' => [
             [
                 'label' => 'Input Logbook',
-                'route' => 'student.attendance.index',
-                'pattern' => 'student/attendance*',
+                'route' => 'student-logbook.index',
+                'pattern' => 'logbook*',
                 'icon' => 'fa-calendar-alt'
             ],
         ]

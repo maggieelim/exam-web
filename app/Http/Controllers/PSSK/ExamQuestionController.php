@@ -61,7 +61,6 @@ class ExamQuestionController extends Controller
             'options' => 'required|array|min:1',
             'options.*.text' => 'required|string',
             'options.*.image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'options.*.is_correct' => 'required',
         ]);
 
         $category = ExamQuestionCategory::firstOrCreate([

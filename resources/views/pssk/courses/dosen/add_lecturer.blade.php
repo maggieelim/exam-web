@@ -74,6 +74,7 @@
 
         <form id="kelompokForm" action="{{ route('admin.courses.assignLecturer', $course->slug) }}" method="POST">
             @csrf
+            <input type="hidden" id="context" value="{{ session('context') }}">
             <div class="table-responsive p-0">
                 <input type="hidden" name="semester_id" value="{{ $semesterId }}">
                 <input type="hidden" name="selected_activity" id="selected_activity" value="{{ $selectedActivity }}">
@@ -119,20 +120,22 @@
     document.addEventListener("DOMContentLoaded", function() {
             const applyBtn = document.getElementById("applyFilter");
             const activitySelect = document.getElementById('activity_id');
+
             const semesterId = document.getElementById('semester_id').value;
             const courseSlug = document.getElementById('course_slug').value;
+            const context = document.getElementById('context').value;
 
-            applyBtn.addEventListener('click', function(){
-                   const name = document.getElementById('filter_name').value;
-        const bagian = document.getElementById('filter_bagian').value;
-        const activityId = document.getElementById('activity_id').value;
-     const params = new URLSearchParams({
-            semester_id: semesterId,
-            activity_id: activityId,
-            name: name,
-            bagian: bagian
-        });
-                        window.location.href = `/course/${courseSlug}/addLecturer?${params.toString()}`;
+            applyBtn.addEventListener('click', function() {
+                const name = document.getElementById('filter_name').value;
+                const bagian = document.getElementById('filter_bagian').value;
+                const activityId = document.getElementById('activity_id').value;
+                const params = new URLSearchParams({
+                    semester_id: semesterId,
+                    activity_id: activityId,
+                    name: name,
+                    bagian: bagian
+                });
+                window.location.href = `/${context}/course/${courseSlug}/addLecturer?${params.toString()}`;
 
             });
             activitySelect.addEventListener('change', function() {
@@ -147,8 +150,10 @@
                     bagian: bagian
                 });
 
-                window.location.href = `/course/${courseSlug}/addLecturer?${params.toString()}`;
+                window.location.href = `/${context}/course/${courseSlug}/addLecturer?${params.toString()}`;
             });
+            applyBtn.addEventListener('click', redirect);
+            activitySelect.addEventListener('change', redirect);
         });
 </script>
 @endsection

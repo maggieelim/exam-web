@@ -5,7 +5,7 @@
 
     <div class="card">
         <div class="card-header pb-0">
-            <h5 class="mb-0">Penugasan Mahasiswa Kepaniteraan</h5>
+            <h5 class="mb-0">Penugasan Dosen Kepaniteraan</h5>
         </div>
         <div class="card-body row px-4 pt-2 pb-2">
             <div class="col-md-6">
@@ -26,7 +26,7 @@
     </div>
 
     <div class="card">
-        <form method="POST" action="{{ route('mahasiswa-koas.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('lecturer-koas.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="card-body">
                 <div>

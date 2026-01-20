@@ -6,49 +6,33 @@
         <div class="card mb-4">
             <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
-                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
-                    <h5 class="mb-0">List Mahasiswa Koas</h5>
-                    @if ($semesterId)
-                    @php
-                    $selectedSemester = $semesters->firstWhere('id', $semesterId);
-                    @endphp
-                    <x-semester-badge :semester="$selectedSemester" :activeSemester="$activeSemester" />
-                    @endif
+                <div>
+                    <h5 class="mb-0">Logbook Mahasiswa</h5>
                 </div>
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
+                    <!-- Tombol toggle collapse -->
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-
+                    <a href="{{ route('student-logbook.create') }}" class="btn btn-primary btn-sm"
+                        style="white-space: nowrap;">
+                        + Logbook
+                    </a>
                 </div>
             </div>
 
             <!-- Collapse Form -->
             <div class="collapse" id="filterCollapse">
-                <form method="GET" action="{{ route('mahasiswa-koas.index') }}">
+                <form method="GET" action="{{ route('logbook.index') }}">
                     <div class="mx-3 my-2 py-2">
                         <div class="row g-2 align-items-end">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="name" class="form-label mb-1">Rumah Sakit</label>
                                 <input type="text" class="form-control " name="name" value="{{ request('name') }}">
                             </div>
-                            <div class="col-md-6">
-                                <label for="semester_id" class="form-label mb-1">Semester</label>
-                                <select name="semester_id" id="semester_id" class="form-select">
-                                    @foreach ($semesters as $semester)
-                                    <option value="{{ $semester->id }}" {{ $semesterId==$semester->id ? 'selected' : ''
-                                        }}>
-                                        {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
-                                        @if ($activeSemester && $semester->id == $activeSemester->id)
-                                        (Aktif)
-                                        @endif
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route('mahasiswa-koas.index') }}" class="btn btn-light btn-sm">Reset</a>
+                                <a href="{{ route('logbook.index') }}" class="btn btn-light btn-sm">Reset</a>
                                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                             </div>
 
@@ -68,45 +52,32 @@
                         <thead>
                             <tr>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Rumah Sakit</th>
+                                    Code</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Stase</th>
-                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Jumlah Peserta</th>
-                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Start Date</th>
-                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    End Date</th>
+                                    Nama</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Action</th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            @foreach ($students as $student)
+                            @foreach ($logbooks as $logbook)
                             <tr>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->student->user->name }}
+                                    {{ $logbook->studentKoas->student->user->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->student->nim }}
+                                    {{ $logbook->activityKoas->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->hospitalRotation->hospital->name }}
-                                </td>
-                                <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->hospitalRotation->clinicalRotation->name }}
-                                </td>
-                                <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $student->start_date->format('d M Y') }} - {{ $student->end_date->format('d M
-                                    Y') }}
+                                    {{ $logbook->date }}
                                 </td>
                                 <td class="align-middle text-center">
-                                    <a href="{{ route('mahasiswa-koas.edit', $student->id) }}"
+                                    <a href="{{ route('logbook.edit', $logbook->id) }}"
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    <a href="{{ route('mahasiswa-koas.show', $student->id) }}"
+                                    <a href="{{ route('logbook.show', $logbook->id) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
@@ -118,7 +89,7 @@
 
                     {{-- Pagination --}}
                     <div class="d-flex justify-content-center mt-3">
-                        <x-pagination :paginator="$students" />
+                        <x-pagination :paginator="$logbooks" />
                     </div>
                 </div>
             </div>

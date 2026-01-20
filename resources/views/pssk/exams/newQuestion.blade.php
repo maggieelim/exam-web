@@ -18,6 +18,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <a href="{{ asset('templates/template_soal.xlsx') }}" class="btn btn-sm btn-info" download>
+                        Download Template
+                    </a>
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary btn-sm">Upload</button>
                 </div>
