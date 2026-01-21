@@ -82,47 +82,51 @@
 
   <div>
     @forelse ($questions as $index => $question)
-    <div class="card mb-3 shadow-sm">
-      <div class="card-body">
-        <div class="d-flex flex-column-reverse flex-md-row justify-content-between">
-          <p class="fw-bold mb-1">
-            {{ $index + 1 }}. {{ $question->badan_soal }}
-          </p>
+    <div class="card p-3 mb-3 shadow-sm">
+      <div class="d-flex flex-column-reverse flex-md-row justify-content-between">
 
+        <div class="d-flex gap-2 w-md-90">
+          <p class="mb-1">{{ $index + 1 }}.</p>
+          <div>
+            <p class="my-0">
+              {!! nl2br(e(trim($question->badan_soal . "\n" . $question->kalimat_tanya))) !!}
+            </p>
+            @if ($question->image)
+            <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal"
+              class="mx-3 my-1 img-fluid rounded shadow-sm" style="max-width: 150px;">
+            @endif
+
+            <small class="fw-bold d-block mt-2">Jawaban:</small>
+            <div class="row">
+              @foreach ($question->options as $option)
+              <div class="col-12 mb-2">
+                <span class="fw-bold">{{ $option->option }}.</span>
+                <span>{{ $option->text }}</span>
+
+                @if ($option->is_correct)
+                <span class="ms-1 text-success">✔</span>
+                @endif
+
+                @if ($option->image)
+                <div class="ps-3 mt-1">
+                  <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Opsi"
+                    class="img-fluid rounded shadow-sm" style="max-width: 150px;">
+                </div>
+                @endif
+              </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        <div>
           <small class="text-muted mb-1 mb-md-0">
             Kategori: {{ $question->category->name ?? 'Tidak ada kategori' }}
           </small>
         </div>
-
-        <p class="my-0">{{ $question->kalimat_tanya }}</p>
-
-        @if ($question->image)
-        <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal"
-          class="mx-3 my-1 img-fluid rounded shadow-sm" style="max-width: 150px;">
-        @endif
-
-        <small class="fw-bold d-block mt-2">Jawaban:</small>
-
-        <div class="row">
-          @foreach ($question->options as $option)
-          <div class="col-md-6 col-12 mb-2">
-            <span class="fw-bold">{{ $option->option }}.</span>
-            <span>{{ $option->text }}</span>
-            @if ($option->is_correct)
-            <span class="ms-1 text-success">✔</span>
-            @endif
-            @if ($option->image)
-            <div class="ps-3 mt-1">
-              <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Opsi" class="img-fluid rounded shadow-sm"
-                style="max-width: 150px;">
-            </div>
-            @endif
-
-          </div>
-          @endforeach
-        </div>
       </div>
     </div>
+
     @empty
     <div class="card">
       <div class="card-body">

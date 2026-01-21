@@ -129,27 +129,27 @@ return [
         ]
     ],
 
-    [
-        'title' => 'Exams Report',
-        'roles' => ['koordinator'],
-        'context' => ['pssk'],
-        'items' => [
-            [
-                'label' => 'Ungraded',
-                'route' => 'lecturer.results.index',
-                'params' => ['status' => 'ungraded'],
-                'pattern' => 'ungraded*',
-                'icon' => 'fa-clipboard-list'
-            ],
-            [
-                'label' => 'Published',
-                'route' => 'lecturer.results.index',
-                'params' => ['status' => 'published'],
-                'pattern' => 'published*',
-                'icon' => 'fa-clipboard-list'
-            ],
-        ]
-    ],
+    // [
+    //     'title' => 'Exams Report',
+    //     'roles' => ['koordinator'],
+    //     'context' => ['pssk'],
+    //     'items' => [
+    //         [
+    //             'label' => 'Ungraded',
+    //             'route' => 'lecturer.results.index',
+    //             'params' => ['status' => 'ungraded'],
+    //             'pattern' => 'ungraded*',
+    //             'icon' => 'fa-clipboard-list'
+    //         ],
+    //         [
+    //             'label' => 'Published',
+    //             'route' => 'lecturer.results.index',
+    //             'params' => ['status' => 'published'],
+    //             'pattern' => 'published*',
+    //             'icon' => 'fa-clipboard-list'
+    //         ],
+    //     ]
+    // ],
 
     [
         'title' => 'Student Exams',

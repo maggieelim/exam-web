@@ -31,12 +31,6 @@
           <input type="number" name="duration" class="form-control" required min="1" value="{{ $exam->duration }}" {{
             $status==='ongoing' ? 'disabled' : '' }}>
         </div>
-
-        {{-- <div class="col-md-3 mb-3">
-          <label for="room">Ruangan</label>
-          <input type="text" name="room" class="form-control" value="{{ $exam->room }}" {{ $status==='ongoing'
-            ? 'disabled' : '' }}>
-        </div> --}}
       </div>
 
       <!-- Pilih Course -->
@@ -59,13 +53,12 @@
         </div>
         <div class="col-md-4 mb-3">
           <label for="password">Password</label>
-          <input type="text" name="password" class="form-control" value="{{$exam->password}}" required {{
-            $status==='ongoing' ? 'disabled' : '' }}>
+          <input type="text" name="password" class="form-control" value="{{$exam->password}}" required>
         </div>
       </div>
       <!-- Tombol Update -->
       <div class="mb-3">
-        <button type="submit" class="btn btn-sm btn-primary" {{ $status==='ongoing' ? 'disabled' : '' }}>Update
+        <button type="submit" class="btn btn-sm btn-primary">Update
           Exams</button>
       </div>
     </form>

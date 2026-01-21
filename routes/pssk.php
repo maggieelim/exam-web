@@ -79,23 +79,20 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
     Route::middleware(['role:koordinator'])
         ->name('lecturer.')
         ->group(function () {
-            Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])
-                ->where('status', '(ungraded|graded|published)')
-                ->name('results.index');
-
+            Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])->where('status', '(ungraded|graded|published)')->name('results.index');
             Route::prefix('/{exam_code}')
                 ->group(function () {
-                    Route::get('/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
+                    Route::post('/publish', [ExamResultsController::class, 'publish'])->name('results.publish');
                     Route::get('/download', [ExamResultsController::class, 'download'])->name('results.download');
                     Route::get('/questions/download', [ExamResultsController::class, 'downloadQuestions'])->name('results.downloadQuestions');
                 });
-            Route::get('/published/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.published');
-            Route::get('/ungraded/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.ungraded');
-            Route::get('/published/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.published');
-            Route::get('/ungraded/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.ungraded');
-            Route::get('/published/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
-            Route::get('/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
-            Route::post('/{exam_code}/{nim}/feedback', [ExamResultsController::class, 'update'])->name('feedback.update');
+            Route::get('/exams/previous/published/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.published');
+            Route::get('/exams/previous/ungraded/{exam_code}', [ExamResultsController::class, 'grade'])->name('grade.ungraded');
+            Route::get('/exams/previous/published/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.published');
+            Route::get('/exams/previous/ungraded/analytics/{exam_code}', [ExamResultsController::class, 'show'])->name('results.show.ungraded');
+            Route::get('/exams/previous/published/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.published');
+            Route::get('/exams/previous/ungraded/{exam_code}/{nim}', [ExamResultsController::class, 'edit'])->name('feedback.ungraded');
+            Route::post('/exams/previous/{exam_code}/{nim}/feedback', [ExamResultsController::class, 'update'])->name('feedback.update');
         });
 
     // ================= SHARED ADMIN & LECTURER =================
@@ -167,6 +164,7 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
         Route::post('exams/new-question/{exam_code}', [ExamQuestionController::class, 'newQuestionModal'])->name('exams.newQuestion');
         Route::put('exams/{exam_code}/questions/{question}', [ExamQuestionController::class, 'update'])->name('exams.questions.update');
         Route::post('exams/{exam_code}/questions/update-excel', [ExamQuestionController::class, 'updateByExcel'])->name('exams.questions.updateByExcel');
+        Route::post('exams/{exam_code}/questions/update-word', [ExamQuestionController::class, 'updateByWord'])->name('exams.questions.updateByWord');
         Route::delete('/exams/{examCode}/questions/{question}', [ExamQuestionController::class, 'destroy'])->name('exams.questions.destroy');
         Route::get('/exams/{examCode}/questions/download', [ExamQuestionController::class, 'export'])->name('exams.questions.download');
     });

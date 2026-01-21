@@ -8,23 +8,38 @@
                     Questions via Excel</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('exams.questions.updateByExcel', $exam->exam_code) }}" method="POST"
-                enctype="multipart/form-data">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
+            <div class="modal-body">
+                <form action="{{ route('exams.questions.updateByExcel', $exam->exam_code) }}" method="POST"
+                    enctype="multipart/form-data">
+                    @csrf
+                    <div>
                         <label for="file" class="form-label">Pilih File Excel (.xls, .xlsx)</label>
-                        <input type="file" name="file" class="form-control" accept=".xls,.xlsx" required>
+                        <input type="file" name="file" class="form-control" accept=".xls,.xlsx">
+                        <div class="d-flex gap-2 my-2">
+                            <a href="{{ asset('templates/template_soal.xlsx') }}" class="btn px-3 btn-sm btn-info"
+                                download>
+                                <i class="fas fa-download"></i> Template Excel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                        </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <a href="{{ asset('templates/template_soal.xlsx') }}" class="btn btn-sm btn-info" download>
-                        Download Template
-                    </a>
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Upload</button>
-                </div>
-            </form>
+                </form>
+                <form action="{{ route('exams.questions.updateByWord', $exam->exam_code) }}" method="POST"
+                    enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Pilih File Word</label>
+                        <input type="file" name="word_file" class="form-control" accept=".docx">
+                        <div class="d-flex gap-2 my-2">
+                            <a href="{{ asset('templates/template_soal.docx') }}" class="btn px-3 btn-sm btn-info"
+                                download>
+                                <i class="fas fa-download"></i> Template Word
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

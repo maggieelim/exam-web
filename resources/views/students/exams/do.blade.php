@@ -13,8 +13,10 @@
         <div class="col-12 col-md-7">
             <div class="card p-3">
                 <div class="mt-2">
-                    <p><strong>{{ $currentQuestion->badan_soal }}</strong></p>
-                    <p>{{ $currentQuestion->kalimat_tanya }}</p>
+                    <p class="fw-bold my-0">{!! nl2br(e($currentQuestion->badan_soal ?? '')) !!}</p>
+                    <p class="my-0">
+                        {!! nl2br(e($currentQuestion->kalimat_tanya ?? '')) !!}
+                    </p>
                     @if ($currentQuestion->image)
                     <div class="my-3">
                         <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\PSPd;
+namespace App\Http\Controllers\PSPD;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityKoas;

@@ -144,8 +144,23 @@
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Exam Participants">
                                         <i class="fas fa-users"></i> </a>
                                     @else
-                                    <span class="badge bg-secondary">Ended</span>
+                                    {{-- <span class="badge bg-secondary">Ended</span> --}}
+                                    @if($exam->is_published)
+                                    <a href="{{ route('lecturer.grade.published', [$exam->exam_code]) }}"
+                                        class="btn bg-gradient-success m-1 p-2 px-3" title="Info">
+                                        Graded </a>
+                                    <a href="{{ route('lecturer.results.show.published', [$exam->exam_code]) }}"
+                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
+                                        <i class="fas fa-chart-line"></i> </a>
+                                    @else
+                                    <a href="{{ route('lecturer.grade.ungraded', [$exam->exam_code]) }}"
+                                        class="btn bg-gradient-info  m-1 p-2 px-3" title="Info">
+                                        Grade </a>
+                                    <a href="{{ route('lecturer.results.show.ungraded', [$exam->exam_code]) }}"
+                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Info">
+                                        <i class="fas fa-chart-line"></i> </a> @endif
                                     @endif
+                                    @if ($exam->status !== 'previous')
                                     <a class="btn bg-gradient-info m-1 p-2 px-3" title="Exam Setting"
                                         href="{{ route('exams.edit', [$status, $exam->exam_code]) }}">
                                         <i class="fas fa-cog"></i>
@@ -154,6 +169,7 @@
                                         href="{{ route('exams.questions.' . $status, $exam->exam_code) }}">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @endif
                                     <a href="{{ route('exams.show.' . $status, [$exam->exam_code]) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Exam Info">
                                         <i class="fas fa-info-circle"></i>

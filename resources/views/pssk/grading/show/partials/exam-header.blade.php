@@ -21,8 +21,7 @@
                         Charts
                     </button>
 
-                    <!-- Back Button -->
-                    <a href="{{ route('lecturer.results.index', $status) }}" class="btn btn-sm btn-outline-secondary">
+                    <a href="{{ route('exams.index', 'previous') }}" class="btn btn-sm btn-outline-secondary">
                         Back
                     </a>
                 </div>

@@ -9,7 +9,8 @@
                 @if ($exam->is_published)
                 <button type="button" class="btn btn-sm btn-success" disabled>Published</button>
                 @else
-                <form role="form" action="/{{ $exam->exam_code }}/publish" method="POST" class="d-inline">
+                <form role="form" action="{{ route('lecturer.results.publish', [ $exam->exam_code]) }}" method="POST"
+                    class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-info px-3 py-2"
                         onclick="return confirm('Yakin ingin publish exam ini?')">

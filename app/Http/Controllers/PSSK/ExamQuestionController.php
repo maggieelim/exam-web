@@ -12,6 +12,12 @@ use App\Models\ExamQuestionCategory;
 use Illuminate\Http\Request;
 use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
+use PhpOffice\PhpWord\Element\TextRun;
+use PhpOffice\PhpWord\Element\Text;
+use PhpOffice\PhpWord\Element\ListItem;
+use PhpOffice\PhpWord\Element\Title;
 
 class ExamQuestionController extends Controller
 {
@@ -294,6 +300,7 @@ class ExamQuestionController extends Controller
         $rows = Excel::toArray([], $request->file('file'))[0];
 
         ExamQuestion::where('exam_id', $exam->id)->delete();
+        ExamQuestionCategory::where('exam_id', $exam->id)->delete();
 
         // Loop data excel, skip header (row pertama)
         foreach ($rows as $index => $row) {
@@ -315,6 +322,7 @@ class ExamQuestionController extends Controller
             ]);
 
             // Insert options (A-E)
+            $correctAnswers = strtoupper($row[9] ?? '');
             $options = ['A', 'B', 'C', 'D', 'E'];
             foreach ($options as $i => $opt) {
                 if (isset($row[4 + $i]) && $row[4 + $i] !== '') {
@@ -322,13 +330,207 @@ class ExamQuestionController extends Controller
                         'exam_question_id' => $question->id,
                         'option' => $opt,
                         'text' => $row[4 + $i],
-                        'is_correct' => str_contains($row[9] ?? '', $opt) ? 1 : 0,
+                        'is_correct' => str_contains($correctAnswers, $opt) ? 1 : 0,
                     ]);
                 }
             }
         }
 
         return back()->with('success', 'Soal berhasil diupdate dari Excel!');
+    }
+
+    public function updateByWord(Request $request, $examCode)
+    {
+        $request->validate([
+            'word_file' => 'required|mimes:docx',
+        ]);
+
+        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+
+        ExamQuestion::where('exam_id', $exam->id)->delete();
+        ExamQuestionCategory::where('exam_id', $exam->id)->delete();
+
+        // Load dokumen Word
+        $phpWord = PhpWordIOFactory::load($request->file('word_file')->getPathname());
+
+        // Ekstrak semua teks dari dokumen
+        $fullText = $this->extractTextFromPhpWord($phpWord);
+        $fullText = preg_replace('/\r\n?/', "\n", $fullText); // Normalize line endings
+        $fullText = preg_replace('/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F\xA0]/u', ' ', $fullText); // Remove non-printable chars
+
+        $questions = $this->parseQuestionsFromText($fullText);
+
+        if (empty($questions)) {
+            return back()->with('error', 'Tidak ada soal yang terdeteksi. Pastikan format dokumen sesuai template!');
+        }
+
+        $this->saveQuestionsToDatabase($questions, $exam);
+
+        return back()->with('success', count($questions) . ' soal berhasil diupload dari Word!');
+    }
+
+    private function extractTextFromPhpWord($phpWord): string
+    {
+        $text = '';
+
+        foreach ($phpWord->getSections() as $section) {
+            foreach ($section->getElements() as $element) {
+
+                if ($element instanceof Text) { // Text biasa
+                    $text .= $element->getText() . "\n";
+                } elseif ($element instanceof TextRun) { // TextRun (paragraph)
+                    foreach ($element->getElements() as $textElement) {
+                        if ($textElement instanceof Text) {
+                            $text .= $textElement->getText();
+                        }
+                    }
+                    $text .= "\n";
+                } elseif ($element instanceof Title) { // Title (judul)
+                    if ($element->getText() instanceof TextRun) {
+                        foreach ($element->getText()->getElements() as $textElement) {
+                            if ($textElement instanceof Text) {
+                                $text .= $textElement->getText();
+                            }
+                        }
+                    } else {
+                        $text .= (string) $element->getText();
+                    }
+                    $text .= "\n";
+                }
+            }
+        }
+        return $text;
+    }
+
+    private function parseQuestionsFromText(string $text): array
+    {
+        $questions = [];
+        $currentCategory = '-';
+        $questionRegex =  '/(?:### Kategori:\s*(.+?)\n)?### Soal (\d+):\s*\n([\s\S]*?)\*Kunci:\s*([A-E,\s]+)/i';
+
+        preg_match_all($questionRegex, $text, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            if (!empty($match[1])) {
+                $currentCategory = trim($match[1]);
+            }
+            $questionNumber = $match[2];
+            $content = trim($match[3]);
+            $keyStr = strtoupper(trim($match[4]));
+
+            // Ekstrak huruf kunci jawaban
+            preg_match_all('/[A-E]/', $keyStr, $keyMatches);
+            $correctLetters = $keyMatches[0] ?? [];
+
+            if (empty($correctLetters)) {
+                continue; // Lewatkan jika tidak ada kunci yang valid
+            }
+
+            // Parse konten: badan soal dan opsi
+            $lines = array_filter(
+                array_map('trim', explode("\n", $content)),
+                fn($line) => !empty($line)
+            );
+
+            $bodyText = '';
+            $questionText = '';
+            $options = [];
+            $inOptions = false;
+            $currentOption = null;
+
+            foreach ($lines as $line) {
+                // Cek apakah baris ini adalah opsi (A. B. C. D. E.)
+                if (preg_match('/^([A-E])\.\s*(.+)$/i', $line, $optionMatch)) {
+                    $inOptions = true;
+                    $options[strtoupper($optionMatch[1])] = $optionMatch[2];
+                    continue;
+                }
+                // Jika sudah di bagian opsi dan baris ini melanjutkan opsi sebelumnya
+                if ($inOptions) {
+                    // Lanjutan opsi terakhir
+                    if (!empty($options)) {
+                        end($options);
+                        $lastKey = key($options);
+                        $options[$lastKey] .= ' ' . $line;
+                    }
+                }
+                // Jika belum di bagian opsi, ini adalah badan soal/kalimat tanya
+                else {
+                    if (
+                        empty($questionText) &&
+                        (strpos($line, '?') !== false ||
+                            preg_match('/\b(siapa|apa|dimana|kapan|mengapa|bagaimana|berapa)\b/i', $line))
+                    ) {
+                        $questionText = $line;
+                    } else {
+                        $bodyText .= ($bodyText ? "\n" : '') . $line;
+                    }
+                }
+            }
+
+            // Jika tidak ditemukan tanda tanya, ambil baris terakhir sebelum opsi sebagai kalimat tanya
+            if (empty($questionText)) {
+                $bodyLines = array_filter(
+                    array_map('trim', explode("\n", $bodyText)),
+                    fn($line) => !empty($line)
+                );
+                $questionText = end($bodyLines) ?: '';
+
+                // Hapus baris terakhir dari badan soal jika diambil sebagai kalimat tanya
+                if (!empty($bodyLines)) {
+                    array_pop($bodyLines);
+                    $bodyText = implode("\n", $bodyLines);
+                }
+            }
+
+            // Validasi
+            if (empty($options) || empty($correctLetters)) {
+                continue;
+            }
+            $questions[] = [
+                'category' => $currentCategory,
+                'number' => $questionNumber,
+                'body' => trim($bodyText),
+                'question' => trim($questionText),
+                'options' => $options,
+                'correct_letters' => $correctLetters,
+            ];
+        }
+
+        return $questions;
+    }
+
+    private function saveQuestionsToDatabase(array $questions, $exam): void
+    {
+        foreach ($questions as $questionData) {
+            $examCategory = ExamQuestionCategory::firstOrCreate([
+                'exam_id' => $exam->id,
+                'name' => $questionData['category']
+            ]);
+
+            $examQuestion = ExamQuestion::create([
+                'exam_id' => $exam->id,
+                'category_id' => $examCategory->id,
+                'badan_soal' => $questionData['body'],
+                'kalimat_tanya' => $questionData['question'],
+                'kode_soal' => $exam->exam_code . '-' . str_pad(
+                    $questionData['number'],
+                    3,
+                    '0',
+                    STR_PAD_LEFT
+                ),
+            ]);
+
+            // Simpan opsi jawaban
+            foreach ($questionData['options'] as $letter => $optionText) {
+                ExamQuestionAnswer::create([
+                    'exam_question_id' => $examQuestion->id,
+                    'option' => $letter,
+                    'text' => trim($optionText),
+                    'is_correct' => in_array($letter, $questionData['correct_letters']) ? 1 : 0,
+                ]);
+            }
+        }
     }
     /**
      * Remove the specified resource from storage.
@@ -339,12 +541,10 @@ class ExamQuestionController extends Controller
             $exam = Exam::where('exam_code', $examCode)->firstOrFail();
             $question = ExamQuestion::where('exam_id', $exam->id)->findOrFail($questionId);
 
-            // Hapus gambar jika ada
             if ($question->image) {
                 \Storage::disk('public')->delete($question->image);
             }
 
-            // Hapus semua opsi jawaban terkait
             $question->options()->delete();
 
             // Hapus soal

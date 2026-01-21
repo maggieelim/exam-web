@@ -350,6 +350,16 @@ class ExamController extends Controller
     public function update(Request $request, $status, $exam_code)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
+        if ($status === 'ongoing') {
+            $request->validate([
+                'password' => 'nullable|string|max:255',
+            ]);
+            $exam->update([
+                'password' => $request->password
+            ]);
+            return back()->with('success', 'Password ujian berhasil diperbarui.');
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'exam_date' => 'required|date',
@@ -358,7 +368,6 @@ class ExamController extends Controller
             'course_id' => 'required|exists:courses,id',
             'password' => 'nullable|string|max:255',
         ]);
-
         $exam->update([
             'title' => $request->title,
             'exam_date' => $request->exam_date,
