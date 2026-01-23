@@ -9,7 +9,7 @@
         </div>
         <div class="card-body px-4 pt-2 pb-2">
 
-            <form method="POST" action="{{ route('student-logbook.store') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('student-logbook.update') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="row">
                     <div class="mb-3 col-md-6">

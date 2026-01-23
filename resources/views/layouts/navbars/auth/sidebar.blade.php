@@ -26,6 +26,7 @@ $context = session('context', 'pssk'); // default
             {{-- PRIORITAS 1: ADMIN --}}
             @hasrole('admin')
             @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label)
+            {{-- @foreach (['pssk' => 'PSSK'] as $key => $label) --}}
             <li class="nav-item mx-2 flex-fill">
                 <a href="{{ route('set.context', $key) }}" class="nav-link text-center shadow border-radius-md d-flex align-items-center justify-content-center fw-semibold
                    {{ $currentContext === $key ? 'fw-bold text-primary bg-white' : 'text-muted' }}">
@@ -37,6 +38,7 @@ $context = session('context', 'pssk'); // default
             {{-- PRIORITAS 2: LECTURER / KOORDINATOR --}}
             @elseif(auth()->user()->hasAnyRole(['lecturer', 'koordinator']))
             @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label)
+            {{-- @foreach (['pssk' => 'PSSK'] as $key => $label) --}}
             @if ($lecturerType === 'both' || $lecturerType === $key)
             <li class="nav-item mx-2 flex-fill">
                 <a href="{{ route('set.context', $key) }}" class="nav-link text-center shadow border-radius-md d-flex align-items-center justify-content-center fw-semibold

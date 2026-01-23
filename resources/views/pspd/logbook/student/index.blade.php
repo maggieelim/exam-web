@@ -15,10 +15,13 @@
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
+                    @if ($rotation )
                     <a href="{{ route('student-logbook.create') }}" class="btn btn-primary btn-sm"
                         style="white-space: nowrap;">
                         + Logbook
                     </a>
+                    @endif
+
                 </div>
             </div>
 
@@ -48,13 +51,20 @@
                         // Ambil semua parameter filter aktif, kecuali sort, dir, dan pagination
                         $filters = request()->except(['sort', 'dir', 'page']);
                         @endphp
-
                         <thead>
                             <tr>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Code</th>
+                                    Hospital</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Nama</th>
+                                    Stase</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Lecturer</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Activity</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Date</th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Status</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Action</th>
                             </tr>
@@ -64,13 +74,22 @@
                             @foreach ($logbooks as $logbook)
                             <tr>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->studentKoas->student->user->name }}
+                                    {{ $logbook->studentKoas->hospitalRotation->hospital->name }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $logbook->studentKoas->hospitalRotation->clinicalRotation->name }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $logbook->lecturer->user->name }}, {{ $logbook->lecturer->gelar }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
                                     {{ $logbook->activityKoas->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->date }}
+                                    {{ $logbook->date->format('d M Y') }}
+                                </td>
+                                <td class="align-middle text-center text-sm font-weight-bold">
+                                    {{ $logbook->status }}
                                 </td>
                                 <td class="align-middle text-center">
                                     <a href="{{ route('logbook.edit', $logbook->id) }}"

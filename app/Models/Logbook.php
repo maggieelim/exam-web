@@ -19,6 +19,10 @@ class Logbook extends Model
         'note'
     ];
 
+    protected $casts = [
+        'date' => 'date',
+    ];
+
     public function studentKoas()
     {
         return $this->belongsTo(StudentKoas::class);
