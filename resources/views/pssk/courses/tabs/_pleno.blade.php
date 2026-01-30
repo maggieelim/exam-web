@@ -18,7 +18,7 @@
                     <th class="headcol name">Nama Dosen</th>
                     <th class="headcol bagian">Bagian</th>
                     @foreach ($plenoData->plenos as $pleno)
-                    <th class="headrow">P{{ $pleno->session_number }}
+                    <th class="headrow text-wrap">P{{ $pleno->session_number }}
                         <br>
                         {{ $pleno->scheduled_date }}
                         <br>

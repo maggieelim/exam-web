@@ -20,31 +20,27 @@
                     </div>
                     <div class="mb-3 col-md-6">
                         <label>Jenis Kegiatan</label>
-                        <select class="form-select" name="activity">
+                        <select class="form-select" name="activity" required>
                             <option>Pilih Kegiatan</option>
                             @foreach ($activity as $act)
                             <option value="{{ $act->id }}">{{ $act->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-3 col-md-12">
+                    <div class="mb-3 col-md-6">
                         <label>Deskripsi Kegiatan</label>
                         <input type="text" name="desc" class="form-control" required>
                         <input hidden type="text" name="rotation" class="form-control" required
                             value="{{ $rotation->id }}">
                     </div>
-                    <div class="mb-3 col-md-12">
+                    <div class="mb-3 col-md-6">
                         <label>Dosen/Dokter Pembimbing</label>
-                        <input type="text" name="lecturer" class="form-control" list="lecturer_list"
-                            placeholder="Pilih Dosen" required>
-
-                        <datalist id="lecturer_list">
+                        <select class="form-select" name="lecturer" required>
+                            <option>Pilih Dosen</option>
                             @foreach ($lecturers as $lecturer)
-                            <option value="{{ $lecturer->id }}">
-                                {{ $lecturer->user->name }}
-                            </option>
+                            <option value="{{ $lecturer->lecturer->id }}">{{ $lecturer->lecturer->user->name }}</option>
                             @endforeach
-                        </datalist>
+                        </select>
                     </div>
                     <div class="mb-3 col-md-12">
                         <label>Upload Bukti</label>

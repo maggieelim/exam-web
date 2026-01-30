@@ -22,8 +22,8 @@ Route::middleware(['auth', 'context:pspd'])
             Route::resource('stase', PSPDClinicalRotationController::class);
             Route::resource('mahasiswa-koas', StudentKoasController::class)->except(['create', 'destroy']);
             Route::get('kepaniteraan/{rotation}/assign', [StudentKoasController::class, 'create'])->name('mahasiswa-koas.assign');
-            Route::get('kepaniteraan/{rotation}/assignLecturer', [LecturerKoasController::class, 'create'])->name('lecturer-koas.assign');
             Route::delete('/mahasiswa-koas/{id}/{rotation}', [StudentKoasController::class, 'destroy'])->name('mahasiswa-koas.destroy');
+            Route::resource('lecturer-koas', LecturerKoasController::class);
         });
         Route::resource('logbook', LogbookController::class);
         Route::resource('student-logbook', StudentLogbookController::class);

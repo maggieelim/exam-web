@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClinicalRotation;
 use App\Models\Hospital;
 use App\Models\HospitalRotation;
+use App\Models\LecturerKoas;
 use App\Models\StudentKoas;
 use App\Services\SemesterService;
 use Illuminate\Http\Request;
@@ -97,8 +98,8 @@ class HospitalRotationController extends Controller
     {
         $rotation = HospitalRotation::findOrFail($id);
         $students = StudentKoas::with('student.user')->where('hospital_rotation_id', $id)->paginate(20);
-
-        return view('pspd.kepaniteraan.show', compact('rotation', 'students'));
+        $lecturers = LecturerKoas::with('lecturer.user')->where('hospital_rotation_id', $id)->get();
+        return view('pspd.kepaniteraan.show', compact('rotation', 'students', 'lecturers'));
     }
 
     /**

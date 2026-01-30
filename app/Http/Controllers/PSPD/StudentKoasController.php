@@ -4,9 +4,10 @@ namespace App\Http\Controllers\PSPD;
 
 use App\Http\Controllers\Controller;
 use App\Models\HospitalRotation;
+use App\Models\Lecturer;
+use App\Models\LecturerKoas;
 use App\Models\Student;
 use App\Models\StudentKoas;
-use App\Services\SemesterService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -22,8 +23,17 @@ class StudentKoasController extends Controller
      */
     public function create($rotationId)
     {
+        $lecturers = Lecturer::with('user')->where('type', 'pspd')->get();
         $rotation = HospitalRotation::findOrFail($rotationId);
-        return view('pspd.kepaniteraan.assign', compact('rotation'));
+        $selectedLecturers = LecturerKoas::where('hospital_rotation_id', $rotation->id)
+            ->pluck('lecturer_id')
+            ->toArray();
+
+        return view('pspd.kepaniteraan.assign', compact(
+            'rotation',
+            'lecturers',
+            'selectedLecturers'
+        ));
     }
 
     /**

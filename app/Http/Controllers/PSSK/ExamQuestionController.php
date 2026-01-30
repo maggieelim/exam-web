@@ -143,7 +143,6 @@ class ExamQuestionController extends Controller
     {
         //
     }
-    public function newQuestion(Request $request, $examCode) {}
 
     public function update(Request $request, $examCode, $questionId)
     {

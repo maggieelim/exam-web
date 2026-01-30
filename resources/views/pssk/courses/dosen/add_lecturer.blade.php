@@ -88,7 +88,6 @@
                             <th>Strata</th>
                             <th>Gelar</th>
                             <th>Tipe Dosen</th>
-                            <th>NIDN</th>
                         </tr>
                     </thead>
 
@@ -104,7 +103,6 @@
                             <td>{{ $lecturer->strata ?? '-' }}</td>
                             <td>{{ $lecturer->gelar ?? '-' }}</td>
                             <td>{{ $lecturer->tipe_dosen ?? '-' }}</td>
-                            <td>{{ $lecturer->nidn ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

@@ -80,14 +80,15 @@ class CourseController extends Controller
         $agent = new Agent();
         $semesters = SemesterService::list();
         $activeSemester = SemesterService::active();
-        $semesterId = $this->getSemesterId($request);
+        $semesterId = $request->semester_id ?? $activeSemester->id;
+        $semester = Semester::findOrFail($semesterId);
 
         // Base query
         $query = Course::query()->with(['lecturers', 'courseStudents', 'courseLecturer', 'coordinators']);
 
         // Apply filters
         $query = $this->applyLecturerFilter($query, $semesterId);
-        $query = $this->applySemesterFilter($query, $activeSemester);
+        $query = $this->applySemesterFilter($query, $semester);
         $query = $this->applyCounts($query, $semesterId);
 
         // Search filter

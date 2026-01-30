@@ -123,7 +123,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'gender' => 'required',
             'nim' => $type === 'student' ? 'required|string|unique:students,nim' : 'nullable',
-            'nidn' => $type === 'lecturer' ? 'string|unique:lecturers,nidn' : 'nullable',
+            'nidn' => $type === 'lecturer' ? 'string' : 'nullable',
             'strata' => $type === 'lecturer' ? 'required' : 'nullable',
             'gelar' => $type === 'lecturer' ? 'nullable|string|max:50' : 'nullable',
             'tipe_dosen' => $type === 'lecturer' ? 'required|in:Asdos,CDT,DT,DTT' : 'nullable',
@@ -157,11 +157,13 @@ class UserController extends Controller
                 'angkatan' => $angkatan,
             ]);
         } elseif ($type === 'lecturer') {
+            $session = session('context');
             Lecturer::create([
                 'user_id' => $user->id,
                 'nidn' => $request['nidn'],
                 'bagian' => $request['bagian'] ?? null,
                 'faculty' => $request['faculty'] ?? null,
+                'type' => $session,
                 'strata' => $request['strata'],
                 'gelar' => $request['gelar'],
                 'tipe_dosen' => $request['tipe_dosen'],

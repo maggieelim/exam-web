@@ -22,6 +22,7 @@ use App\Http\Controllers\PSSK\{
 use App\Http\Controllers\{
     AttendanceSessionsController,
     AttendanceReportController,
+    CourseRecapController,
     HomeController,
     StudentAttendanceController,
 };
@@ -32,6 +33,8 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
 
     Route::middleware(['role:admin,koordinator'])->name('admin.')
         ->group(function () {
+            /* ----- Course Recap ----- */
+            Route::resource('lecturer-recap', CourseRecapController::class);
             /* ----- Course Students & Groups ----- */
             Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
             Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
@@ -71,6 +74,7 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
                     Route::get('/download-pemicu', [CoursePemicuController::class, 'downloadExcel'])->name('courses.downloadPemicu');
                     Route::get('/download-pleno', [CoursePlenoController::class, 'downloadExcel'])->name('courses.downloadPleno');
                     Route::get('/download-skillsLab', [CourseSkillsLabController::class, 'downloadExcel'])->name('courses.downloadSkillsLab');
+                    Route::get('/download-absen-skillsLab', [CourseSkillsLabController::class, 'downloadPresenceForm'])->name('courses.downloadAbsenSkillsLab');
                     Route::get('/download-kelas', [CourseScheduleController::class, 'downloadExcel'])->name('courses.downloadPerkuliahan');
                 });
         });

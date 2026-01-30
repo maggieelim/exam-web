@@ -4,6 +4,11 @@
         title="Download Excel">
         <i class="fas fa-download"></i>
     </a>
+    <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
+        href="{{ route('admin.courses.downloadAbsenSkillsLab', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
+        title="Download Excel">
+        <i class="fas fa-download"></i>
+    </a>
 </div>
 <form class="schedule-form" action="{{ route('admin.course.assignSkillLab') }}" method="POST">
     @csrf

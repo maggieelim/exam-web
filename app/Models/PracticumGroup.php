@@ -24,10 +24,10 @@ class PracticumGroup extends Model
     }
 
     // Grup punya banyak dosen pengajar
-    public function lecturers()
-    {
-        return $this->hasMany(PracticumLecturer::class, 'practicum_group_id');
-    }
+    // public function lecturers()
+    // {
+    //     return $this->hasMany(PracticumLecturer::class, 'practicum_group_id');
+    // }
 
     // Grup terkait ke jadwal pengajaran
     public function teachingSchedule()

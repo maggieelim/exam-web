@@ -144,4 +144,83 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+            const skillLabCheckboxes = document.querySelectorAll('input[name="selected_groups[]"]');
+            const form = document.getElementById('groupForm');
+
+            // Fungsi untuk memvalidasi setiap kelompok
+            function validateGroups() {
+                const kelompokMap = new Map();
+                const errors = [];
+
+                // Kelompok semua checkbox
+                skillLabCheckboxes.forEach(checkbox => {
+                    const value = checkbox.value;
+                    const parts = value.split('_');
+                    if (parts.length === 2) {
+                        const kelompok = parts[1];
+                        if (!kelompokMap.has(kelompok)) {
+                            kelompokMap.set(kelompok, []);
+                        }
+                        if (checkbox.checked) {
+                            kelompokMap.get(kelompok).push(parts[0]);
+                        }
+                    }
+                });
+
+                // Validasi setiap kelompok
+                for (const [kelompok, groups] of kelompokMap.entries()) {
+                    if (groups.length === 0) {
+                        errors.push(`Kelompok ${kelompok} harus memilih minimal 1 grup Skill Lab`);
+                    } else if (groups.length > 1) {
+                        errors.push(`Kelompok ${kelompok} memilih lebih dari 1 grup: ${groups.join(', ')}`);
+                    }
+                }
+
+                return errors;
+            }
+
+            // Event listener untuk checkbox Skill Lab
+            skillLabCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        const kelompok = this.getAttribute('data-kelompok');
+
+                        // Uncheck semua checkbox Skill Lab di kelompok yang sama
+                        skillLabCheckboxes.forEach(otherCheckbox => {
+                            if (otherCheckbox !== this &&
+                                otherCheckbox.getAttribute('data-kelompok') === kelompok) {
+                                otherCheckbox.checked = false;
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Validasi sebelum submit
+            form.addEventListener('submit', function(e) {
+                const errors = validateGroups();
+
+                if (errors.length > 0) {
+                    e.preventDefault();
+
+                    // Tampilkan semua error dalam satu notifikasi
+                    const errorMessages = errors.join('\n');
+                    showNotification(errorMessages, 'error');
+                    return false;
+                }
+
+                // Pastikan checkbox yang readonly tetap terkirim
+                originallyCheckedBoxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        checkbox.disabled = false;
+                    }
+                });
+
+                return true;
+            });
+        });
+</script>
 @endsection

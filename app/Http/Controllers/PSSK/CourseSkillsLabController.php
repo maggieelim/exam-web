@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\PSSK;
 
 use App\Exports\SkillsLabExport;
+use App\Exports\SkillsLabPresenceForm;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Semester;
@@ -180,5 +181,16 @@ class CourseSkillsLabController extends Controller
         $yearName = str_replace('/', '-', $semester->academicYear->year_name);
         $filename = "Jadwal_SkillLab_{$course->slug}_{$semester->semester_name}_{$yearName}.xlsx";
         return Excel::download(new SkillsLabExport($course->id, $semesterId), $filename);
+    }
+
+    public function downloadPresenceForm($courseSlug, $semesterId)
+    {
+        $course = Course::where('slug', $courseSlug)->firstOrFail();
+        $semester = Semester::where('id', $semesterId)->firstOrFail();
+        $yearName = str_replace('/', '-', $semester->academicYear->year_name);
+        $academicYear = $semester->semester_name . " " . $semester->academicYear->year_name;
+
+        $filename = "Absen KKD Blok {$course->slug} {$semester->semester_name} {$yearName}.xlsx";
+        return Excel::download(new SkillsLabPresenceForm($course->id, $semesterId, $course->name, $academicYear), $filename);
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityKoas;
 use App\Models\HospitalRotation;
 use App\Models\Lecturer;
+use App\Models\LecturerKoas;
 use App\Models\Logbook;
 use App\Models\Student;
 use App\Models\StudentKoas;
@@ -28,7 +29,8 @@ class StudentLogbookController extends Controller
             ->whereHas('studentKoas', function ($query) use ($semester, $student) {
                 $query->where('semester_id', $semester->id)
                     ->where('student_id', $student->id);
-            })->paginate(20);
+            })
+            ->orderBy('date', 'desc')->paginate(20);
         $rotation = StudentKoas::where([
             ['student_id', $student->id],
             ['semester_id', $semester->id],
@@ -43,7 +45,6 @@ class StudentLogbookController extends Controller
     public function create()
     {
         $activity = ActivityKoas::get();
-        $lecturers = Lecturer::whereIn('type', ['pspd', 'both'])->get();
         $user = Auth::id();
         $semesterId = SemesterService::active();
         $student = Student::where('user_id', $user)->firstOrFail();
@@ -52,6 +53,7 @@ class StudentLogbookController extends Controller
             ['semester_id', $semesterId->id],
             ['status', 'active'],
         ])->first();
+        $lecturers = LecturerKoas::where('hospital_rotation_id', $rotation->hospital_rotation_id)->get();
 
         return view('pspd.logbook.student.create', compact('activity', 'lecturers', 'rotation'));
     }
@@ -73,8 +75,10 @@ class StudentLogbookController extends Controller
         $filePath = null;
 
         if ($request->hasFile('proof')) {
-            $filePath = $request->file('proof')
-                ->store('logbook_proofs', 'public');
+            $filePath = $request->file('proof')->store(
+                'logbook/proofs', // folder
+                'public'          // disk → storage/app/public
+            );
         }
 
         Logbook::create([
@@ -96,7 +100,8 @@ class StudentLogbookController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $logbook = Logbook::findOrFail($id);
+        return view('pspd.logbook.student.show', compact('logbook'));
     }
 
     /**
@@ -104,7 +109,19 @@ class StudentLogbookController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $user = Auth::id();
+        $activity = ActivityKoas::get();
+        $semesterId = SemesterService::active();
+        $student = Student::where('user_id', $user)->firstOrFail();
+        $rotation = StudentKoas::where([
+            ['student_id', $student->id],
+            ['semester_id', $semesterId->id],
+            ['status', 'active'],
+        ])->first();
+        $logbook = Logbook::where('id', $id)->firstOrFail();
+        $lecturers = LecturerKoas::where('hospital_rotation_id', $rotation->hospital_rotation_id)->get();
+
+        return view('pspd.logbook.student.edit', compact('logbook', 'rotation', 'activity', 'lecturers'));
     }
 
     /**
@@ -112,7 +129,24 @@ class StudentLogbookController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validated = $request->validate([
+            'date'      => ['required', 'date'],
+            'rotation'      => ['required', 'exists:student_koas,id'],
+            'activity'  => ['required', 'exists:activity_koas,id'],
+            'desc'      => ['required', 'string', 'max:1000'],
+            'lecturer'  => ['required', 'exists:lecturers,id'],
+            'proof'    => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
+        ]);
+
+        $logbook = Logbook::where('id', $id)->firstOrFail();
+        $logbook->update([
+            'lecturer_id' => $request->lecturer,
+            'activity_koas_id' => $request->activity,
+            'date' => $request->date,
+            'description' => $request->desc,
+            'file_path' => $request->proof,
+        ]);
+        return redirect()->back()->with('success', 'Logbook berhasil diperbarui');
     }
 
     /**

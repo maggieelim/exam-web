@@ -93,8 +93,15 @@ return [
             [
                 'label' => 'Academic Year',
                 'route' => 'pssk.admin.semester.index',
-                'pattern' => 'semester*',
+                'pattern' => 'admin/semester*',
                 'icon' => 'fa-calendar',
+                'roles' => ['admin']
+            ],
+            [
+                'label' => 'Recap',
+                'route' => 'admin.lecturer-recap.index',
+                'pattern' => 'lecturer-recap*',
+                'icon' => 'fa-timeline',
                 'roles' => ['admin']
             ],
         ]
@@ -289,7 +296,7 @@ return [
             [
                 'label' => 'Input Logbook',
                 'route' => 'student-logbook.index',
-                'pattern' => 'logbook*',
+                'pattern' => 'student-logbook*',
                 'icon' => 'fa-calendar-alt'
             ],
         ]
