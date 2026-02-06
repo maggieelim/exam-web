@@ -68,7 +68,7 @@
                         @foreach ($courses as $course)
                         @foreach ($activities as $activity)
                         <th class="text-center text-xs text-wrap">
-                            {{ $activity->activity_name }}
+                            {{ $activity }}
                         </th>
                         @endforeach
                         @endforeach
@@ -82,10 +82,11 @@
                         <td class="headcol text-wrap">
                             {{ $lecturer->user->name }}
                         </td>
+
                         @foreach ($courses as $course)
                         @foreach ($activities as $activity)
                         <td class="text-center">
-                            {{ $summary[$lecturer->id][$course->id][$activity->id] ?? 0 }}
+                            {{ $summary[$lecturer->id][$course->id][$activity] ?? 0 }}
                         </td>
                         @endforeach
                         @endforeach

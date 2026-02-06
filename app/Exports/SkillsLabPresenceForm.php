@@ -23,8 +23,8 @@ class SkillsLabPresenceForm implements WithMultipleSheets
     protected $studentGroups;
     protected $courseName;
     protected $academicYear;
-    protected $maxSessionsPerSheet = 4;
-    protected $activityTypes = [2, 3, 7]; // KKD (2), Praktikum (3), Praktikum Lab (7)
+    protected $maxSessionsPerSheet = 6;
+    protected $activityTypes = [2, 3, 5, 4]; // KKD (2), Praktikum (3), Pemicu (5), TBL (4)
 
     public function __construct($course_id, $semesterId, $courseName, $academicYear)
     {
@@ -69,7 +69,6 @@ class SkillsLabPresenceForm implements WithMultipleSheets
                 $chunkNumber++;
             }
         }
-
         return $sheets;
     }
 
@@ -91,8 +90,10 @@ class SkillsLabPresenceForm implements WithMultipleSheets
                 return 'KKD';
             case 3:
                 return 'Praktikum';
-            case 7:
-                return 'Ujian Praktikum';
+            case 5:
+                return 'Pemicu';
+            case 4:
+                return 'TBL';
             default:
                 return 'KKD';
         }
@@ -120,7 +121,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
     protected $sheetNumber;
     protected $totalSessions;
     protected $activityType;
-    protected $maxSessionsPerSheet = 4;
+    protected $maxSessionsPerSheet = 6;
     protected $chunkNumber;
 
     public function __construct($courseId, $semesterId, $courseName, $academicYear, $sessions, $studentGroups, $sheetNumber, $totalSessions, $activityType, $chunkNumber)
@@ -140,8 +141,13 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
     public function array(): array
     {
         $rows = [];
-        $sessionCount = count($this->sessions);
-        $totalColumns = 3 + $sessionCount;
+        if ($this->isPemicu()) {
+            $pemicuCount = $this->groupPemicuSessions()->count();
+            $totalColumns = 3 + ($pemicuCount * 3); // D1 & D2
+        } else {
+            $sessionCount = count($this->sessions);
+            $totalColumns = 3 + $sessionCount;
+        }
 
         $groupIndex = 0;
         foreach ($this->studentGroups as $kelompok => $items) {
@@ -169,42 +175,70 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
 
     private function addGroupHeaderRows(&$rows, $kelompok, $studentCount, $totalColumns)
     {
-        // Baris 1: Judul utama dengan tipe aktivitas
         $titleRow = array_fill(0, $totalColumns, '');
         $titleRow[0] = 'DAFTAR HADIR ' . strtoupper($this->activityType) . ' MAHASISWA';
         $rows[] = $titleRow;
 
-        // Baris 2: Nama blok dan SPMI
         $blockRow = array_fill(0, $totalColumns, '');
         $blockRow[0] = 'BLOK: ' . strtoupper($this->courseName);
+        if ($this->isPemicu()) {
+            $blockRow[$totalColumns - 3] = 'SPMI-20-/FR-FK-20-11-R0';
+        } else {
+            $blockRow[$totalColumns - 2] = 'SPMI-20-/FR-FK-20-11-R0';
+        }
         $blockRow[$totalColumns - 2] = 'SPMI-20-/FR-FK-20-11-R0';
         $rows[] = $blockRow;
 
-        // Baris 3: Semester dan tahun akademik
         $semesterRow = array_fill(0, $totalColumns, '');
         $semesterRow[0] = 'SEMESTER ' . strtoupper($this->academicYear);
         $rows[] = $semesterRow;
 
-        // 2 baris kosong
+        // spacer
         $rows[] = array_fill(0, $totalColumns, '');
         $rows[] = array_fill(0, $totalColumns, '');
 
-        // Header tabel - Baris 1 untuk NO, NIM, NAMA dan header sesi
+        /* ===============================
+     * HEADER TABEL
+     * =============================== */
         $headerRow1 = array_fill(0, $totalColumns, '');
+        $headerRow2 = array_fill(0, $totalColumns, '');
+
         $headerRow1[0] = 'NO';
         $headerRow1[1] = 'NIM';
         $headerRow1[2] = 'NAMA';
 
-        // Tambahkan header sesi sesuai dengan session number asli
-        $sessionIndex = 0;
-        foreach ($this->sessions as $session) {
-            $headerRow1[3 + $sessionIndex] = strtoupper($this->activityType) . ' ' . $session->session_number;
-            $sessionIndex++;
+        if ($this->isPemicu()) {
+
+            // ===== PEMICU MODE =====
+            $colIndex = 3;
+
+            foreach ($this->groupPemicuSessions() as $pemicuKe => $sessions) {
+
+                // Baris 1 → PEMICU i (merge 2 kolom)
+                $headerRow1[$colIndex] = 'PEMICU ' . $pemicuKe;
+
+                // Baris 2 → D1 & D2
+                $headerRow2[$colIndex]     = 'D1';
+                $headerRow2[$colIndex + 1] = 'D2';
+                $headerRow1[$colIndex + 2] = 'PLENO ' . $pemicuKe;
+
+                $colIndex += 3;
+            }
+        } else {
+
+            // ===== NON PEMICU MODE =====
+            $sessionIndex = 0;
+            foreach ($this->sessions as $session) {
+                $headerRow1[3 + $sessionIndex] =
+                    strtoupper($this->activityType) . ' ' . $session->session_number;
+                $sessionIndex++;
+            }
         }
+
+        // push header rows
         $rows[] = $headerRow1;
 
-        // Header tabel - Baris 2 untuk judul kelompok
-        $headerRow2 = array_fill(0, $totalColumns, '');
+        // baris kelompok + D1 D2 / kosong
         $headerRow2[0] = 'Kelompok: ' . $kelompok . '  (Jumlah=' . $studentCount . ' Siswa)';
         $rows[] = $headerRow2;
     }
@@ -218,6 +252,9 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
             $studentRow[2] = $student->student->user->name ?? '-';
             $rows[] = $studentRow;
         }
+        $emptyRow = array_fill(0, $totalColumns, '');
+        $emptyRow[0] = count($items) + 1; // nomor urut berikutnya
+        $rows[] = $emptyRow;
     }
 
     private function addTutorRows(&$rows, $totalColumns)
@@ -256,7 +293,13 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
                 $this->setupPage($sheet);
 
                 $sessionCount = count($this->sessions);
-                $totalColumns = 3 + $sessionCount;
+                if ($this->isPemicu()) {
+                    $pemicuCount = $this->groupPemicuSessions()->count();
+                    $totalColumns = 3 + ($pemicuCount * 3); // D1 & D2
+                } else {
+                    $sessionCount = count($this->sessions);
+                    $totalColumns = 3 + $sessionCount;
+                }
                 $lastColumn = Coordinate::stringFromColumnIndex($totalColumns);
 
                 $currentRow = 1;
@@ -277,7 +320,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
                     // TAMBAHKAN PAGE BREAK SETELAH KELOMPOK (kecuali kelompok terakhir)
                     if ($groupNumber < $totalGroups) {
                         // Page break ditempatkan di baris KOSONG SETELAH kelompok
-                        $pageBreakRow = $groupEndRow + 1; // Baris pertama dari 4 baris kosong
+                        $pageBreakRow = $groupEndRow + 4; // Baris pertama dari 4 baris kosong
                         $sheet->setBreak("A{$pageBreakRow}", Worksheet::BREAK_ROW);
 
                         // UPDATE currentRow untuk kelompok berikutnya (termasuk 4 baris kosong)
@@ -296,7 +339,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
 
     private function calculateGroupRows($studentCount)
     {
-        return 5 + 2 + $studentCount + 3;
+        return 5 + 2 + ($studentCount + 1) + 3;
     }
 
     private function setupPage($sheet)
@@ -340,12 +383,11 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
 
         // Data mahasiswa dimulai setelah header tabel
         $dataStartRow = $headerRow2 + 1;
-        $dataEndRow = $dataStartRow + $studentCount - 1;
+        $dataEndRow = $dataStartRow + $studentCount;
 
         // Baris tutor dimulai setelah data mahasiswa
         $tutorStartRow = $dataEndRow + 1;
         $dateRow = $tutorStartRow + 2;
-
         // Format header tabel
         $this->formatTableHeaders($sheet, $headerRow1, $headerRow2, $sessionCount, $lastColumn);
 
@@ -356,7 +398,47 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
         $this->formatTutorRows($sheet, $tutorStartRow, $dateRow, $lastColumn, $sessionCount);
 
         // Apply borders - dari header tabel sampai baris tanggal
-        $this->applyBorders($sheet, $headerRow1, $dateRow, $lastColumn);
+        $this->applyBorders($sheet, $headerRow1, $dateRow, $lastColumn, $headerRow1, $dataEndRow);
+
+        $ranges = [
+            "A{$headerRow1}:C{$dateRow}",
+            "A{$tutorStartRow}:{$lastColumn}{$dateRow}",
+            "A{$headerRow1}:{$lastColumn}{$headerRow2}"
+        ];
+
+        $style = [
+            'borders' => [
+                'outline' => [
+                    'borderStyle' => Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ];
+        if ($this->isPemicu()) {
+            for ($colIndex = 4; $colIndex <= $totalColumns; $colIndex += 3) {
+                $endColIndex = min($colIndex + 2, $totalColumns);
+
+                $startCol = Coordinate::stringFromColumnIndex($colIndex);
+                $endCol = Coordinate::stringFromColumnIndex($endColIndex);
+
+                // Apply border outline tebal untuk grup kolom ini
+                $range = "{$startCol}{$headerRow1}:{$endCol}{$dateRow}";
+                $sheet->getStyle($range)->applyFromArray($style);
+            }
+        } else {
+            for ($colIndex = 4; $colIndex <= $totalColumns; $colIndex += 1) {
+                $endColIndex = min($colIndex + 2, $totalColumns);
+                $startCol = Coordinate::stringFromColumnIndex($colIndex);
+                $endCol = Coordinate::stringFromColumnIndex($endColIndex);
+
+                // Apply border outline tebal untuk grup kolom ini
+                $range = "{$startCol}{$headerRow1}:{$endCol}{$dateRow}";
+                $sheet->getStyle($range)->applyFromArray($style);
+            }
+        }
+        foreach ($ranges as $range) {
+            $sheet->getStyle($range)->applyFromArray($style);
+        }
 
         // Set row height khusus untuk baris data mahasiswa
         for ($row = $dataStartRow; $row <= $dataEndRow; $row++) {
@@ -378,7 +460,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
         $this->applyCellStyle($sheet, "A{$blockRow}", ['bold' => true, 'size' => 12, 'horizontal' => 'left']);
 
         // SPMI cells
-        $spmiColStart = Coordinate::stringFromColumnIndex($totalColumns - 1);
+        $spmiColStart = $this->isPemicu() ? Coordinate::stringFromColumnIndex($totalColumns - 2) : Coordinate::stringFromColumnIndex($totalColumns - 1);
         $spmiColEnd = Coordinate::stringFromColumnIndex($totalColumns);
         $sheet->mergeCells("{$spmiColStart}{$blockRow}:{$spmiColEnd}{$blockRow}");
         $this->applyCellStyle($sheet, "{$spmiColStart}{$blockRow}", ['bold' => true, 'size' => 11, 'horizontal' => 'center']);
@@ -394,16 +476,55 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
         // Header row 1 style
         $sheet->getStyle("A{$headerRow1}:{$lastColumn}{$headerRow1}")
             ->getFont()->setBold(true);
+
         $sheet->getStyle("A{$headerRow1}:{$lastColumn}{$headerRow1}")
             ->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
             ->setVertical(Alignment::VERTICAL_CENTER);
 
         // Merge and format session columns
-        for ($i = 0; $i < $sessionCount; $i++) {
-            $colLetter = Coordinate::stringFromColumnIndex(4 + $i);
-            $sheet->mergeCells("{$colLetter}{$headerRow1}:{$colLetter}{$headerRow2}");
-            $this->applyCellStyle($sheet, "{$colLetter}{$headerRow1}", ['horizontal' => 'center']);
+        if ($this->isPemicu()) {
+            $pemicuCount = $this->groupPemicuSessions()->count();
+            $colIndex = 4; // kolom D
+
+            for ($i = 0; $i < $pemicuCount; $i++) {
+
+                $pemicuStart = Coordinate::stringFromColumnIndex($colIndex);
+                $pemicuEnd   = Coordinate::stringFromColumnIndex($colIndex + 1);
+
+                $sheet->mergeCells("{$pemicuStart}{$headerRow1}:{$pemicuEnd}{$headerRow1}");
+                $this->applyCellStyle($sheet, "{$pemicuStart}{$headerRow1}", [
+                    'bold' => true,
+                    'horizontal' => 'center'
+                ]);
+
+                // D1 & D2
+                $this->applyCellStyle($sheet, "{$pemicuStart}{$headerRow2}", [
+                    'bold' => true,
+                    'horizontal' => 'center'
+                ]);
+                $this->applyCellStyle($sheet, "{$pemicuEnd}{$headerRow2}", [
+                    'bold' => true,
+                    'horizontal' => 'center'
+                ]);
+
+                $plenoCol = Coordinate::stringFromColumnIndex($colIndex + 2);
+                $sheet->mergeCells("{$plenoCol}{$headerRow1}:{$plenoCol}{$headerRow2}");
+
+                $this->applyCellStyle($sheet, "{$plenoCol}{$headerRow1}", [
+                    'bold' => true,
+                    'horizontal' => 'center',
+                    'vertical' => 'center',
+                ]);
+
+                // Geser ke pemicu berikutnya
+                $colIndex += 3;
+            }
+        } else {
+            for ($i = 0; $i < $sessionCount; $i++) {
+                $colLetter = Coordinate::stringFromColumnIndex(4 + $i);
+                $sheet->mergeCells("{$colLetter}{$headerRow1}:{$colLetter}{$headerRow2}");
+            }
         }
 
         // Header row 2 (kelompok)
@@ -443,6 +564,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
         foreach ($rows as $rowNum => $label) {
             $sheet->mergeCells("A{$rowNum}:C{$rowNum}");
             $this->applyCellStyle($sheet, "A{$rowNum}", ['bold' => true, 'horizontal' => 'left']);
+            $sheet->getRowDimension($rowNum)->setRowHeight(30);
         }
 
         if ($sessionCount > 0) {
@@ -450,11 +572,11 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
             $sheet->getStyle($tutorRange)
                 ->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                ->setVertical(Alignment::VERTICAL_CENTER);
+                ->setVertical(Alignment::VERTICAL_BOTTOM);
         }
     }
 
-    private function applyBorders($sheet, $startRow, $endRow, $lastColumn)
+    private function applyBorders($sheet, $startRow, $endRow, $lastColumn, $headerRow1, $dataEndRow)
     {
         $range = "A{$startRow}:{$lastColumn}{$endRow}";
         $this->applyBorder($sheet, $range, Border::BORDER_THIN);
@@ -497,11 +619,17 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
         $sheet->getColumnDimension('B')->setWidth(12);  // NIM
         $sheet->getColumnDimension('C')->setWidth(34);  // NAMA
         $sheet->getStyle('C')->getAlignment()->setWrapText(true);
-
+        $columnCount = $this->isPemicu()
+            ? $this->groupPemicuSessions()->count() * 3
+            : $sessionCount;
         // Set width untuk kolom sesi
-        for ($i = 0; $i < $sessionCount; $i++) {
+        for ($i = 0; $i < $columnCount; $i++) {
             $colLetter = Coordinate::stringFromColumnIndex(4 + $i);
-            $sheet->getColumnDimension($colLetter)->setWidth(14);
+            if ($this->isPemicu()) {
+                $sheet->getColumnDimension($colLetter)->setWidth(10);
+            } else {
+                $sheet->getColumnDimension($colLetter)->setWidth(14);
+            }
             $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true);
         }
     }
@@ -525,5 +653,24 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
 
         $sheet->getStyle("A1:{$lastColumn}{$highestRow}")
             ->getAlignment();
+    }
+
+    private function isPemicu()
+    {
+        return strtolower($this->activityType) === 'pemicu';
+    }
+
+    private function isTBL()
+    {
+        return strtolower($this->activityType) === 'tbl';
+    }
+
+    private function groupPemicuSessions()
+    {
+        return $this->sessions
+            ->groupBy(function ($s) {
+                return floor($s->pemicu_ke / 10);
+            })
+            ->sortKeys();
     }
 }

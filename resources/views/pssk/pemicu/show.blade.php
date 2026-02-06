@@ -54,7 +54,7 @@
                     <thead>
                         <tr>
                             <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">NIM</th>
-                            <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Name</th>
+                            <th class="text-uppercase text-dark text-sm font-weight-bolder ">Name</th>
                             <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Nilai</th>
                             <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Action</th>
                         </tr>

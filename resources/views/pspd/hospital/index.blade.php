@@ -74,10 +74,15 @@
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    <a href="{{ route('rumah-sakit.show', $hospital->id) }}"
-                                        class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                                        <i class="fas fa-info-circle"></i>
-                                    </a>
+                                    <form action="{{ route('rumah-sakit.destroy', $hospital->id) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn bg-gradient-danger m-1 p-2 px-3" title="Delete"
+                                            onclick="return confirm('Apakah anda yakin ingin menghapus rumah sakit ini?');">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             @endforeach

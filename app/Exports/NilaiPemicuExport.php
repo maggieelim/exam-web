@@ -25,7 +25,7 @@ class NilaiPemicuExport implements FromView, WithStyles, WithEvents
 
     public function view(): View
     {
-        return view('courses.pemicu.nilai_pemicu', [
+        return view('pssk.courses.pemicu.nilai_pemicu', [
             'groupedStudents' => $this->groupedStudents,
             'scores' => $this->scores,
             'groupLecturer' => $this->groupLecturer,

@@ -52,11 +52,7 @@ class HospitalController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        $hospital = Hospital::with('hospitalRotations.clinicalRotation')->findOrFail($id);
-        return view('pspd.hospital.show', compact('hospital'));
-    }
+    public function show(string $id) {}
 
     /**
      * Show the form for editing the specified resource.

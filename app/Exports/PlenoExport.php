@@ -50,7 +50,7 @@ class PlenoExport implements FromCollection, WithHeadings, WithTitle, WithStyles
 
             $row = [
                 'No' => $index + 1,
-                'Nama Dosen' => $lecturer->user->name ?? '-',
+                'Nama Dosen' => $lecturer->user->name . ', ' . $lecturer->gelar,
                 'Bagian' => $lecturer->bagian ?? '-',
             ];
 

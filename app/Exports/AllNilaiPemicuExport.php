@@ -31,7 +31,7 @@ class AllNilaiPemicuExport implements FromView, WithStyles, WithEvents
             throw new \Exception("Data course atau students tidak valid");
         }
 
-        return view('courses.pemicu.all_nilai_pemicu', [
+        return view('pssk.courses.pemicu.all_nilai_pemicu', [
             'pemicuGroups' => $this->pemicuGroups ?? [],
             'preGroup' => $this->preGroup ?? 0,
             'course' => $this->course,

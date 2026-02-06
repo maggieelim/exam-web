@@ -1,7 +1,6 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-
 {{-- Informasi Umum --}}
 <div class="card mb-4 shadow-sm">
     <div class="card-body">
@@ -43,38 +42,62 @@
 {{-- Detail Logbook --}}
 <div class="card shadow-sm">
     <div class="card-body">
-        <div class="d-flex col-md-12 justify-content-between">
-            <h5>Detail Logbook</h5>
-            <span @if ($logbook->status === 'approved')
-                class="badge bg-success mb-3"
-                @elseif ($logbook->status === 'rejected')
-                class="badge bg-danger mb-3"
-                @else
-                class="badge bg-warning mb-3"
-                @endif>
-                {{ ucfirst($logbook->status) }}
-            </span>
+        <div class="d-flex align-items-center justify-content-between w-100">
+            <h5 class="mb-0">Detail Logbook</h5>
+
+            <form action="{{ route('logbook.update', ['status' => $status, 'logbook' => $logbook->id]) }}" method="POST"
+                class="d-inline">
+                @csrf
+                @method('PUT')
+
+                <button @if ($logbook->status === 'rejected') hidden @endif
+                    type="submit"
+                    name="action"
+                    value="rejected"
+                    class="btn btn-danger px-3 py-2"
+                    title="Decline"
+                    >
+                    <i class="fa fa-times"></i>
+                    <span class="d-none d-sm-inline ms-1">Decline</span>
+                </button>
+
+                <button @if ($logbook->status === 'approved') hidden @endif
+                    type="submit"
+                    name="action"
+                    value="approved"
+                    class="btn btn-success px-3 py-2"
+                    title="Approve"
+                    >
+                    <i class="fa fa-check"></i>
+                    <span class="d-none d-sm-inline ms-1">Approve</span>
+                </button>
+            </form>
         </div>
         <div class="row gy-3">
-            <div class="col-md-4">
-                <small class="text-muted fw-bold">Waktu</small>
+            <div class="col-md-3">
+                <small class="text-muted fw-bold">Student</small>
                 <div class="fw-semibold">
-                    {{ optional($logbook->date)->format('d M Y') }},
-                    {{ optional($logbook->start_time)->format('H.i') ?? '' }} -
-                    {{ optional($logbook->end_time)->format('H.i') ?? '' }}
+                    {{ $logbook->studentKoas->student->user->name }}
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <small class="text-muted fw-bold">NIM</small>
+                <div class="fw-semibold">
+                    {{ $logbook->studentKoas->student->nim }}
+                </div>
+            </div>
+            <div class="col-md-3">
                 <small class="text-muted fw-bold">Jenis Kegiatan</small>
                 <div class="fw-semibold">
                     {{ $logbook->activityKoas->name }}
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <small class="text-muted fw-bold">Dosen/Dokter Pembimbing</small>
+            <div class="col-md-3">
+                <small class="text-muted fw-bold">Waktu</small>
                 <div class="fw-semibold">
-                    {{ $logbook->lecturer->user->name }} {{ $logbook->lecturer->gelar }}
+                    {{ $logbook->date->format('d M Y') }},
+                    {{ optional($logbook->start_time)->format('H.i') ?? '' }} -
+                    {{ optional($logbook->end_time)->format('H.i') ?? '' }}
                 </div>
             </div>
 
@@ -96,5 +119,4 @@
         </div>
     </div>
 </div>
-
 @endsection

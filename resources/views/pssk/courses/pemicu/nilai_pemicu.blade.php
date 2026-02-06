@@ -7,7 +7,7 @@
             <th colspan="5">Diskusi 2</th>
             <th rowspan="2">Nilai</th>
             <th rowspan="2">%</th>
-            <th rowspan="2">Dosen</th>
+            <th colspan="2">Dosen</th>
         </tr>
 
         <tr>
@@ -20,13 +20,16 @@
             <th class="text-wrap">Berpikir Kritis</th>
             <th class="text-wrap">Informasi Relevan</th>
             <th class="text-wrap">Analisis Sintesis</th>
+
+            <th class="text-wrap">Diskusi 1</th>
+            <th class="text-wrap">Diskusi 2</th>
         </tr>
     </thead>
 
     <tbody>
         @foreach ($groupedStudents as $kelompok => $students)
         <tr>
-            <td colspan="13" style="font-weight: bold; background: #d9d9d9;">
+            <td colspan="14" style="font-weight: bold; background: #d9d9d9;">
                 Kelompok: {{ $kelompok }} ({{ $students->count() }} Siswa)
             </td>
         </tr>
@@ -41,7 +44,8 @@
         $total = ($scoreD1->total_score ?? 0) + ($scoreD2->total_score ?? 0);
         $percent = 24 > 0 ? ($total / 24) * 100 : 0;
 
-        $lecturerName = $groupLecturer[$cs->kelompok] ?? '-';
+        $dosenD1 = $groupLecturer[$cs->kelompok][$id1] ?? '-';
+        $dosenD2 = $groupLecturer[$cs->kelompok][$id2] ?? '-';
         @endphp
 
         <tr>
@@ -62,7 +66,16 @@
 
             <td>{{ $total }}</td>
             <td>{{ number_format($percent, 2) }}%</td>
-            <td>{{ $lecturerName }}</td>
+
+            {{-- PERBAIKAN DI SINI --}}
+            @if ($dosenD1 !== '-' && $dosenD2 !== '-' && $dosenD1 !== $dosenD2)
+            <td class="text-wrap text-sm">{{ $dosenD1 }}</td>
+            <td class="text-wrap text-sm">{{ $dosenD2 }}</td>
+            @else
+            <td colspan="2" class="text-wrap text-sm text-center">
+                {{ $dosenD1 !== '-' ? $dosenD1 : $dosenD2 }}
+            </td>
+            @endif
         </tr>
         @endforeach
         @endforeach

@@ -72,7 +72,8 @@
                             $maxScore = 24;
                             $percent = $maxScore > 0 ? ($total / $maxScore) * 100 : 0;
 
-                            $lecturerName = $groupLecturer[$cs->kelompok] ?? '-';
+                            $dosenD1 = $groupLecturer[$cs->kelompok][$id1] ?? '-';
+                            $dosenD2 = $groupLecturer[$cs->kelompok][$id2] ?? '-';
                             @endphp
 
 
@@ -100,7 +101,14 @@
                                 <td class="text-center text-sm">{{ number_format($percent, 2) }}%</td>
 
                                 {{-- Dosen --}}
-                                <td>{{ $lecturerName }}</td>
+                                <td class="text-sm">
+                                    @if ($dosenD1 && $dosenD2 && $dosenD1 !== $dosenD2)
+                                    D1: {{ $dosenD1 }} <br>
+                                    D2: {{ $dosenD2 }}
+                                    @else
+                                    {{ $dosenD1 ?? $dosenD2 ?? '-' }}
+                                    @endif
+                                </td>
                             </tr>
 
                             @endforeach

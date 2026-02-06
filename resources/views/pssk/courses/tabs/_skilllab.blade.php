@@ -4,11 +4,6 @@
         title="Download Excel">
         <i class="fas fa-download"></i>
     </a>
-    <a class="btn btn-outline-info d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"
-        href="{{ route('admin.courses.downloadAbsenSkillsLab', ['course' => $course->slug, 'semesterId' => $semesterId]) }}"
-        title="Download Excel">
-        <i class="fas fa-download"></i>
-    </a>
 </div>
 <form class="schedule-form" action="{{ route('admin.course.assignSkillLab') }}" method="POST">
     @csrf
@@ -26,8 +21,8 @@
                 </tr>
                 <tr>
                     @foreach ($skillLabData->skillsLabs as $skillLab)
-                    <th class="headrow">{{ $skillLab->group }}
-                        {{ $skillLab->scheduled_date }}<br>{{ $skillLab->start_time }}~{{ $skillLab->end_time }}
+                    <th class="headrow text-wrap">{{ $skillLab->group }}
+                        {{ $skillLab->scheduled_date }}<br>{{ $skillLab->start_time }}<br>{{ $skillLab->end_time }}
                     </th>
                     @endforeach
                 </tr>

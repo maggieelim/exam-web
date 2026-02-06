@@ -38,9 +38,6 @@ class SemesterController extends Controller
         }
         $semesters = $query->paginate(20)->appends($request->query());
 
-        if ($agent->isMobile()) {
-            return view('admin.semester.index_mobile', compact('semesters', 'activeSemester'));
-        }
         return view('admin.semester.index', compact('sort', 'dir', 'semesters', 'activeSemester'));
     }
 

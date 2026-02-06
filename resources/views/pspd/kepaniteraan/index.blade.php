@@ -32,11 +32,17 @@
                 <form method="GET" action="{{ route('kepaniteraan.index') }}">
                     <div class="mx-3 my-2 py-2">
                         <div class="row g-2 align-items-end">
-                            <div class="col-md-6">
-                                <label for="name" class="form-label mb-1">Rumah Sakit</label>
-                                <input type="text" class="form-control " name="name" value="{{ request('name') }}">
+                            <div class="col-md-4">
+                                <label for="hospital_name" class="form-label mb-1">Rumah Sakit</label>
+                                <input type="text" class="form-control " name="hospital_name"
+                                    value="{{ request('hospital_name') }}">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="stase_name" class="form-label mb-1">Stase</label>
+                                <input type="text" class="form-control " name="stase_name"
+                                    value="{{ request('stase_name') }}">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="semester_id" class="form-label mb-1">Semester</label>
                                 <select name="semester_id" id="semester_id" class="form-select">
                                     @foreach ($semesters as $semester)

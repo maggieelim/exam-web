@@ -22,10 +22,8 @@ class CourseRecapController extends Controller
         $activeSemester = SemesterService::active();
         $semesterId = $request->semester_id ?? $activeSemester->id;
         $semester = Semester::findOrFail($semesterId);
-
         $lecturers = Lecturer::with('courseLecturers', 'user')
             ->join('users', 'users.id', '=', 'lecturers.user_id')
-            // ->whereIn('lecturers.type', ['pssk', 'both'])
             ->orderBy('users.name', 'asc')
             ->select('lecturers.*')
             ->get();
@@ -43,30 +41,60 @@ class CourseRecapController extends Controller
         ])
             ->where('status', 'finished')
             ->whereHas('course', function ($q) use ($semester) {
-                $q->whereIn('semester', [$semester->semester_name, 'Ganjil/Genap']);
+                $q->whereIn('semester', [
+                    $semester->semester_name,
+                    'Ganjil/Genap'
+                ]);
             })
             ->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
                 $q->whereIn('course_lecturer_id', $courseLecturerIds);
             })
             ->get();
 
+        $activityMap = [
+            1 => 'Kuliah',
+            4 => 'Pleno',
+            5 => 'Pemicu',
+            2 => 'KKD',
+            8 => 'KKD',
+            3 => 'Praktikum',
+            7 => 'Praktikum',
+        ];
+
         // 3. Hitung summary: dosen × blok × kegiatan
         $summary = [];
-
         foreach ($attendances as $attendance) {
             foreach ($attendance->lecturerRecords as $record) {
+
+                // skip activity 6
+                if ($attendance->activity_id == 6) {
+                    continue;
+                }
+
+                // skip activity yang tidak dimapping
+                if (!isset($activityMap[$attendance->activity_id])) {
+                    continue;
+                }
+
                 $lecturerId = $record->courseLecturer->lecturer_id;
                 $courseId   = $attendance->course_id;
-                $activityId = $attendance->activity_id;
 
-                $summary[$lecturerId][$courseId][$activityId] =
-                    ($summary[$lecturerId][$courseId][$activityId] ?? 0) + 1;
+                $activityKey = $activityMap[$attendance->activity_id];
+
+                $summary[$lecturerId][$courseId][$activityKey] =
+                    ($summary[$lecturerId][$courseId][$activityKey] ?? 0) + 1;
             }
         }
 
         // 4. Ambil master data untuk header tabel
-        $courses    = Course::orderBy('sesi')->get();
-        $activities = Activity::orderBy('activity_name')->get();
+        $courses    = Course::orderBy('sesi')->whereIn('semester', [$semester->semester_name, 'Ganjil/Genap'])->get();
+        $activities = collect([
+            'Kuliah',
+            'Pleno',
+            'KKD',
+            'Praktikum',
+            'Pemicu',
+        ]);
 
         return view('admin.courseRecap.index', compact(
             'lecturers',

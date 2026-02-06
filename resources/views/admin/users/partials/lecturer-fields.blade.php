@@ -44,12 +44,12 @@ $tipeDosenOptions = ['Asdos', 'CDT', 'DT', 'DTT'];
 
 <div class="col-md-2">
     <label class="form-label">Min SKS</label>
-    <input type="number" name="min_sks" class="form-control" value="{{ old('min_sks', $lecturer->min_sks ?? '') }}">
+    <input type="number" name="min_sks" class="form-control" value="{{ old('min_sks', $lecturer->min_sks ?? 0) }}">
 </div>
 
 <div class="col-md-2">
     <label class="form-label">Max SKS</label>
-    <input type="number" name="max_sks" class="form-control" value="{{ old('max_sks', $lecturer->max_sks ?? '') }}">
+    <input type="number" name="max_sks" class="form-control" value="{{ old('max_sks', $lecturer->max_sks ?? 0) }}">
 </div>
 
 {{-- @if (!$isCreate)

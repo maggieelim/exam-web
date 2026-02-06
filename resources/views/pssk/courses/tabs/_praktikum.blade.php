@@ -11,7 +11,7 @@
     <div class="table-wrapper p-0">
         <input type="hidden" name="semester_id" value="{{ $semesterId }}">
         <input type="hidden" name="course_id" value="{{ $course->id }}">
-        <table class="table table-bordered compact-table m-0">
+        <table class="table-bordered compact-table m-0">
             <thead class="text-center align-middle">
                 <tr>
                     <th rowspan="2" class="headcol no">No</th>

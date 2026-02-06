@@ -25,7 +25,7 @@
                             <tr>
                                 <th rowspan="2">NIM</th>
                                 <th rowspan="2">Nama</th> @foreach (range(1, $preGroup) as $index) <th colspan="2">
-                                    Pemicu {{ $index }}</th> @endforeach <th rowspan="2">Dosen</th>
+                                    Pemicu {{ $index }}</th> @endforeach
                             </tr>
                             <tr> @foreach (range(1, $preGroup) as $index) <th>Nilai</th>
                                 <th>%</th> @endforeach
@@ -76,9 +76,6 @@
                                 <td class="text-center text-sm">{{ $total }}</td>
                                 <td class="text-center text-sm">{{ number_format($percent, 2) }}%</td>
                                 @endforeach
-
-                                {{-- Dosen --}}
-                                <td>{{ $lecturerName }}</td>
                             </tr>
                             @endforeach
                             @endforeach

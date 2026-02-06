@@ -200,10 +200,12 @@ class CoursePemicuController extends Controller
             ->get()
             ->groupBy('course_student_id');
 
-        $groupLecturer = $pemicuDetails->mapWithKeys(function ($d) {
-            return [
-                $d->kelompok_num => $d->lecturer->user->name
-            ];
+        $groupLecturer = $pemicuDetails->groupBy('kelompok_num')->map(function ($items) {
+            return $items->mapWithKeys(function ($d) {
+                return [
+                    $d->teaching_schedule_id => $d->lecturer->user->name
+                ];
+            });
         });
 
         return compact(
@@ -218,12 +220,26 @@ class CoursePemicuController extends Controller
 
     public function nilai($id1, $id2)
     {
-        $data = $this->getPemicuDetailsData($id1, $id2);
+        try {
+            $data = $this->getPemicuDetailsData($id1, $id2);
 
-        return view('pssk.courses.pemicu.nilai', array_merge($data, [
-            'id1' => $id1,
-            'id2' => $id2,
-        ]));
+            // validasi data penting
+            if (
+                empty($data['pemicuDetails']) ||
+                $data['pemicuDetails']->isEmpty()
+            ) {
+                return redirect()->back()
+                    ->with('error', 'Data nilai pemicu belum tersedia.');
+            }
+
+            return view('pssk.courses.pemicu.nilai', array_merge($data, [
+                'id1' => $id1,
+                'id2' => $id2,
+            ]));
+        } catch (\Throwable $e) {
+            return redirect()->back()
+                ->with('error', 'Data belum lengkap atau belum diinput.');
+        }
     }
 
     public function downloadPemicu($id1, $id2)

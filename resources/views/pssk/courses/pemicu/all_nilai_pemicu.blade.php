@@ -14,7 +14,6 @@
                 @foreach (range(1, $preGroup) as $index)
                 <th colspan="2">Pemicu {{ $index }}</th>
                 @endforeach
-                <th rowspan="2">Dosen</th>
             </tr>
             <tr>
                 @foreach (range(1, $preGroup) as $index)
@@ -65,7 +64,6 @@
                 <td class="text-center text-sm">{{ number_format($percent, 2) }}%</td>
                 @endforeach
 
-                <td>{{ $lecturerName }}</td>
             </tr>
             @endforeach
             @endforeach

@@ -136,28 +136,6 @@ return [
         ]
     ],
 
-    // [
-    //     'title' => 'Exams Report',
-    //     'roles' => ['koordinator'],
-    //     'context' => ['pssk'],
-    //     'items' => [
-    //         [
-    //             'label' => 'Ungraded',
-    //             'route' => 'lecturer.results.index',
-    //             'params' => ['status' => 'ungraded'],
-    //             'pattern' => 'ungraded*',
-    //             'icon' => 'fa-clipboard-list'
-    //         ],
-    //         [
-    //             'label' => 'Published',
-    //             'route' => 'lecturer.results.index',
-    //             'params' => ['status' => 'published'],
-    //             'pattern' => 'published*',
-    //             'icon' => 'fa-clipboard-list'
-    //         ],
-    //     ]
-    // ],
-
     [
         'title' => 'Student Exams',
         'roles' => ['student'],
@@ -241,27 +219,27 @@ return [
             ],
         ]
     ],
-    [
-        'title' => 'Monitoring',
-        'roles' => ['admin'],
-        'context' => ['pspd'],
-        'items' => [
-            [
-                'label' => 'Logbook Mahasiswa',
-                'route' => 'pspd.admin.users.index',
-                'params' => ['type' => 'student'],
-                'pattern' => 'admin/users/student*',
-                'icon' => 'fa-book-medical'
-            ],
-            [
-                'label' => 'Rekap Kepaniteraan',
-                'route' => 'pspd.admin.users.index',
-                'params' => ['type' => 'student'],
-                'pattern' => 'admin/users/student*',
-                'icon' => 'fa-file-medical'
-            ],
-        ]
-    ],
+    // [
+    //     'title' => 'Monitoring',
+    //     'roles' => ['admin'],
+    //     'context' => ['pspd'],
+    //     'items' => [
+    //         [
+    //             'label' => 'Logbook Mahasiswa',
+    //             'route' => 'pspd.admin.users.index',
+    //             'params' => ['type' => 'student'],
+    //             'pattern' => 'admin/users/student*',
+    //             'icon' => 'fa-book-medical'
+    //         ],
+    //         [
+    //             'label' => 'Rekap Kepaniteraan',
+    //             'route' => 'pspd.admin.users.index',
+    //             'params' => ['type' => 'student'],
+    //             'pattern' => 'admin/users/student*',
+    //             'icon' => 'fa-file-medical'
+    //         ],
+    //     ]
+    // ],
     [
         'title' => 'Logbook Mahasiswa',
         'roles' => ['lecturer'],
@@ -270,26 +248,43 @@ return [
             [
                 'label' => 'Waiting for Approval',
                 'route' => 'logbook.index',
-                'pattern' => 'logbook*',
+                'params' => ['status' => 'pending'],
+                'pattern' => 'logbook/pending*',
                 'icon' => 'fa-clipboard-list'
             ],
             [
                 'label' => 'Approved',
-                'route' => 'tutors',
-                'pattern' => 'tutor*',
+                'route' => 'logbook.index',
+                'params' => ['status' => 'approved'],
+                'pattern' => 'logbook/approved*',
                 'icon' => 'fa-clipboard-check'
             ],
             [
                 'label' => 'Denied',
-                'route' => 'tutors',
-                'pattern' => 'tutor*',
+                'route' => 'logbook.index',
+                'params' => ['status' => 'rejected'],
+                'pattern' => 'logbook/rejected*',
                 'icon' => 'fa-circle-xmark'
+            ],
+        ]
+    ],
+    [
+        'title' => 'Validasi Kepaniteraan',
+        'roles' => ['lecturer'],
+        'context' => ['pspd'],
+        'items' => [
+            [
+                'label' => 'Validasi',
+                'route' => 'logbook.index',
+                'params' => ['status' => 'pending'],
+                'pattern' => 'logbook/pending*',
+                'icon' => 'fa-clipboard-list'
             ],
         ]
     ],
     //student pspd
     [
-        'title' => 'Logbook',
+        'title' => 'Kepaniteraan',
         'roles' => ['student'],
         'context' => ['pspd'],
         'items' => [
@@ -299,24 +294,11 @@ return [
                 'pattern' => 'student-logbook*',
                 'icon' => 'fa-calendar-alt'
             ],
-        ]
-    ],
-    [
-        'title' => 'Kepaniteraan',
-        'roles' => ['student'],
-        'context' => ['pspd'],
-        'items' => [
             [
-                'label' => 'Kepaniteraan Aktif',
-                'route' => 'student.attendance.index',
-                'pattern' => 'student/attendance*',
-                'icon' => 'fa-calendar-alt'
-            ],
-            [
-                'label' => 'Riwayat Kepaniteraan',
-                'route' => 'student.attendance.index',
-                'pattern' => 'student/attendance*',
-                'icon' => 'fa-calendar-alt'
+                'label' => 'List Kepaniteraan',
+                'route' => 'student-rotation.index',
+                'pattern' => 'student-rotation*',
+                'icon' => 'fa-solid fa-stethoscope'
             ],
         ]
     ],

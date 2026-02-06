@@ -9,6 +9,7 @@ use App\Http\Controllers\PSPD\LecturerKoasController;
 use App\Http\Controllers\PSPd\LogbookController;
 use App\Http\Controllers\PSPD\StudentKoasController;
 use App\Http\Controllers\PSPd\StudentLogbookController;
+use App\Http\Controllers\PSPD\StudentRotationController;
 
 Route::middleware(['auth', 'context:pspd'])
     ->prefix('pspd')
@@ -25,6 +26,13 @@ Route::middleware(['auth', 'context:pspd'])
             Route::delete('/mahasiswa-koas/{id}/{rotation}', [StudentKoasController::class, 'destroy'])->name('mahasiswa-koas.destroy');
             Route::resource('lecturer-koas', LecturerKoasController::class);
         });
-        Route::resource('logbook', LogbookController::class);
+        // routes/web.php
+        Route::prefix('logbook/{status}')->group(function () {
+            Route::get('/', [LogbookController::class, 'index'])->name('logbook.index');
+            Route::get('/{logbook}/edit', [LogbookController::class, 'edit'])->name('logbook.edit');
+            Route::put('/{logbook}', [LogbookController::class, 'update'])->name('logbook.update');
+            Route::get('/{logbook}', [LogbookController::class, 'show'])->name('logbook.show');
+        });
         Route::resource('student-logbook', StudentLogbookController::class);
+        Route::resource('student-rotation', StudentRotationController::class);
     });

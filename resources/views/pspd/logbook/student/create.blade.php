@@ -12,11 +12,19 @@
             <form method="POST" action="{{ route('student-logbook.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="row">
-                    <div class="mb-3 col-md-6">
+                    <div class="mb-3 col-md-4">
                         <label>Tanggal</label>
                         <input type="date" name="date" class="form-control" required
                             min="{{ \Carbon\Carbon::parse($rotation->start_date)->format('Y-m-d') }}"
                             max="{{ \Carbon\Carbon::parse($rotation->end_date)->format('Y-m-d') }}">
+                    </div>
+                    <div class="mb-3 col-md-4">
+                        <label>Waktu Mulai</label>
+                        <input type="time" name="start_time" class="form-control" required>
+                    </div>
+                    <div class="mb-3 col-md-4">
+                        <label>Waktu Selesai</label>
+                        <input type="time" name="end_time" class="form-control" required>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label>Jenis Kegiatan</label>
@@ -28,12 +36,6 @@
                         </select>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label>Deskripsi Kegiatan</label>
-                        <input type="text" name="desc" class="form-control" required>
-                        <input hidden type="text" name="rotation" class="form-control" required
-                            value="{{ $rotation->id }}">
-                    </div>
-                    <div class="mb-3 col-md-6">
                         <label>Dosen/Dokter Pembimbing</label>
                         <select class="form-select" name="lecturer" required>
                             <option>Pilih Dosen</option>
@@ -41,6 +43,12 @@
                             <option value="{{ $lecturer->lecturer->id }}">{{ $lecturer->lecturer->user->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="mb-3 col-md-12">
+                        <label>Deskripsi Kegiatan</label>
+                        <input type="text" name="desc" class="form-control" required>
+                        <input hidden type="text" name="rotation" class="form-control" required
+                            value="{{ $rotation->id }}">
                     </div>
                     <div class="mb-3 col-md-12">
                         <label>Upload Bukti</label>

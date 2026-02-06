@@ -123,7 +123,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'gender' => 'required',
             'nim' => $type === 'student' ? 'required|string|unique:students,nim' : 'nullable',
-            'nidn' => $type === 'lecturer' ? 'string' : 'nullable',
+            'nidn' => $type === 'lecturer' ? 'string|nullable' : 'nullable',
             'strata' => $type === 'lecturer' ? 'required' : 'nullable',
             'gelar' => $type === 'lecturer' ? 'nullable|string|max:50' : 'nullable',
             'tipe_dosen' => $type === 'lecturer' ? 'required|in:Asdos,CDT,DT,DTT' : 'nullable',
@@ -160,15 +160,15 @@ class UserController extends Controller
             $session = session('context');
             Lecturer::create([
                 'user_id' => $user->id,
-                'nidn' => $request['nidn'],
+                'nidn' => $request['nidn'] ?? null,
                 'bagian' => $request['bagian'] ?? null,
                 'faculty' => $request['faculty'] ?? null,
                 'type' => $session,
                 'strata' => $request['strata'],
                 'gelar' => $request['gelar'],
                 'tipe_dosen' => $request['tipe_dosen'],
-                'min_sks' => $request['min_sks'],
-                'max_sks' => $request['max_sks'],
+                'min_sks' => $request['min_sks'] ?? 0,
+                'max_sks' => $request['max_sks'] ?? 0,
             ]);
 
             // Sync role sesuai input

@@ -140,7 +140,12 @@
                                                 <i class="fas fa-info-circle me-2"></i> Detail
                                             </a>
                                         </li>
-
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="{{ route('admin.courses.downloadAbsenSkillsLab', ['course' => $course->slug, 'semesterId' => $semesterId]) }}">
+                                                <i class="fas fa-download me-2"></i> Download Form Absen
+                                            </a>
+                                        </li>
                                     </ul>
 
                                 </td>

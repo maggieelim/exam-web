@@ -73,10 +73,15 @@
                                         class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
-                                    <a href="{{ route('stase.show', $stase->id) }}"
-                                        class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
-                                        <i class="fas fa-info-circle"></i>
-                                    </a>
+                                    <form action="{{ route('stase.destroy', $stase->id) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn bg-gradient-danger m-1 p-2 px-3" title="Delete"
+                                            onclick="return confirm('Apakah anda yakin ingin menghapus stase ini?');">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             @endforeach

@@ -50,7 +50,7 @@ class PemicuExport implements FromCollection, WithHeadings, WithTitle, WithStyle
 
             $row = [
                 'no' => $index + 1,
-                'nama_dosen' => $lecturer->user->name,
+                'nama_dosen' => $lecturer->user->name . ', ' . $lecturer->gelar,
                 'bagian' => $lecturer->bagian,
             ];
 

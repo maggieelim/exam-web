@@ -7,7 +7,7 @@
             <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
                 <div>
-                    <h5 class="mb-0">Logbook Mahasiswa</h5>
+                    <h5 class="mb-0">List rotation</h5>
                 </div>
                 <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
                     <!-- Tombol toggle collapse -->
@@ -15,40 +15,23 @@
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-                    @if ($rotation )
-                    <a href="{{ route('student-logbook.create') }}" class="btn btn-primary btn-sm"
-                        style="white-space: nowrap;">
-                        + Logbook
-                    </a>
-                    @endif
                 </div>
             </div>
 
             <!-- Collapse Form -->
             <div class="collapse" id="filterCollapse">
-                <form method="GET" action="{{ route('student-logbook.index') }}">
+                <form method="GET" action="{{ route('student-rotation.index') }}">
                     <div class="mx-3 my-2 py-2">
                         <div class="row g-2 align-items-end">
-                            <div class="col-md-6">
-                                <label for="name" class="form-label mb-1">Lecturer</label>
+                            <div class="col-md-12">
+                                <label for="name" class="form-label mb-1">rotation</label>
                                 <input type="text" class="form-control " name="name" value="{{ request('name') }}">
                             </div>
-                            <div class="col-md-6">
-                                <label for="status" class="form-label mb-1">Status</label>
-                                <select class="form-control" name="status">
-                                    <option value="">All</option>
-                                    <option value="pending" {{ request('status')==='pending' ? 'selected' : '' }}>
-                                        Pending</option>
-                                    <option value="approved" {{ request('status')==='approved' ? 'selected' : '' }}>
-                                        Approved</option>
-                                    <option value="rejected" {{ request('status')==='rejected' ? 'selected' : '' }}>
-                                        Rejected</option>
-                                </select>
-                            </div>
                             <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route('student-logbook.index') }}" class="btn btn-light btn-sm">Reset</a>
+                                <a href="{{ route('student-rotation.index') }}" class="btn btn-light btn-sm">Reset</a>
                                 <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                             </div>
+
                         </div>
                     </div>
                 </form>
@@ -58,68 +41,54 @@
                 <div class="table-responsive p-0">
                     <table class="table align-items-center mb-0">
                         @php
+                        // Ambil semua parameter filter aktif, kecuali sort, dir, dan pagination
                         $filters = request()->except(['sort', 'dir', 'page']);
                         @endphp
+
                         <thead>
                             <tr>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Hospital</th>
+                                    Rumah Sakit</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Stase</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Lecturer</th>
+                                    Periode</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Activity</th>
+                                    Total Izin</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Date</th>
-                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                                    Status</th>
+                                    Status Validasi</th>
                                 <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                                     Action</th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            @foreach ($logbooks as $logbook)
+                            @foreach ($rotations as $rotation)
                             <tr>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->studentKoas->hospitalRotation->hospital->name }}
+                                    {{ $rotation->hospitalRotation->hospital->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->studentKoas->hospitalRotation->clinicalRotation->name }}
+                                    {{ $rotation->hospitalRotation->clinicalRotation->name }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->lecturer->user->name }}, {{ $logbook->lecturer->gelar }}
+                                    {{ $rotation->hospitalRotation->start_date->format('d M Y') }} - {{
+                                    $rotation->hospitalRotation->end_date->format('d M Y') }}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->activityKoas->name }}
+                                    {{ $rotation->izin_count ?? 0}}
                                 </td>
                                 <td class="align-middle text-center text-sm font-weight-bold">
-                                    {{ $logbook->date->format('d M Y') }}
-                                </td>
-                                <td class="align-middle text-center font-weight-bold">
-                                    <span
-                                        class="badge bg-{{ $logbook->status === 'approved' ? 'success' : ($logbook->status === 'rejected' ? 'danger' : 'warning') }}">
-                                        {{ $logbook->status }}
-                                    </span>
+                                    {{ $rotation->validasi_count ?? 0}}/{{ $rotation->logbook_count }}
                                 </td>
                                 <td class="align-middle text-center">
-                                    @if ($logbook->status === 'pending')
-                                    <a href="{{ route('student-logbook.edit', $logbook->id) }}"
-                                        class="btn bg-gradient-primary m-1 p-2 px-3" title="Edit">
-                                        <i class="fa-solid fa-pen"></i>
+                                    @if ($rotation->validasi_count === $rotation->logbook_count)
+                                    <a href="{{ route('student-rotation.edit', $rotation->id) }}"
+                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Edit">
+                                        <i class="fa-solid fa-pen-nib me-2"></i> Ajukan Validasi
                                     </a>
-                                    <form action="{{ route('student-logbook.destroy', $logbook->id) }}" method="POST"
-                                        class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn bg-gradient-danger m-1 p-2 px-3" title="Delete"
-                                            onclick="return confirm('Apakah anda yakin ingin menghapus logbook ini?');">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </form>
                                     @endif
-                                    <a href="{{ route('student-logbook.show', $logbook->id) }}"
+                                    <a href="{{ route('student-rotation.show', $rotation->id) }}"
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
@@ -131,7 +100,7 @@
 
                     {{-- Pagination --}}
                     <div class="d-flex justify-content-center mt-3">
-                        <x-pagination :paginator="$logbooks" />
+                        <x-pagination :paginator="$rotations" />
                     </div>
                 </div>
             </div>

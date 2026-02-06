@@ -39,4 +39,8 @@ class StudentKoas extends Model
     {
         return $this->belongsTo(Semester::class);
     }
+    public function logbooks()
+    {
+        return $this->hasMany(Logbook::class, 'student_koas_id');
+    }
 }
