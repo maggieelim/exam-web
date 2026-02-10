@@ -1,10 +1,5 @@
-#sidenav-main {
-    height: 100vh;
-    overflow: hidden !important; /* sidebar tidak scroll */
-}
-
-#sidenav-collapse-main {
-  height: calc(100vh );
+.navbar-nav{
+  margin-bottom: 40px;
 }
 
 .choices__list--multiple .choices__item {
@@ -111,6 +106,14 @@ border: 1px solid rgba(0, 0, 0, 0.4) !important;
 
 /* Atur posisi dan lebar untuk setiap kolom freeze */
 .headcol.no {
+left: 40px;
+min-width: 40px;
+max-width: 40px;
+text-align: center;
+z-index: 8;
+}
+/* Atur posisi dan lebar untuk setiap kolom freeze */
+.headcol.view {
 left: 0;
 min-width: 40px;
 max-width: 40px;
@@ -119,13 +122,13 @@ z-index: 8;
 }
 
 .headcol.name {
-left: 40px;
+left: 80px;
 min-width: 180px;
 max-width: 180px;
 }
 
 .headcol.bagian {
-left: 220px;
+left: 260px;
 min-width: 120px;
 max-width: 150px;
 }

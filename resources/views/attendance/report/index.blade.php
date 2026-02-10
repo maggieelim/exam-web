@@ -70,15 +70,14 @@
                             @forelse ($attendances as $attendance)
                             <tr>
                                 <td class="align-middle text-sm text-center">
-                                    {{ $attendance->activity->activity_name }} {{
-                                    $attendance->teachingSchedule->session_number }}
+                                    {{ $attendance->pemicu_label }} - {{ $attendance->diskusi_label }}
                                 </td>
                                 <td class="align-middle text-sm text-center">
                                     {{ $attendance->formatted_schedule }}
                                 </td>
 
                                 <td class="align-middle text-center text-sm">
-                                    {{ $attendance->student_records_count }}
+                                    {{ $totalStudents }}
                                 </td>
                                 <td class="align-middle text-center">
                                     {{ $attendance->present_count }} </td>

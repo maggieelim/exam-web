@@ -7,7 +7,10 @@
             <div
                 class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
                 <div class="d-flex flex-column">
-                    <h5 class="mb-0">Absensi {{ $attendance->teachingSchedule->activity->activity_name }} Blok
+                    <h5 class="mb-0">Absensi Diskusi {{$attendance->teachingSchedule->pemicu % 10 }} - {{
+                        $attendance->teachingSchedule->activity->activity_name }}
+                        {{ floor($attendance->teachingSchedule->pemicu / 10) }}
+                        Blok
                         {{$course->name}}</h5>
                     <p>{{$attendance->formatted1_schedule}}</p>
                 </div>
@@ -72,11 +75,7 @@
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder  text-center">
                                     NIM
                                 </th>
-                                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">Clocked In
-                                    At
-                                </th>
-                                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center text-wrap">
-                                    Distance</th>
+
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-center text-wrap">
                                     Status</th>
                             </tr>
@@ -90,13 +89,6 @@
                                 </td>
                                 <td class="align-middle text-sm text-center">
                                     {{ $student->courseStudent->student->nim }}
-                                </td>
-                                <td class="align-middle text-center text-sm">
-                                    {{ $student->scanned_at ? \Carbon\Carbon::parse($student->scanned_at)->format('H:i')
-                                    : '-' }}
-                                </td>
-                                <td class="align-middle text-sm text-center">
-                                    {{ $student->distance}} m
                                 </td>
                                 <td class="align-middle text-center">
                                     <span class="badge 

@@ -14,6 +14,7 @@
         <table class="compact-table table-bordered">
             <thead class="text-center align-middle">
                 <tr>
+                    <th class="headcol view" rowspan="2">#</th>
                     <th class="headcol no headrow">No</th>
                     <th class="headcol name">Nama Dosen</th>
                     <th class="headcol bagian">Bagian</th>
@@ -32,6 +33,11 @@
             <tbody>
                 @foreach ($plenoData->lecturers as $index => $lecturer)
                 <tr>
+                    <td class="text-center headcol view">
+                        <a href="{{ route('schedules.index', ['lecturer_id' => $lecturer->lecturer->id]) }}"
+                            class="text-info text-decoration-underline" title="Lihat Jadwal"> View
+                        </a>
+                    </td>
                     <td class="text-center headcol no">{{ $index + 1 }}</td>
                     <td class="headcol name">{{ $lecturer->lecturer->user->name }}</td>
                     <td class="headcol bagian">{{ $lecturer->lecturer->bagian }}</td>

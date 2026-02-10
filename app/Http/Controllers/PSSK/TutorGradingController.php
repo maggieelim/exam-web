@@ -4,9 +4,12 @@ namespace App\Http\Controllers\PSSK;
 
 use App\Exports\LecturerTutorGrading;
 use App\Http\Controllers\Controller;
+use App\Models\AttendanceRecords;
+use App\Models\AttendanceSessions;
 use App\Models\Course;
 use App\Models\CourseStudent;
 use App\Models\Lecturer;
+use App\Models\LecturerAttendanceRecords;
 use App\Models\PemicuDetails;
 use App\Models\PemicuScore;
 use App\Models\Semester;
@@ -45,10 +48,16 @@ class TutorGradingController extends Controller
             ->unique('id')
             ->values();
 
-        $grouped = $details->groupBy(
-            fn($d) =>
-            $d->teachingSchedule->course_id . '-' . $d->kelompok_num
-        );
+        $grouped = $details->groupBy(function ($d) {
+            $pemicuKe = (string) $d->teachingSchedule->pemicu_ke;
+
+            return implode('-', [
+                $d->teachingSchedule->course_id,
+                $d->kelompok_num,
+                substr($pemicuKe, 0, 1),
+            ]);
+        });
+
 
         $tutors = $grouped->map(function ($group) use ($lecturer) {
 
@@ -138,7 +147,70 @@ class TutorGradingController extends Controller
             ->get()
             ->groupBy('course_student_id');
 
-        return view('pssk.pemicu.show', compact('kel', 'students', 'course', 'pemicu', 'pemicusJson'));
+        $teachingId = PemicuDetails::whereIn('id', $pemicu)
+            ->get(['teaching_schedule_id']);
+
+        $attendanceSessions = AttendanceSessions::where('course_id', $courseId)->whereIn('teaching_schedule_id', collect($teachingId)->pluck('teaching_schedule_id'))
+            ->get()
+            ->keyBy('teaching_schedule_id');
+
+        $existingAttendance = AttendanceRecords::whereIn('attendance_session_id', $attendanceSessions->pluck('id'))
+            ->get()
+            ->groupBy('course_student_id');
+
+        return view('pssk.pemicu.show', compact('kel', 'students', 'course', 'pemicu', 'pemicusJson', 'attendanceSessions', 'existingAttendance'));
+    }
+
+    public function storeAttendance(Request $request)
+    {
+        $request->validate([
+            'attendance_session_id' => 'required|integer',
+            'course_student_id' => 'required|integer',
+            'checked' => 'required|boolean',
+        ]);
+
+        $user = Auth::id();
+        $lecturer  = Lecturer::where('user_id', $user)->firstOrFail();
+        $courseId = CourseStudent::where('id', $request->course_student_id)->firstOrFail()->course_id;
+        $courseLecturer = $lecturer->courseLecturers()
+            ->where('course_id', $courseId)
+            ->firstOrFail();
+
+        if (!$request->checked) {
+            AttendanceRecords::where('attendance_session_id', $request->attendance_session_id)
+                ->where('course_student_id', $request->course_student_id)
+                ->delete();
+
+            return response()->json(['status' => 'deleted']);
+        }
+
+        LecturerAttendanceRecords::updateOrCreate([
+            'attendance_session_id' => $request->attendance_session_id,
+            'course_lecturer_id' => $courseLecturer->id,
+        ], [
+            'status' => 'checked_in',
+            'checked_in_at' => Carbon::now(),
+        ]);
+        AttendanceRecords::firstOrCreate(
+            [
+                'attendance_session_id' => $request->attendance_session_id,
+                'course_student_id' => $request->course_student_id,
+            ],
+            [
+                'nim' => $request->nim ?? '',
+                'latitude' => '-6.16925120',
+                'longitude' => '106.79052950',
+                'loc_name' => 'Universitas Tarumanagara Kampus 1',
+                'distance' => 0,
+                'wifi_ssid' => 'unknown',
+                'device_info' => request()->userAgent(),
+                'scanned_at' => Carbon::now(),
+                'method' => 'manual',
+                'status' => 'present',
+            ]
+        );
+
+        return response()->json(['status' => 'created']);
     }
 
     public function edit($pemicu, $studentId, Request $request)

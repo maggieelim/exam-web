@@ -4,7 +4,7 @@ $context = session('context', 'pssk'); // default
 @endphp
 
 <aside id="sidenav-main"
-    class="sidenav navbar navbar-vertical navbar-expand-xs bg-white border-0 border-radius-xl fixed-start overflow-y-hidden h-100vh">
+    class="sidenav navbar navbar-vertical navbar-expand-xs bg-white border-0 border-radius-xl fixed-start h-100">
     <div class="sidenav-sticky-header sticky-top bg-white">
         <div class="sidenav-header text-center">
             <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
@@ -55,7 +55,11 @@ $context = session('context', 'pssk'); // default
         @endhasanyrole
 
     </div>
-    <div id="sidenav-collapse-main" class="collapse navbar-collapse ">
+    <div id="sidenav-collapse-main" class="navbar-collapse" style="
+        height: calc(100% - 140px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+     ">
         <ul class="navbar-nav">
             <!-- User Dropdown - Desktop Only -->
             @foreach($menu as $section)

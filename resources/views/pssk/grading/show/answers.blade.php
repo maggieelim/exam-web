@@ -237,7 +237,7 @@
         button.disabled = true;
         button.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Anulir...`;
 
-        fetch(`/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
+        fetch(`/pssk/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
                 method: 'POST',
                 body: formData,
                 headers: {

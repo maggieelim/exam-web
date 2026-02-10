@@ -30,6 +30,7 @@ use App\Http\Controllers\{
 Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
     Route::get('/', [HomeController::class, 'home']);
     Route::get('dashboard', [HomeController::class, 'home'])->name('dashboard.pssk');
+    Route::get('/courses/schedule-lecturer', [AttendanceSessionsController::class, 'index'])->name('schedules.index');
 
     Route::middleware(['role:admin,koordinator'])->name('admin.')
         ->group(function () {
@@ -102,6 +103,7 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
     // ================= SHARED ADMIN & LECTURER =================
     Route::middleware(['role:admin,lecturer,koordinator'])->group(function () {
         Route::prefix('tutors')->group(function () {
+            Route::post('/attendance/ajax', [TutorGradingController::class, 'storeAttendance'])->name('tutors.AttendanceAjax');
             Route::get('/', [TutorGradingController::class, 'index'])->name('tutors');
             Route::get('/{course}/{kelompok}', [TutorGradingController::class, 'show'])->name('tutors.detail');
             Route::get('/{pemicu}/{student}/edit', [TutorGradingController::class, 'edit'])->name('tutors.edit');

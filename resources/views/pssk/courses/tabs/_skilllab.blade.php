@@ -13,6 +13,7 @@
         <table class="compact-table table-bordered">
             <thead class="text-center align-middle">
                 <tr>
+                    <th class="headcol view" rowspan="2">#</th>
                     <th class="headcol no headrow" rowspan="2">No</th>
                     <th class="headcol name" rowspan="2">Nama Dosen</th>
                     @foreach ($skillLabData->skillsLabs as $index => $skillLab)
@@ -30,6 +31,11 @@
             <tbody>
                 @foreach ($skillLabData->lecturers as $index => $lecturer)
                 <tr>
+                    <td class="text-center headcol view">
+                        <a href="{{ route('schedules.index', ['lecturer_id' => $lecturer->lecturer->id]) }}"
+                            class="text-info text-decoration-underline" title="Lihat Jadwal"> View
+                        </a>
+                    </td>
                     <td class="text-center headcol no">{{ $index + 1 }}</td>
                     <td class="headcol name">{{ $lecturer->lecturer->user->name }}</td>
                     @foreach ($skillLabData->skillsLabs as $skillLab)

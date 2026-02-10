@@ -5,14 +5,13 @@
     <div class="card mb-4">
         <div class="card-header pb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
             <div class="d-flex flex-column">
-                <h5 class="mb-0">Tutor Blok {{$course->name}}</h5>
-                <h6 class="mb-0">Kelompok {{$kel}}</h6>
+                <h5 class="mb-0">Tutor Blok {{ $course->name }}</h5>
+                <h6 class="mb-0">Kelompok {{ $kel }}</h6>
             </div>
 
             <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2 mt-2 mt-md-0">
-                <a href="{{route('tutors.download', ['course' =>  $course->id,
-                'kelompok' => $kel, 'pemicus'=>json_encode($pemicu)]) }}" class="btn btn-success btn-sm"
-                    style="white-space: nowrap;">
+                <a href="{{ route('tutors.download', ['course' => $course->id, 'kelompok' => $kel, 'pemicus' => json_encode($pemicu)]) }}"
+                    class="btn btn-success btn-sm" style="white-space: nowrap;">
                     <i class="fas fa-file-excel"></i> Export
                 </a>
                 <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -34,7 +33,7 @@
                         </div>
 
                         <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                            <a href="{{ route('tutors.detail', ['course' => $course->id, 'kelompok' => $kel, 'pemicu'=>$pemicusJson]) }}"
+                            <a href="{{ route('tutors.detail', ['course' => $course->id, 'kelompok' => $kel, 'pemicu' => $pemicusJson]) }}"
                                 class="btn btn-light btn-sm">
                                 Reset
                             </a>
@@ -64,7 +63,11 @@
                         @forelse ($students as $studentId => $stu)
                         @php
                         $first = $stu->first();
-                        $pemicus = $stu->pluck('pemicuDetail.teachingSchedule.pemicu_ke')->unique()->sort()->values();
+                        $pemicus = $stu
+                        ->pluck('pemicuDetail.teachingSchedule.pemicu_ke')
+                        ->unique()
+                        ->sort()
+                        ->values();
                         $allPemicuDetailIds = $stu->pluck('pemicu_detail_id')->toArray();
                         @endphp
 
@@ -82,18 +85,57 @@
                             <td class="text-center d-flex justify-content-center flex-wrap">
                                 @foreach ($pemicus as $index => $pemicuKe)
                                 @php
-                                $pemDetail = $stu->firstWhere('pemicuDetail.teachingSchedule.pemicu_ke', $pemicuKe);
+                                $pemDetail = $stu->firstWhere(
+                                'pemicuDetail.teachingSchedule.pemicu_ke',
+                                $pemicuKe,
+                                );
+
+                                // default aman
+                                $sessionId = null;
+                                $isChecked = false;
+                                $isExpired = true;
+
+                                if ($pemDetail && $pemDetail->pemicuDetail?->teachingSchedule) {
+                                $scheduleId = $pemDetail->pemicuDetail->teaching_schedule_id;
+
+                                $sessionId = $attendanceSessions[$scheduleId]->id ?? null;
+
+                                $isChecked =
+                                isset($existingAttendance[$studentId]) &&
+                                $sessionId &&
+                                $existingAttendance[$studentId]
+                                ->pluck('attendance_session_id')
+                                ->contains($sessionId);
+
+                                $schedule =
+                                $pemDetail->pemicuDetail->teachingSchedule->scheduled_date;
+
+                                if ($schedule) {
+                                $isExpired = \Carbon\Carbon::now()->greaterThan(
+                                \Carbon\Carbon::parse($schedule)->addHours(48),
+                                );
+                                }
+                                }
                                 @endphp
 
-                                <a href="{{ route('tutors.edit', [
-                                    'pemicu' => $pemDetail->pemicu_detail_id,
-                                    'pemicus' => json_encode($allPemicuDetailIds),
-                                    'student' => $studentId
-                                ]) }}" class="btn btn-info m-1 p-2">
-                                    Diskusi {{ $index + 1 }}
-                                </a>
+                                <div class="d-flex gap-2 mx-2">
+                                    <input type="checkbox" class="attendance-checkbox m-1"
+                                        data-student="{{ $studentId }}" data-session="{{ $sessionId }}"
+                                        @checked($isChecked) @disabled($isExpired || !$sessionId)>
+
+                                    <a href="{{ route('tutors.edit', [
+                                                    'pemicu' => $pemDetail->pemicu_detail_id,
+                                                    'pemicus' => json_encode($allPemicuDetailIds),
+                                                    'student' => $studentId,
+                                                ]) }}" class="btn btn-info discussion-btn m-1 p-2 
+                                        {{ $isExpired ? 'disabled text-white' : '' }} 
+                                         {{ !$isChecked ? 'disabled text-white' : '' }}">
+                                        Diskusi {{ $index + 1 }}
+                                    </a>
+                                </div>
                                 @endforeach
                             </td>
+
                         </tr>
 
                         @empty
@@ -139,22 +181,53 @@
                 </p>
 
                 {{-- Action Buttons --}}
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex gap-2">
                     @foreach ($pemicus as $index => $pemicuKe)
                     @php
                     $pemDetail = $stu->firstWhere('pemicuDetail.teachingSchedule.pemicu_ke', $pemicuKe);
+
+                    $sessionId = null;
+                    $isChecked = false;
+                    $isExpired = true;
+
+                    if ($pemDetail && $pemDetail->pemicuDetail?->teachingSchedule) {
+                    $scheduleId = $pemDetail->pemicuDetail->teaching_schedule_id;
+
+                    $sessionId = $attendanceSessions[$scheduleId]->id ?? null;
+
+                    $isChecked =
+                    isset($existingAttendance[$studentId]) &&
+                    $sessionId &&
+                    $existingAttendance[$studentId]
+                    ->pluck('attendance_session_id')
+                    ->contains($sessionId);
+
+                    $schedule = $pemDetail->pemicuDetail->teachingSchedule->scheduled_date;
+
+                    if ($schedule) {
+                    $isExpired = \Carbon\Carbon::now()->greaterThan(
+                    \Carbon\Carbon::parse($schedule)->addHours(48),
+                    );
+                    }
+                    }
                     @endphp
 
-                    <a href="{{ route('tutors.edit', [
-                                'pemicu' => $pemDetail->pemicu_detail_id,
-                                'pemicus' => json_encode($allPemicuDetailIds),
-                                'student' => $studentId
-                            ]) }}" class="btn btn-sm btn-info flex-fill">
-                        Diskusi {{ $index + 1 }}
-                    </a>
+                    <div class="align-items-center">
+                        <input type="checkbox" class=" attendance-checkbox m-1" data-student="{{ $studentId }}"
+                            data-session="{{ $sessionId }}" {{ $isChecked ? 'checked' : '' }} {{ $isExpired ? 'disabled'
+                            : '' }}>
+                        <a href="{{ route('tutors.edit', [
+                                        'pemicu' => $pemDetail->pemicu_detail_id,
+                                        'pemicus' => json_encode($allPemicuDetailIds),
+                                        'student' => $studentId,
+                                    ]) }}" class="btn btn-info mx-2 flex-fill discussion-btn 
+                            {{ !$isChecked ? 'disabled text-white' : '' }} 
+                             {{ $isExpired ? 'disabled text-white' : '' }}">
+                            Diskusi {{ $index + 1 }}
+                        </a>
+                    </div>
                     @endforeach
                 </div>
-
             </div>
         </div>
 
@@ -174,8 +247,50 @@
 
 </div>
 
+<script>
+    document.querySelectorAll('.attendance-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const wrapper = this.closest('.d-flex');
+                const discussionBtn = wrapper.querySelector('.discussion-btn');
+                if (this.checked) {
+                    discussionBtn.classList.remove('disabled');
+                } else {
+                    discussionBtn.classList.add('disabled');
+                }
+                const payload = {
+                    attendance_session_id: this.dataset.session,
+                    course_student_id: this.dataset.student,
+                    checked: this.checked
+                };
 
+                fetch("{{ route('tutors.AttendanceAjax') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Server error');
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log('✅ Attendance berhasil disimpan', {
+                            response: data,
+                            payload: payload
+                        });
+                    })
+                    .catch(err => {
+                        console.error('❌ Gagal menyimpan attendance', err, payload);
+                        alert('Gagal menyimpan kehadiran');
+                        this.checked = !this.checked;
+                    });
+            });
+        });
+</script>
 @endsection
+
 
 @push('dashboard')
 <style>

@@ -18,9 +18,9 @@ class ScheduleCreationService
         $courseSchedule = $this->findOrCreateCourseSchedule($requestData);
 
         foreach ($requestData['activities'] as $activityId => $newCount) {
-            if ($newCount <= 0) {
-                continue;
-            }
+            // if ($newCount <= 0) {
+            //     continue;
+            // }
 
             $this->processActivity($courseSchedule, $activityId, $newCount);
         }

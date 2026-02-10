@@ -14,6 +14,7 @@
         <table class="table-bordered compact-table m-0">
             <thead class="text-center align-middle">
                 <tr>
+                    <th rowspan="2" class="headcol view">#</th>
                     <th rowspan="2" class="headcol no">No</th>
                     <th rowspan="2" class="headcol name">Nama Dosen</th>
                     <th rowspan="2" class="headcol bagian">Bagian</th>
@@ -32,6 +33,11 @@
             <tbody>
                 @foreach ($practicumData->lecturers as $index => $lecturer)
                 <tr>
+                    <td class="text-center headcol view">
+                        <a href="{{ route('schedules.index', ['lecturer_id' => $lecturer->lecturer->id]) }}"
+                            class="text-info text-decoration-underline" title="Lihat Jadwal"> View
+                        </a>
+                    </td>
                     <td class="text-center headcol no">{{ $index + 1 }}</td>
                     <td class="headcol name">{{ $lecturer->lecturer->user->name }}</td>
                     <td class="headcol bagian">{{ $lecturer->lecturer->bagian }}</td>

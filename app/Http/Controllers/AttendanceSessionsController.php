@@ -20,11 +20,16 @@ use Str;
 
 class AttendanceSessionsController extends Controller
 {
-    public function getEvents()
+    public function getEvents(Request $request)
     {
-        $userId = Auth::id();
-        $lecturer = Lecturer::with('courseLecturers')->where('user_id', $userId)->first();
-
+        if ($request->filled('lecturer_id')) {
+            $lecturer = Lecturer::with('courseLecturers')
+                ->findOrFail($request->lecturer_id);
+        } else {
+            $lecturer = Lecturer::with('courseLecturers')
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+        }
         $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
 
         $attendances =  AttendanceSessions::with(['course', 'activity', 'lecturerRecords'])
@@ -70,11 +75,48 @@ class AttendanceSessionsController extends Controller
         return response()->json($attendances);
     }
 
+    public function lecturersSchedule(Request $request)
+    {
+        // ambil parameter sorting
+        $sort = $request->get('sort', 'name'); // default sort by name
+        $dir  = $request->get('dir', 'asc');   // default asc
+
+        // whitelist kolom yang boleh di-sort (AMAN)
+        $allowedSorts = ['name'];
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'name';
+        }
+
+        $lecturers = Lecturer::query()
+            ->select('lecturers.*')
+            ->join('users', 'users.id', '=', 'lecturers.user_id')
+            ->with(['user', 'courseLecturers.course'])
+            ->when($request->filled('name'), function ($query) use ($request) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', "%{$request->name}%");
+                });
+            })
+            ->orderBy('users.name', $dir)
+            ->paginate(25);
+
+        return view(
+            'admin.users.schedules',
+            compact('lecturers', 'sort', 'dir')
+        );
+    }
+
     public function index(Request $request)
     {
-        $userId = Auth::id();
-        $lecturer = Lecturer::with('courseLecturers')->where('user_id', $userId)->first();
-
+        if ($request->filled('lecturer_id')) {
+            $lecturer = Lecturer::with('courseLecturers')
+                ->findOrFail($request->lecturer_id);
+        } else {
+            // default: dosen login
+            $lecturer = Lecturer::with('courseLecturers')
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+        }
         $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
 
         $activeSemester = SemesterService::active();
@@ -129,7 +171,8 @@ class AttendanceSessionsController extends Controller
             'semesters',
             'sort',
             'dir',
-            'attendances'
+            'attendances',
+            'lecturer'
         ));
     }
 

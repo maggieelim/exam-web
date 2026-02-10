@@ -6,8 +6,10 @@ use App\Exports\AttendanceReportExport;
 use App\Models\AttendanceSessions;
 use App\Models\Course;
 use App\Models\CourseLecturer;
+use App\Models\CourseStudent;
 use App\Models\Lecturer;
 use App\Models\LecturerAttendanceRecords;
+use App\Models\TeachingSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -22,13 +24,17 @@ class AttendanceReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate   = $request->query('end_date');
 
+        $totalStudents = CourseStudent::where('course_id', $course->id)
+            ->where('semester_id', $semesterId)
+            ->count();
+
         $attendances = AttendanceSessions::with('teachingSchedule')
-            ->withCount('studentRecords') // total semua record
             ->withCount([
                 'studentRecords as present_count' => function ($query) {
                     $query->whereIn('status', ['present', 'late']);
                 }
             ])
+            ->where('activity_id', 5)
             ->where('course_id', $course->id)
             ->where('semester_id', $semesterId)
             ->where('status', 'finished')
@@ -38,11 +44,23 @@ class AttendanceReportController extends Controller
             ->when($endDate, function ($query) use ($endDate) {
                 $query->whereDate('start_time', '<=', $endDate);
             })
-            ->orderBy('start_time', 'desc')
+            ->orderBy('start_time', 'asc')
             ->paginate(30)
             ->appends($request->query());
 
-        return view('attendance.report.index', compact('attendances', 'course', 'semesterId'));
+        $attendances->getCollection()->transform(function ($attendance) {
+            $attendance->updateStatusIfExpired();
+            $schedule = $attendance->teachingSchedule;
+
+            $diskusiKe = $attendance->teachingSchedule->pemicu % 10;
+
+            $attendance->pemicu_label = 'Pemicu ' . floor($schedule->pemicu_ke / 10);
+            $attendance->diskusi_label = 'Diskusi ' . $diskusiKe;
+
+            return $attendance;
+        });
+
+        return view('attendance.report.index', compact('attendances', 'course', 'semesterId', 'totalStudents'));
     }
 
     public function indexLecturer(Request $request)

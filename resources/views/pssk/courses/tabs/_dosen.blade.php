@@ -45,6 +45,7 @@
             <thead class="text-center align-middle">
                 <tr>
                     <th class="headrow">#</th>
+                    <th class="headrow">No</th>
                     <th class="headrow">Nama</th>
                     <th class="headrow">Bagian</th>
                     <th class="headrow">Pleno</th>
@@ -58,6 +59,11 @@
             <tbody>
                 @foreach ($lecturerData->lecturers as $index => $lecturer)
                 <tr>
+                    <td class="text-center">
+                        <a href="{{ route('schedules.index', ['lecturer_id' => $lecturer->lecturer->id]) }}"
+                            class="text-info text-decoration-underline" title="Lihat Jadwal"> View
+                        </a>
+                    </td>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $lecturer->lecturer->user->name }}</td>
                     <td>{{ $lecturer->lecturer->bagian }}</td>

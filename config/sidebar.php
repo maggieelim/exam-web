@@ -56,6 +56,12 @@ return [
                 'pattern' => 'admin/users/admin*',
                 'icon' => 'fa-user-gear'
             ],
+            [
+                'label' => 'Lecturer Schedules',
+                'route' => 'pssk.admin.schedules',
+                'pattern' => 'admin/schedules*',
+                'icon' => 'fa-calendar-alt'
+            ],
         ]
     ],
 

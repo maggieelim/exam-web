@@ -168,13 +168,13 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.zoomable-image').forEach(img => {
-        img.addEventListener('click', function () {
-            document.getElementById('zoomedImage').src = this.dataset.image;
+    document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.zoomable-image').forEach(img => {
+                img.addEventListener('click', function() {
+                    document.getElementById('zoomedImage').src = this.dataset.image;
+                });
+            });
         });
-    });
-});
 </script>
 
 <script>
@@ -274,7 +274,7 @@
             console.log('Server End Time:', '{{ $endTime }}');
 
             // Gunakan endTime dari server
-            const serverEndTime = new Date("{{ $endTime }}").getTime();
+            const serverEndTime = new Date("{{ $endTime->toISOString() }}").getTime();
             const now = new Date().getTime();
 
             console.log('Server End Time (ms):', serverEndTime);
