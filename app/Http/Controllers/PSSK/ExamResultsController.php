@@ -590,7 +590,7 @@ class ExamResultsController extends Controller
     private function prepareChartData($questionAnalysis, $exam)
     {
         // 🔹 Grafik kesulitan soal
-        $difficultyData = collect(['Easy', 'Medium', 'Fair', 'Hard'])
+        $difficultyData = collect(['Easy', 'Medium', 'Hard'])
             ->mapWithKeys(fn($level) => [$level => $questionAnalysis->where('difficulty_level', $level)->count()])
             ->toArray();
 

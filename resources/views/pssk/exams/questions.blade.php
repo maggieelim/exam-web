@@ -85,28 +85,30 @@
             <form class="question-form" data-question-id="{{ $question->id }}">
                 @csrf
                 @method('PUT')
+                <div>
+                    <select name="cpmk" class="form-select form-select-sm w-20 cpmk-select">
+                        <option value="1" @selected($question->cpmk == 1)>CPMK 1</option>
+                        <option value="2" @selected($question->cpmk == 2)>CPMK 2</option>
+                    </select>
+                </div>
+
                 <input type="hidden" id="context" value="{{ session('context') }}">
 
                 <div class="mb-2">
                     <label class="form-label">Badan Soal</label>
-                    <textarea name="badan_soal" rows=1
-                        class="form-control auto-resize">{{ $question->badan_soal }}</textarea>
-                </div>
 
-                <div class="mb-2">
-                    <label class="form-label">Kalimat Tanya</label>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <textarea name="kalimat_tanya" class="form-control auto-resize"
-                            rows="1">{{ $question->kalimat_tanya }}</textarea>
+                    <div class="d-flex align-items-start gap-1 mb-1">
+                        <textarea name="badan_soal" rows="1"
+                            class="form-control auto-resize">{{ $question->badan_soal }}</textarea>
+
                         @unless ($question->image)
-                        <label class="d-flex align-items-center p-0 mb-0 " style="cursor: pointer;">
-                            <div class="position-relative">
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <i class="fa-regular fa-image" style="color: #5f6368; font-size: 23px;"></i>
-                                </div>
-                                <input type="file" name="image" id="image-{{ $question->id }}"
-                                    class="d-none option-image-input" accept="image/*">
-                            </div>
+                        <label for="image-{{ $question->id }}"
+                            class="d-flex align-items-center justify-content-center mb-0"
+                            style="cursor: pointer; width: 40px; height: 38px;">
+                            <i class="fa-regular fa-image" style="color: #5f6368; font-size: 20px;"></i>
+
+                            <input type="file" name="image" id="image-{{ $question->id }}"
+                                class="d-none question-image-input" accept="image/*">
                         </label>
                         @endunless
                     </div>
@@ -126,6 +128,14 @@
                     </div>
                     @endif
                 </div>
+                <div class="mb-2">
+                    <label class="form-label">Kalimat Tanya</label>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <textarea name="kalimat_tanya" class="form-control auto-resize"
+                            rows="1">{{ $question->kalimat_tanya }}</textarea>
+                    </div>
+                </div>
+
                 <input type="hidden" name="delete_image" id="delete_image-{{ $question->id }}" value="0">
 
                 <div class="mb-3">
@@ -206,7 +216,7 @@
             el.style.height = el.scrollHeight + 2 + 'px';
         }
         document.addEventListener('DOMContentLoaded', function() {
-                       const context = document.getElementById('context').value;
+            const context = document.getElementById('context').value;
             // Fungsi untuk handle upload gambar opsi (tanpa tombol update)
             document.querySelectorAll('.option-image-input').forEach(input => {
                 input.addEventListener('change', function(e) {
@@ -248,7 +258,6 @@
                             style="position:absolute; top:-9px; right:-8px; width:24px; height:24px; padding:0;"
                             data-option-id="${optionId}">
                                                             <i class="fas fa-times" style="font-size: 15px"></i> </button>
-                        </button>
                     </div>
                 `;
 
@@ -401,6 +410,35 @@
                         });
                 });
             });
+
+           // Handle autosave CPMK
+document.querySelectorAll('.cpmk-select').forEach(select => {
+    select.addEventListener('change', function (e) {
+        e.preventDefault();
+
+        const form = this.closest('.question-form');
+        if (!form) return;
+
+        const updateBtn = form.querySelector('.update-btn');
+        // Disable button selama proses
+        if (updateBtn) {
+            updateBtn.disabled = true;
+            updateBtn.textContent = 'Updating...';
+        }
+
+        // Trigger submit AJAX yang sudah ada
+        form.dispatchEvent(new Event('submit'));
+
+        // Enable kembali (UX)
+        setTimeout(() => {
+            if (updateBtn) {
+                updateBtn.disabled = false;
+                updateBtn.textContent = 'Update Soal';
+            }
+        }, 800);
+    });
+});
+
 
             // Handle anulir soal
             document.querySelectorAll('.anulir-btn').forEach(button => {

@@ -61,7 +61,7 @@ class ExamQuestionController extends Controller
         $validated = $request->validate([
             'category_name' => 'required|string|max:255',
             'badan_soal' => 'required|string',
-            'kalimat_tanya' => 'required|string',
+            'kalimat_tanya' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
 
             'options' => 'required|array|min:1',
@@ -183,8 +183,9 @@ class ExamQuestionController extends Controller
 
         $request->validate([
             'category_id' => 'nullable|exists:exam_question_categories,id',
+            'cpmk' => 'required',
             'badan_soal' => 'required|string',
-            'kalimat_tanya' => 'required|string',
+            'kalimat_tanya' => 'nullable|string',
             'options.*.text' => 'nullable|string',
             'options.*.image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
@@ -207,8 +208,9 @@ class ExamQuestionController extends Controller
         }
 
         $question->update([
+            'cpmk' => $request->cpmk,
             'badan_soal' => $request->badan_soal,
-            'kalimat_tanya' => $request->kalimat_tanya,
+            'kalimat_tanya' => $request->kalimat_tanya ?: '',
             'image' => $imagePath,
         ]);
 

@@ -89,13 +89,15 @@
           <p class="mb-1">{{ $index + 1 }}.</p>
           <div>
             <p class="my-0">
-              {!! nl2br(e(trim($question->badan_soal . "\n" . $question->kalimat_tanya))) !!}
+              {!! nl2br(e(trim($question->badan_soal ))) !!}
             </p>
             @if ($question->image)
             <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal"
               class="mx-3 my-1 img-fluid rounded shadow-sm" style="max-width: 150px;">
             @endif
-
+            <p class="my-0">
+              {!! nl2br(e(trim($question->kalimat_tanya))) !!}
+            </p>
             <small class="fw-bold d-block mt-2">Jawaban:</small>
             <div class="row">
               @foreach ($question->options as $option)

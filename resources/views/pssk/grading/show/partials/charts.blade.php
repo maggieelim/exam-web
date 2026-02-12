@@ -94,7 +94,7 @@ $charts = [
                     labels: Object.keys(@json($chartData['difficulty'] ?? [])),
                     datasets: [{
                         data: Object.values(@json($chartData['difficulty'] ?? [])),
-                        backgroundColor: ['#4eaf04ff', '#90be6d', '#ffba08', '#e63946'],
+                        backgroundColor: ['#4eaf04ff', '#ffba08', '#e63946'],
                         borderWidth: 2
                     }]
                 },

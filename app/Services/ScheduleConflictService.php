@@ -161,7 +161,7 @@ class ScheduleConflictService
         ?int $excludeId,
         ?int $semesterId
     ): bool {
-        return $model::where('lecturer_id', $lecturerId)
+        $query = $model::where('lecturer_id', $lecturerId)
             ->whereHas('teachingSchedule', function ($q) use ($date, $start, $end, $semesterId) {
                 $q->where('scheduled_date', $date)
                     ->where('start_time', '<', $end)
@@ -171,8 +171,14 @@ class ScheduleConflictService
                     $q->where('semester_id', $semesterId);
                 }
             })
-            ->when($excludeId, fn($q) => $q->where('teaching_schedule_id', '!=', $excludeId))
-            ->exists();
+            ->when($excludeId, fn($q) => $q->where('teaching_schedule_id', '!=', $excludeId));
+
+        // ?? KHUSUS Pemicu DETAILS - harus memiliki kelompok_num
+        if ($model === PemicuDetails::class) {
+            $query->whereNotNull('kelompok_num');
+        }
+
+        return $query->exists();
     }
 
     private function getTeachingConflicts(
@@ -188,7 +194,9 @@ class ScheduleConflictService
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
             ->when($semesterId, fn($q) => $q->where('semester_id', $semesterId))
             ->pluck('lecturer_id')
-            ->filter();
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     private function getDetailConflicts(
@@ -199,7 +207,7 @@ class ScheduleConflictService
         ?int $excludeId,
         ?int $semesterId
     ): Collection {
-        return $model::whereHas('teachingSchedule', function ($q) use ($date, $start, $end, $semesterId) {
+        $query = $model::whereHas('teachingSchedule', function ($q) use ($date, $start, $end, $semesterId) {
             $q->where('scheduled_date', $date)
                 ->where('start_time', '<', $end)
                 ->where('end_time', '>', $start);
@@ -207,10 +215,19 @@ class ScheduleConflictService
             if ($semesterId) {
                 $q->where('semester_id', $semesterId);
             }
-        })
+        });
+
+        // ?? KHUSUS Pemicu DETAILS - harus memiliki kelompok_num
+        if ($model === PemicuDetails::class) {
+            $query->whereNotNull('kelompok_num');
+        }
+
+        return $query
             ->when($excludeId, fn($q) => $q->where('teaching_schedule_id', '!=', $excludeId))
             ->pluck('lecturer_id')
-            ->filter();
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     private function detailModels(): array

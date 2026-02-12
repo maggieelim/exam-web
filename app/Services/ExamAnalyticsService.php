@@ -135,7 +135,7 @@ class ExamAnalyticsService
 
   public function prepareChartData($questionAnalysis, Exam $exam)
   {
-    $difficultyData = collect(['Easy', 'Medium', 'Fair', 'Hard'])
+    $difficultyData = collect(['Easy', 'Medium', 'Hard'])
       ->mapWithKeys(fn($level) => [$level => $questionAnalysis->where('difficulty_level', $level)->count()])
       ->toArray();
 

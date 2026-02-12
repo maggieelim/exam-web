@@ -127,6 +127,7 @@
                 },
                 timeGridWeek: {
                     dayHeaderFormat: {
+                        day: 'numeric',
                         weekday: 'long',
                     }
                 }

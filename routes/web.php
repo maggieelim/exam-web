@@ -78,8 +78,8 @@ Route::middleware('guest')->group(function () {
     });
 
     Route::controller(SessionsController::class)->group(function () {
-        Route::get('login', 'create');
-        Route::post('session', 'store');
+        Route::get('login', 'create')->name('login');
+        Route::post('session', 'store')->name('session.store');
     });
 
     Route::controller(ResetController::class)->group(function () {
@@ -90,5 +90,3 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
 });
-
-Route::view('login', 'session/login-session')->name('login');

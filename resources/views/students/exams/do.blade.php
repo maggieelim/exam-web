@@ -14,18 +14,18 @@
             <div class="card p-3">
                 <div class="mt-2">
                     <p class="fw-bold my-0">{!! nl2br(e($currentQuestion->badan_soal ?? '')) !!}</p>
-                    <p class="my-0">
-                        {!! nl2br(e($currentQuestion->kalimat_tanya ?? '')) !!}
-                    </p>
                     @if ($currentQuestion->image)
-                    <div class="my-3">
+                    <div class="my-2">
                         <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"
                             class="img-fluid rounded shadow-sm zoomable-image"
-                            style="max-width: 600px; cursor: zoom-in;" data-bs-toggle="modal"
+                            style="max-width: 600px; max-height: 170px; cursor: zoom-in;" data-bs-toggle="modal"
                             data-bs-target="#imageZoomModal"
                             data-image="{{ asset('storage/' . $currentQuestion->image) }}">
                     </div>
                     @endif
+                    <p class="my-0">
+                        {!! nl2br(e($currentQuestion->kalimat_tanya ?? '')) !!}
+                    </p>
                 </div>
                 <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -53,7 +53,7 @@
                         <div class="mt-0">
                             <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Soal"
                                 class="img-fluid rounded shadow-sm zoomable-image"
-                                style="max-width: 200px; cursor: zoom-in;" data-bs-toggle="modal"
+                                style="max-width: 150px; max-height: 130px; cursor: zoom-in;" data-bs-toggle="modal"
                                 data-bs-target="#imageZoomModal" data-image="{{ asset('storage/' . $option->image) }}">
                         </div>
                         @endif

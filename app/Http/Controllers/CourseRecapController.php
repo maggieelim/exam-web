@@ -23,6 +23,7 @@ class CourseRecapController extends Controller
         $semesterId = $request->semester_id ?? $activeSemester->id;
         $semester = Semester::findOrFail($semesterId);
         $lecturers = Lecturer::with('courseLecturers', 'user')
+            ->where('type', 'pssk')
             ->join('users', 'users.id', '=', 'lecturers.user_id')
             ->orderBy('users.name', 'asc')
             ->select('lecturers.*')

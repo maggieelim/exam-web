@@ -5,7 +5,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="reuploadModalLabel">
                     {{ $questions->count() === 0 ? 'Upload' : 'Reupload' }}
-                    Questions via Excel</h5>
+                    Questions</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -94,7 +94,7 @@
                     {{-- OPSI JAWABAN --}}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Opsi Jawaban</label>
-                        @foreach (['A','B','C','D'] as $key)
+                        @foreach (['A','B','C','D', 'E'] as $key)
                         <div class="d-flex align-items-center mb-2">
                             <div class="form-check me-2">
                                 <input type="checkbox" name="options[{{ $key }}][is_correct]" class="form-check-input">

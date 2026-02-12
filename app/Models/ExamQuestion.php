@@ -13,6 +13,7 @@ class ExamQuestion extends Model
     protected $fillable = [
         'exam_id',
         'category_id',
+        'cpmk',
         'badan_soal',
         'kalimat_tanya',
         'kode_soal',

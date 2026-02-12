@@ -41,7 +41,7 @@ class CoursePracticumController extends Controller
             ->where('semester_id', $semesterId)
             ->whereNotNull('scheduled_date')
             ->with('practicumDetails')
-            ->orderBy('session_number')
+            ->orderBy('scheduled_date', 'asc')
             ->get()
             ->map(function ($practicum) {
                 $practicum->scheduled_date = Carbon::parse($practicum->scheduled_date)->translatedFormat('D d/M');

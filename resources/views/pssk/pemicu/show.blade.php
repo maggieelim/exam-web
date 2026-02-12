@@ -130,7 +130,7 @@
                                                 ]) }}" class="btn btn-info discussion-btn m-1 p-2 
                                         {{ $isExpired ? 'disabled text-white' : '' }} 
                                          {{ !$isChecked ? 'disabled text-white' : '' }}">
-                                        Diskusi {{ $index + 1 }}
+                                        Diskusi {{ substr($pemicuKe, -1) }}
                                     </a>
                                 </div>
                                 @endforeach
@@ -212,10 +212,9 @@
                     }
                     @endphp
 
-                    <div class="align-items-center">
-                        <input type="checkbox" class=" attendance-checkbox m-1" data-student="{{ $studentId }}"
-                            data-session="{{ $sessionId }}" {{ $isChecked ? 'checked' : '' }} {{ $isExpired ? 'disabled'
-                            : '' }}>
+                    <div class="pemicu-wrapper d-flex align-items-center gap-2">
+                        <input type="checkbox" class="attendance-checkbox m-1" data-student="{{ $studentId }}"
+                            data-session="{{ $sessionId }}" @checked($isChecked) @disabled($isExpired || !$sessionId)>
                         <a href="{{ route('tutors.edit', [
                                         'pemicu' => $pemDetail->pemicu_detail_id,
                                         'pemicus' => json_encode($allPemicuDetailIds),
@@ -223,7 +222,7 @@
                                     ]) }}" class="btn btn-info mx-2 flex-fill discussion-btn 
                             {{ !$isChecked ? 'disabled text-white' : '' }} 
                              {{ $isExpired ? 'disabled text-white' : '' }}">
-                            Diskusi {{ $index + 1 }}
+                            Diskusi {{ substr($pemicuKe, -1) }}
                         </a>
                     </div>
                     @endforeach

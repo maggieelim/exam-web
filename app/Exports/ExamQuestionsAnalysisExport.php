@@ -279,8 +279,7 @@ class ExamQuestionsAnalysisExport implements FromCollection, WithHeadings, WithM
         if ($totalStudents === 0) return 'N/A';
         $ratio = $correctAnswers / $totalStudents;
 
-        if ($ratio >= 0.8) return 'Easy';
-        if ($ratio >= 0.6) return 'Medium';
+        if ($ratio >= 0.75) return 'Easy';
         if ($ratio >= 0.2) return 'Fair';
         return 'Hard';
     }
