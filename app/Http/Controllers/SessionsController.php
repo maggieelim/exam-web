@@ -10,6 +10,10 @@ class SessionsController extends Controller
 {
     public function create()
     {
+        if (auth()->check()) {
+            return redirect()->route('home'); // atau dashboard kamu
+        }
+
         return view('session.login-session');
     }
 

@@ -75,7 +75,6 @@
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder  text-center">
                                     NIM
                                 </th>
-
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-center text-wrap">
                                     Status</th>
                             </tr>

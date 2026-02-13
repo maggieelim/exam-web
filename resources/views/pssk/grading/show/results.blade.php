@@ -2,11 +2,12 @@
   <div class="card-header d-flex flex-row justify-content-between mb-0 pb-0">
     <h5>Student Ranking & Results</h5>
     <div class="d-flex align-items-center gap-2">
-      <a href="{{ route('lecturer.results.download', $exam->exam_code) }}"
-        class="btn btn-sm btn-warning"><i class="fas fa-download"></i>
+      <a href="{{ route('lecturer.results.download', $exam->exam_code) }}" class="btn btn-sm btn-warning"><i
+          class="fas fa-download"></i>
         Download
       </a>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+        data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
         <i class="fas fa-filter"></i> Filter
       </button>
     </div>
@@ -22,7 +23,8 @@
               value="{{ request('name') }}">
           </div>
           <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-            <a href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}" class="btn btn-light btn-sm">Reset</a>
+            <a href="{{ route('lecturer.results.show.' . $status, $exam->exam_code) }}"
+              class="btn btn-light btn-sm">Reset</a>
             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
           </div>
         </div>
@@ -150,16 +152,13 @@
                                             @elseif($cat['percentage'] >= 60) bg-info
                                             @elseif($cat['percentage'] >= 40) bg-warning
                                             @else bg-danger
-                                            @endif"
-                      role="progressbar"
-                      style="width: {{ max($cat['percentage'], 1) }}%"
-                      data-bs-toggle="tooltip"
-                      data-bs-placement="top"
+                                            @endif" role="progressbar" style="width: {{ max($cat['percentage'], 1) }}%"
+                      data-bs-toggle="tooltip" data-bs-placement="top"
                       title="{{ $cat['percentage'] }}% - {{ $cat['total_correct'] }}/{{ $cat['total_question'] }} correct">
                     </div>
                   </div>
                   <small class="ms-2 text-muted" style="min-width: 40px;">
-                    {{ $cat['percentage'] }}%
+                    {{ $cat['percentage'] }}
                   </small>
                 </div>
                 @endforeach

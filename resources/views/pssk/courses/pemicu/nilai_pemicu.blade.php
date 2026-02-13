@@ -5,8 +5,8 @@
             <th rowspan="2">Nama</th>
             <th colspan="3">Diskusi 1</th>
             <th colspan="5">Diskusi 2</th>
+            <th rowspan="2">Total</th>
             <th rowspan="2">Nilai</th>
-            <th rowspan="2">%</th>
             <th colspan="2">Dosen</th>
         </tr>
 
@@ -65,7 +65,7 @@
             <td>{{ $scoreD2->analisis_rumusan ?? '-' }}</td>
 
             <td>{{ $total }}</td>
-            <td>{{ number_format($percent, 2) }}%</td>
+            <td>{{ number_format($percent, 2) }}</td>
 
             {{-- PERBAIKAN DI SINI --}}
             @if ($dosenD1 !== '-' && $dosenD2 !== '-' && $dosenD1 !== $dosenD2)

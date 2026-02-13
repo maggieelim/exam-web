@@ -182,9 +182,10 @@ class CoursePemicuController extends Controller
     {
         $pemicuDetails = PemicuDetails::with([
             'lecturer.user',
-            'pemicuScore',
+            'pemicuScore.courseStudent',
             'teachingSchedule.course.courseStudents.student.user'
         ])
+            ->whereNotNull('kelompok_num')
             ->whereIn('teaching_schedule_id', [$id1, $id2])
             ->get();
 
@@ -195,8 +196,10 @@ class CoursePemicuController extends Controller
         $course = $firstDetail->teachingSchedule->course;
 
         $groupedStudents = $course->courseStudents->groupBy('kelompok')->sortKeys();
+        $courseStudentIds = $course->courseStudents->pluck('id');
 
         $scores = PemicuScore::whereIn('pemicu_detail_id', $pemicuDetails->pluck('id'))
+            ->whereIn('course_student_id', $courseStudentIds) // Filter hanya student di course ini
             ->get()
             ->groupBy('course_student_id');
 
@@ -232,14 +235,53 @@ class CoursePemicuController extends Controller
                     ->with('error', 'Data nilai pemicu belum tersedia.');
             }
 
+            $pemicuDetailMap = PemicuDetails::whereIn('teaching_schedule_id', [$id1, $id2])
+                ->pluck('id', 'teaching_schedule_id');
+
             return view('pssk.courses.pemicu.nilai', array_merge($data, [
                 'id1' => $id1,
                 'id2' => $id2,
-            ]));
+            ]), compact('pemicuDetailMap'));
         } catch (\Throwable $e) {
             return redirect()->back()
                 ->with('error', 'Data belum lengkap atau belum diinput.');
         }
+    }
+
+    public function saveNilai(Request $request)
+    {
+        $data = $request->scores;
+
+        foreach ($data as $studentCourseId => $schedules) {
+
+            foreach ($schedules as $scheduleId => $values) {
+
+                $disiplin = $values['disiplin'] ?? 0;
+                $keaktifan = $values['keaktifan'] ?? 0;
+                $berpikir = $values['berpikir_kritis'] ?? 0;
+                $info = $values['info_baru'] ?? 0;
+                $analisis = $values['analisis_rumusan'] ?? 0;
+
+                $total = $disiplin + $keaktifan + $berpikir + $info + $analisis;
+
+                PemicuScore::updateOrCreate(
+                    [
+                        'course_student_id' => $studentCourseId,
+                        'teaching_schedule_id' => $scheduleId,
+                        'pemicu_detail_id' => $values['pemicu_detail_id'],
+                    ],
+                    [
+                        'disiplin' => $disiplin,
+                        'keaktifan' => $keaktifan,
+                        'berpikir_kritis' => $berpikir,
+                        'info_baru' => $info,
+                        'analisis_rumusan' => $analisis,
+                        'total_score' => $total,
+                    ]
+                );
+            }
+        }
+        return back()->with('success', 'Nilai berhasil disimpan.');
     }
 
     public function downloadPemicu($id1, $id2)
@@ -297,6 +339,7 @@ class CoursePemicuController extends Controller
             'pemicuScore',
             'teachingSchedule'
         ])
+            ->whereNotNull('kelompok_num')
             ->whereIn('teaching_schedule_id', $teachingSchedules->pluck('id'))
             ->get();
 

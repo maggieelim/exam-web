@@ -17,8 +17,8 @@
             </tr>
             <tr>
                 @foreach (range(1, $preGroup) as $index)
+                <th>Total</th>
                 <th>Nilai</th>
-                <th>%</th>
                 @endforeach
             </tr>
         </thead>
@@ -61,7 +61,7 @@
                 @endphp
 
                 <td class="text-center text-sm">{{ $total }}</td>
-                <td class="text-center text-sm">{{ number_format($percent, 2) }}%</td>
+                <td class="text-center text-sm">{{ number_format($percent, 2) }}</td>
                 @endforeach
 
             </tr>

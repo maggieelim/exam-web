@@ -54,6 +54,15 @@
         border-color: #344767;
     }
 
+    .fc .fc-daygrid-dot-event {
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        width: 90%;
+        white-space: normal;
+        word-break: break-word;
+    }
+
     /* Toolbar tidak mepet dan tidak pecah */
     @media (max-width: 767px) {
         .fc-header-toolbar {
@@ -92,7 +101,7 @@
             'timeGridWeek', // Day untuk mobile, Week untuk desktop
             nowIndicator: true,
             allDaySlot: false,
-            slotMinTime: "07:00:00",
+            slotMinTime: "07:30:00",
             slotMaxTime: "17:00:00",
             hiddenDays: [0, 6],
             events: {
@@ -127,8 +136,8 @@
                 },
                 timeGridWeek: {
                     dayHeaderFormat: {
-                        day: 'numeric',
-                        weekday: 'long',
+                        weekday: 'short',
+                        day: 'numeric'
                     }
                 }
             },

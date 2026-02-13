@@ -27,8 +27,9 @@
                                 <th rowspan="2">Nama</th> @foreach (range(1, $preGroup) as $index) <th colspan="2">
                                     Pemicu {{ $index }}</th> @endforeach
                             </tr>
-                            <tr> @foreach (range(1, $preGroup) as $index) <th>Nilai</th>
-                                <th>%</th> @endforeach
+                            <tr> @foreach (range(1, $preGroup) as $index)
+                                <th>Total</th>
+                                <th>Nilai</th> @endforeach
                             </tr>
                         </thead>
 
@@ -74,7 +75,7 @@
 
                                 {{-- Total --}}
                                 <td class="text-center text-sm">{{ $total }}</td>
-                                <td class="text-center text-sm">{{ number_format($percent, 2) }}%</td>
+                                <td class="text-center text-sm">{{ number_format($percent, 2) }}</td>
                                 @endforeach
                             </tr>
                             @endforeach

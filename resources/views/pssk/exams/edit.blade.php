@@ -40,17 +40,16 @@
           <input type="text" class="form-control"
             value="{{ $exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name }}" readonly>
         </div>
-        <div class=" col-md-4 mb-3"> <label for="course_id" class="form-label">Pilih Course</label>
-          <select name="course_id" id="course_id" class="form-select" required {{ $status==='ongoing' ? 'disabled' : ''
-            }}>
-            <option value="">-- Pilih Course --</option>
-            @foreach($courses as $course)
-            <option value="{{ $course->id }}" {{ $exam->course_id == $course->id ? 'selected' : '' }}>
-              {{ $course->name }}
-            </option>
-            @endforeach
-          </select>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Course</label>
+
+          {{-- TAMPILAN --}}
+          <input type="text" class="form-control" value="{{ $exam->course->name ?? '' }}" readonly>
+
+          {{-- VALUE UNTUK BACKEND --}}
+          <input type="hidden" name="course_id" value="{{ $exam->course_id }}">
         </div>
+
         <div class="col-md-4 mb-3">
           <label for="password">Password</label>
           <input type="text" name="password" class="form-control" value="{{$exam->password}}" required>

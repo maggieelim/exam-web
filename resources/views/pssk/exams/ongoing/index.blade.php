@@ -86,6 +86,9 @@
                             Status
                         </th>
                         <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                            Timer
+                        </th>
+                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                             Action
                         </th>
                     </tr>
@@ -115,6 +118,17 @@
                                 {{ $attempt['status_badge']['text'] }}
                             </span>
                         </td>
+                        <td class="align-middle text-center">
+                            @if ($attempt['status'] === 'in_progress')
+                            <span class="badge bg-danger timer-badge" data-start="{{ $attempt['started_at'] }}"
+                                data-duration="{{ $exam['duration'] * 60 }}">
+                                00:00:00
+                            </span>
+                            @else
+                            <span class="badge bg-secondary">-</span>
+                            @endif
+                        </td>
+
                         <td class="align-middle text-center">
                             @if ($attempt['status'] === 'completed' || $attempt['status'] === 'timeout')
                             <a href="{{ route('exams.retake', [$exam->exam_code, $attempt['id']]) }}"
@@ -178,6 +192,37 @@
                     modal.show();
                 });
             });
+
+            function updateTimers() {
+                document.querySelectorAll('.timer-badge').forEach(function(el) {
+
+                    const startTime = new Date(el.dataset.start).getTime();
+                    const duration = parseInt(el.dataset.duration) * 1000;
+                    const now = new Date().getTime();
+
+                    const endTime = startTime + duration;
+                    const remaining = endTime - now;
+
+                    if (remaining <= 0) {
+                        el.textContent = "00:00:00";
+                        el.classList.remove('bg-danger');
+                        el.classList.add('bg-secondary');
+                        return;
+                    }
+
+                    const hours = Math.floor((remaining / (1000 * 60 * 60)));
+                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+                    el.textContent =
+                        String(hours).padStart(2, '0') + ":" +
+                        String(minutes).padStart(2, '0') + ":" +
+                        String(seconds).padStart(2, '0');
+                });
+            }
+
+            updateTimers();
+            setInterval(updateTimers, 1000);
         });
 </script>
 @endsection

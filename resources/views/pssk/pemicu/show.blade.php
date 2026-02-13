@@ -164,16 +164,27 @@
         $first = $stu->first();
         $pemicus = $stu->pluck('pemicuDetail.teachingSchedule.pemicu_ke')->unique()->sort()->values();
         $allPemicuDetailIds = $stu->pluck('pemicu_detail_id')->toArray();
+        $totalScore = $stu->sum('total_score');
+        $isChecked =
+        isset($existingAttendance[$studentId]) &&
+        $sessionId &&
+        $existingAttendance[$studentId]
+        ->pluck('attendance_session_id')
+        ->contains($sessionId);
+
         @endphp
 
         <div class="card mb-3 shadow-sm">
             <div class="card-body p-2 m-2 mb-0">
 
                 {{-- Nama --}}
-                <h6 class="mb-1">
-                    <strong>{{ $first->courseStudent->student->user->name }}</strong>
-                </h6>
-
+                <div class="d-flex justify-content-between">
+                    <h6 class="mb-1">
+                        <strong>{{ $first->courseStudent->student->user->name }}</strong>
+                    </h6>
+                    <span id="null_score_{{ $studentId }}"
+                        class="null-score-indicator text-danger {{ $isChecked && $totalScore == 0 ? '' : 'd-none' }}">score</span>
+                </div>
                 {{-- Detail --}}
                 <p class="text-muted mb-2">
                     NIM: {{ $first->courseStudent->student->nim }} <br>
@@ -229,7 +240,6 @@
                 </div>
             </div>
         </div>
-
         @empty
         <div class="text-center py-4">
             <div class="text-muted">
@@ -241,7 +251,11 @@
             </div>
         </div>
         @endforelse
-
+        <div class="d-flex justify-content-end">
+            <a href="{{ route('tutors') }}" class="btn btn-success">
+                Selesai
+            </a>
+        </div>
     </div>
 
 </div>

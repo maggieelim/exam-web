@@ -103,6 +103,8 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
     // ================= SHARED ADMIN & LECTURER =================
     Route::middleware(['role:admin,lecturer,koordinator'])->group(function () {
         Route::prefix('tutors')->group(function () {
+            Route::post('pemicuScore/save', [CoursePemicuController::class, 'saveNilai'])
+                ->name('saveNilai');
             Route::post('/attendance/ajax', [TutorGradingController::class, 'storeAttendance'])->name('tutors.AttendanceAjax');
             Route::get('/', [TutorGradingController::class, 'index'])->name('tutors');
             Route::get('/{course}/{kelompok}', [TutorGradingController::class, 'show'])->name('tutors.detail');
