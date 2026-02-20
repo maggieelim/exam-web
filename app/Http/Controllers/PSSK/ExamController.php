@@ -353,9 +353,11 @@ class ExamController extends Controller
         if ($status === 'ongoing') {
             $request->validate([
                 'password' => 'nullable|string|max:255',
+                'duration' => 'required|integer|min:1',
             ]);
             $exam->update([
-                'password' => $request->password
+                'password' => $request->password,
+                'duration' => $request->duration,
             ]);
             return back()->with('success', 'Password ujian berhasil diperbarui.');
         }

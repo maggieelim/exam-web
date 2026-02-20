@@ -106,7 +106,7 @@
                 <span>{{ $option->text }}</span>
 
                 @if ($option->is_correct)
-                <span class="ms-1 text-success">✔</span>
+                <i class="fas fa-check text-success ms-1"></i>
                 @endif
 
                 @if ($option->image)

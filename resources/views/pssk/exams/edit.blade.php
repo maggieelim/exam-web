@@ -28,8 +28,7 @@
 
         <div class="col-md-4 mb-3">
           <label for="duration">Durasi (menit)</label>
-          <input type="number" name="duration" class="form-control" required min="1" value="{{ $exam->duration }}" {{
-            $status==='ongoing' ? 'disabled' : '' }}>
+          <input type="number" name="duration" class="form-control" required min="1" value="{{ $exam->duration }}">
         </div>
       </div>
 

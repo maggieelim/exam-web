@@ -1,6 +1,8 @@
 @php
 $menu = config('sidebar');
 $context = session('context', 'pssk'); // default
+$host = request()->getHost(); // ambil domain aktif
+$isExamDomain = str_starts_with($host, 'exam.');
 @endphp
 
 <aside id="sidenav-main"
@@ -75,8 +77,11 @@ $context = session('context', 'pssk'); // default
             @endif
 
             @foreach($section['items'] as $item)
-            @if(!isset($item['roles']) || auth()->user()->hasAnyRole($item['roles']))
-            @php
+            @if(
+            (!isset($item['only_domain'])) ||
+            ($item['only_domain'] === 'exam' && $isExamDomain) ||
+            ($item['only_domain'] === 'main' && !$isExamDomain)
+            ) @php
             $active = request()->is($item['pattern']);
             // Menyesuaikan pattern dengan context jika ada placeholder {context}
             $pattern = isset($item['pattern'])

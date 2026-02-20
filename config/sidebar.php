@@ -152,7 +152,8 @@ return [
                 'route' => 'student.studentExams.index',
                 'params' => ['status' => 'upcoming'],
                 'pattern' => 'student/exams/upcoming',
-                'icon' => 'fa-file'
+                'icon' => 'fa-file',
+                'only_domain' => 'exam'
             ],
             [
                 'label' => 'Previous Exam',

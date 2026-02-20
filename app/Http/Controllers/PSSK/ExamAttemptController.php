@@ -69,8 +69,11 @@ class ExamAttemptController extends Controller
         if (!$attempt || in_array($attempt->status, ['completed', 'timeout'])) {
             return redirect()->route('student.studentExams.index')->with('info', 'Ujian telah diselesaikan atau diakhiri oleh pengawas.');
         }
+        $pauseSeconds = $attempt->total_pause_seconds ?? 0;
+        $isPaused = $attempt->is_paused;
+        $pausedAt = $attempt->paused_at;
 
-        $endTime = $attempt->created_at->copy()->addMinutes($exam->duration);
+        $endTime = $attempt->started_at->copy()->addMinutes($exam->duration)->addSeconds($pauseSeconds);
         // Validasi jika waktu sudah habis sebelum mulai
         if (now()->greaterThan($endTime)) {
             \Log::warning('Time already expired for attempt: ' . $attempt->id);
@@ -128,7 +131,7 @@ class ExamAttemptController extends Controller
             ->where('user_id', auth()->id())
             ->pluck('answer', 'exam_question_id');
 
-        return view('students.exams.do', compact('exam', 'attempt', 'endTime', 'questionNumber', 'currentQuestion', 'prevQuestion', 'nextQuestion', 'savedAnswer', 'allAnswered', 'userAnswers', 'totalQuestions', 'answeredCount', 'questions'));
+        return view('students.exams.do', compact('exam', 'attempt', 'endTime', 'isPaused', 'pausedAt', 'questionNumber', 'currentQuestion', 'prevQuestion', 'nextQuestion', 'savedAnswer', 'allAnswered', 'userAnswers', 'totalQuestions', 'answeredCount', 'questions'));
     }
 
     public function answer(Request $request, $exam_code, $kode_soal)
@@ -214,6 +217,8 @@ class ExamAttemptController extends Controller
         return response()->json([
             'user' => auth()->id(),
             'status' => $attempt->status ?? 'in_progress',
+            'is_paused' => $attempt->is_paused,
+            'paused_at' => $attempt->paused_at?->toISOString(),
             'message' => $attempt->status === 'completed' ? 'Exam has been completed' : 'Exam in progress',
         ]);
     }

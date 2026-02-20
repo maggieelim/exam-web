@@ -164,7 +164,9 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
         Route::get('/exams/ongoing/participants/{exam_code}', [OngoingExamController::class, 'ongoing'])->name('exams.ongoing');
         Route::get('/exams/ongoing/{exam_code}/retake/{user_id}', [OngoingExamController::class, 'resetAttempt'])->name('exams.retake');
         Route::get('/exams/ongoing/{exam_code}/end/{user_id}', [OngoingExamController::class, 'endAttempt'])->name('exams.endAttempt');
-
+        Route::post('/exams/ongoing/{exam_code}/endAllAttempts', [OngoingExamController::class, 'endAllAttempts'])->name('exams.endAllAttempts');
+        Route::post('/exams/ongoing/{exam_code}/attempt/{attempt}/pause', [OngoingExamController::class, 'pauseAttempt'])->name('exams.pauseAttempt');
+        Route::post('/exams/ongoing/{exam_code}/attempt/{attempt}/resume', [OngoingExamController::class, 'resumeAttempt'])->name('exams.resumeAttempt');
         // exam questions
         Route::get('exams/upcoming/questions/{exam_code}', [ExamQuestionController::class, 'index'])->name('exams.questions.upcoming');
         Route::get('exams/ongoing/questions/{exam_code}', [ExamQuestionController::class, 'index'])->name('exams.questions.ongoing');
@@ -182,18 +184,21 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
         Route::get('/exams/{status?}', [ExamController::class, 'index'])
             ->where('status', '(previous|upcoming|ongoing)')
             ->name('studentExams.index');
-        // Route untuk mengecek status exam
-        Route::get('/exams/{exam_code}/check-status', [ExamAttemptController::class, 'checkExamStatus'])->name('exams.check-status');
-        Route::get('/exams/previous/results/{exam_code}', [StudentExamResultsController::class, 'show'])->name('results.show');
-        Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
-        Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');
-        Route::post('/exams/{exam_code}/{kode_soal}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
-        Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
 
         Route::get('/results', [StudentExamResultsController::class, 'index'])->name('results.index');
+        Route::get('/exams/previous/results/{exam_code}', [StudentExamResultsController::class, 'show'])->name('results.show');
         //attendance
         Route::get('/attendance', [StudentAttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'showAttendanceForm'])->name('attendance.form');
         Route::post('/attendance/{attendanceSession}', [StudentAttendanceController::class, 'submitAttendance'])->name('attendance.submit');
+        Route::middleware(['campus.ip'])->group(function () {
+            Route::get('/exams/{exam_code}/check-status', [ExamAttemptController::class, 'checkExamStatus'])->name('exams.check-status');
+            Route::post('/exams/{exam_code}/start', [ExamAttemptController::class, 'start'])->name('exams.start');
+            Route::get('/exams/{exam_code}/{kode_soal?}', [ExamAttemptController::class, 'do'])->name('exams.do');
+            Route::post('/exams/{exam_code}/{kode_soal}/answer', [ExamAttemptController::class, 'answer'])->name('exams.answer');
+            Route::post('/exams/{exam_code}/finish', [ExamAttemptController::class, 'finish'])->name('exams.finish');
+        });
     });
+
+    Route::domain('exam.localhost')->group(function () {});
 });

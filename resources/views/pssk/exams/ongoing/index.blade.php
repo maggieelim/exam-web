@@ -39,7 +39,14 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header d-flex justify-content-end align-items-center mb-0 pb-0">
+    <div class="card-header d-flex justify-content-end align-items-center gap-3 mb-0 pb-0">
+        <form method="POST" action="{{ route('exams.endAllAttempts', $exam->exam_code) }}"
+            onsubmit="return confirm('Yakin ingin mengakhiri semua ujian yang sedang berjalan?')">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-danger px-3">
+                <i class="fas fa-stop-circle me-1"></i> End All Attempts
+            </button>
+        </form>
         <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
             data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filter
@@ -120,15 +127,16 @@
                         </td>
                         <td class="align-middle text-center">
                             @if ($attempt['status'] === 'in_progress')
-                            <span class="badge bg-danger timer-badge" data-start="{{ $attempt['started_at'] }}"
-                                data-duration="{{ $exam['duration'] * 60 }}">
-                                00:00:00
+                            <span class="badge {{ $attempt['is_paused'] ? 'bg-danger' : 'bg-info' }} timer-badge"
+                                data-start="{{ $attempt['started_at'] }}" data-duration="{{ $exam['duration'] * 60 }}"
+                                data-paused="{{ $attempt['total_pause_seconds'] }}"
+                                data-is-paused="{{ $attempt['is_paused'] ? 1 : 0 }}"
+                                data-paused-at="{{ $attempt['paused_at'] }}">
                             </span>
                             @else
                             <span class="badge bg-secondary">-</span>
                             @endif
                         </td>
-
                         <td class="align-middle text-center">
                             @if ($attempt['status'] === 'completed' || $attempt['status'] === 'timeout')
                             <a href="{{ route('exams.retake', [$exam->exam_code, $attempt['id']]) }}"
@@ -136,6 +144,27 @@
                                 Allow retake <i class="fas fa-redo"></i>
                             </a>
                             @elseif ($attempt['status'] === 'in_progress')
+                            @if (!$attempt['is_paused'])
+                            <form method="POST"
+                                action="{{ route('exams.pauseAttempt', [$exam->exam_code, $attempt['id']]) }}"
+                                class="d-inline">
+                                @csrf
+                                <button class="btn bg-gradient-warning m-1 p-2 px-3"
+                                    onclick="return confirm('Pause ujian mahasiswa ini?')">
+                                    Pause
+                                </button>
+                            </form>
+                            @else
+                            <form method="POST"
+                                action="{{ route('exams.resumeAttempt', [$exam->exam_code, $attempt['id']]) }}"
+                                class="d-inline">
+                                @csrf
+                                <button class="btn bg-gradient-success m-1 p-2 px-3"
+                                    onclick="return confirm('Lanjutkan ujian mahasiswa ini?')">
+                                    Resume
+                                </button>
+                            </form>
+                            @endif
                             <a href="{{ route('exams.endAttempt', [$exam->exam_code, $attempt['id']]) }}"
                                 class="btn bg-gradient-danger m-1 p-2 px-3" title="Info">
                                 End Attempt
@@ -197,11 +226,25 @@
                 document.querySelectorAll('.timer-badge').forEach(function(el) {
 
                     const startTime = new Date(el.dataset.start).getTime();
-                    const duration = parseInt(el.dataset.duration) * 1000;
-                    const now = new Date().getTime();
+                    const durationMs = parseInt(el.dataset.duration || 0) * 1000;
+                    const pausedSecondsMs = parseInt(el.dataset.paused || 0) * 1000;
 
-                    const endTime = startTime + duration;
-                    const remaining = endTime - now;
+                    const isPaused = parseInt(el.dataset.isPaused || 0) === 1;
+                    const pausedAt = el.dataset.pausedAt ?
+                        new Date(el.dataset.pausedAt).getTime() :
+                        null;
+
+                    const endTime = startTime + durationMs + pausedSecondsMs;
+
+                    let remaining;
+
+                    // 🔥 Kalau sedang paused → hitung berdasarkan paused_at (freeze)
+                    if (isPaused && pausedAt) {
+                        remaining = endTime - pausedAt;
+                    } else {
+                        const now = new Date().getTime();
+                        remaining = endTime - now;
+                    }
 
                     if (remaining <= 0) {
                         el.textContent = "00:00:00";
@@ -210,7 +253,7 @@
                         return;
                     }
 
-                    const hours = Math.floor((remaining / (1000 * 60 * 60)));
+                    const hours = Math.floor(remaining / (1000 * 60 * 60));
                     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
 

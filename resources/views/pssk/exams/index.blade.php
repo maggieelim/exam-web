@@ -20,9 +20,6 @@
                         data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-                    <a href="{{ route('exams.create') }}" class="btn bg-gradient-primary btn-sm" type="button">
-                        + Add Exam test
-                    </a>
                 </div>
             </div>
 
@@ -178,7 +175,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="4" class="text-center py-4">
+                                <td colspan="5" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="fas fa-inbox fa-2x mb-2"></i>
                                         <p>Tidak ada Exam yang ditemukan</p>

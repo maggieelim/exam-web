@@ -74,6 +74,7 @@ class OngoingExamController extends Controller
 
             $totalQuestions = $exam->questions->count();
 
+            $pause = $attempt->is_paused;
             $status = $attempt->status;
             $statusBadge = $this->getAttemptStatusBadge($attempt);
 
@@ -91,6 +92,9 @@ class OngoingExamController extends Controller
                 'total_questions' => $totalQuestions,
                 'progress_percentage' => $totalQuestions > 0 ? round(($answeredCount / $totalQuestions) * 100) : 0,
                 'status' => $status,
+                'is_paused' => $pause,
+                'total_pause_seconds' => $attempt->total_pause_seconds,
+                'paused_at' => $attempt->paused_at,
                 'status_badge' => $statusBadge,
                 'started_at' => $attempt->created_at,
                 'updated_at' => $attempt->updated_at,
@@ -213,6 +217,65 @@ class OngoingExamController extends Controller
         return redirect()->back()->with('success', 'Attempt berhasil diakhiri.');
     }
 
+    public function endAllAttempts($examCode)
+    {
+        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+            $affected = ExamAttempt::where('exam_id', $exam->id)->where('status', 'in_progress')
+                ->update([
+                    'status' => 'completed',
+                    'finished_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            DB::commit();
+            return redirect()->back()->with('success', "Successfully ended {$affected} active attempts.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to end attemps: ' . $e->getMessage());
+        }
+    }
+
+    public function pauseAttempt($examCode, $attemptId)
+    {
+        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+        $attempt = ExamAttempt::where('exam_id', $exam->id)
+            ->where('id', $attemptId)
+            ->firstOrFail();
+
+        if ($attempt->is_paused) {
+            return back()->with('error', 'Attempt sudah dalam keadaan pause.');
+        }
+
+        $attempt->update([
+            'is_paused' => true,
+            'paused_at' => now(),
+        ]);
+
+        return back()->with('success', 'Attempt berhasil dipause.');
+    }
+
+    public function resumeAttempt($examCode, $attemptId)
+    {
+        $exam = Exam::where('exam_code', $examCode)->firstOrFail();
+        $attempt = ExamAttempt::where('exam_id', $exam->id)
+            ->where('id', $attemptId)
+            ->firstOrFail();
+
+        if (!$attempt->is_paused) {
+            return back()->with('error', 'Attempt tidak dalam keadaan pause.');
+        }
+
+        $pauseDuration = $attempt->paused_at->diffInSeconds(now(), true);
+        $attempt->update([
+            'is_paused' => false,
+            'paused_at' => null,
+            'total_pause_seconds' => $attempt->total_pause_seconds + $pauseDuration,
+        ]);
+
+        return back()->with('success', 'Attempt berhasil dilanjutkan.');
+    }
     /**
      * Bulk reset attempts
      */

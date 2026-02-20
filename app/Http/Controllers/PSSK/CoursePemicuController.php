@@ -185,7 +185,7 @@ class CoursePemicuController extends Controller
             'pemicuScore.courseStudent',
             'teachingSchedule.course.courseStudents.student.user'
         ])
-            ->whereNotNull('kelompok_num')
+            // ->whereNotNull('kelompok_num')
             ->whereIn('teaching_schedule_id', [$id1, $id2])
             ->get();
 
@@ -268,9 +268,9 @@ class CoursePemicuController extends Controller
                     [
                         'course_student_id' => $studentCourseId,
                         'teaching_schedule_id' => $scheduleId,
-                        'pemicu_detail_id' => $values['pemicu_detail_id'],
                     ],
                     [
+                        'pemicu_detail_id' => $values['pemicu_detail_id'],
                         'disiplin' => $disiplin,
                         'keaktifan' => $keaktifan,
                         'berpikir_kritis' => $berpikir,

@@ -16,10 +16,16 @@ class ExamAttempt extends Model
         'finished_at',
         'started_at',
         'question_order',
+        'is_paused',
+        'paused_at',
+        'total_pause_seconds'
     ];
     protected $casts = [
+        'finished_at' => 'datetime',
+        'started_at' => 'datetime',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'paused_at' => 'datetime',
     ];
     public function user()
     {
@@ -35,11 +41,11 @@ class ExamAttempt extends Model
         return $this->hasMany(ExamAnswer::class, 'exam_id', 'exam_id')
             ->where('user_id', $this->user_id);
     }
-       public function findAnswerByQuestion($questionId)
+    public function findAnswerByQuestion($questionId)
     {
         return ExamAnswer::where('exam_id', $this->exam_id)
-                        ->where('user_id', $this->user_id)
-                        ->where('exam_question_id', $questionId)
-                        ->first();
+            ->where('user_id', $this->user_id)
+            ->where('exam_question_id', $questionId)
+            ->first();
     }
 }
