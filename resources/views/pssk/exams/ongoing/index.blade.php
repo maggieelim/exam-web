@@ -40,6 +40,7 @@
 
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-end align-items-center gap-3 mb-0 pb-0">
+        @if ($stats['active_participants']>0)
         <form method="POST" action="{{ route('exams.endAllAttempts', $exam->exam_code) }}"
             onsubmit="return confirm('Yakin ingin mengakhiri semua ujian yang sedang berjalan?')">
             @csrf
@@ -47,6 +48,7 @@
                 <i class="fas fa-stop-circle me-1"></i> End All Attempts
             </button>
         </form>
+        @endif
         <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
             data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filter

@@ -377,19 +377,22 @@ class ExamQuestionController extends Controller
         foreach ($phpWord->getSections() as $section) {
             foreach ($section->getElements() as $element) {
 
-                if ($element instanceof Text) { // Text biasa
+                if ($element instanceof \PhpOffice\PhpWord\Element\Text) {
                     $text .= $element->getText() . "\n";
-                } elseif ($element instanceof TextRun) { // TextRun (paragraph)
+                } elseif ($element instanceof \PhpOffice\PhpWord\Element\TextRun) {
+                    $lineText = '';
                     foreach ($element->getElements() as $textElement) {
-                        if ($textElement instanceof Text) {
-                            $text .= $textElement->getText();
+                        if ($textElement instanceof \PhpOffice\PhpWord\Element\Text) {
+                            $lineText .= $textElement->getText();
                         }
                     }
-                    $text .= "\n";
-                } elseif ($element instanceof Title) { // Title (judul)
-                    if ($element->getText() instanceof TextRun) {
+                    if (!empty(trim($lineText))) {
+                        $text .= $lineText . "\n";
+                    }
+                } elseif ($element instanceof \PhpOffice\PhpWord\Element\Title) {
+                    if ($element->getText() instanceof \PhpOffice\PhpWord\Element\TextRun) {
                         foreach ($element->getText()->getElements() as $textElement) {
-                            if ($textElement instanceof Text) {
+                            if ($textElement instanceof \PhpOffice\PhpWord\Element\Text) {
                                 $text .= $textElement->getText();
                             }
                         }
@@ -397,97 +400,157 @@ class ExamQuestionController extends Controller
                         $text .= (string) $element->getText();
                     }
                     $text .= "\n";
+                } elseif ($element instanceof \PhpOffice\PhpWord\Element\ListItem) {
+                    // Handle ListItem dengan lebih baik
+                    $depth = $element->getDepth();
+                    $listText = $element->getText();
+
+                    // Coba deteksi style numbering
+                    $style = $element->getStyle();
+                    $styleName = $style ? $style->getStyleName() : '';
+
+                    // Deteksi tipe numbering dari style name
+                    if (preg_match('/List(Number|Alpha|Bullet)/i', $styleName, $matches)) {
+                        $type = strtolower($matches[1]);
+
+                        // Gunakan static counter per depth
+                        static $counters = [];
+                        $key = $depth . '_' . $type;
+
+                        if (!isset($counters[$key])) {
+                            $counters[$key] = 1;
+                        } else {
+                            $counters[$key]++;
+                        }
+
+                        switch ($type) {
+                            case 'number':
+                                $prefix = $counters[$key] . '. ';
+                                break;
+                            case 'alpha':
+                                // A, B, C, ...
+                                $prefix = chr(64 + $counters[$key]) . '. ';
+                                break;
+                            case 'bullet':
+                            default:
+                                $prefix = '• ';
+                                break;
+                        }
+                    } else {
+                        // Fallback: lihat dari teks asli
+                        if (preg_match('/^[A-Ea-e][.)]/', $listText)) {
+                            // Sudah ada format A. di teks, pertahankan
+                            $prefix = '';
+                        } else {
+                            // Default ke bullet
+                            $prefix = '• ';
+                        }
+                    }
+
+                    $text .= $prefix . $listText . "\n";
                 }
             }
         }
+
         return $text;
     }
-
     private function parseQuestionsFromText(string $text): array
     {
         $questions = [];
         $currentCategory = '-';
-        $questionRegex =  '/(?:### Kategori:\s*(.+?)\n)?### Soal (\d+):\s*\n([\s\S]*?)\*Kunci:\s*([A-E,\s]+)/i';
-
+        $questionRegex = '/(?:### Kategori:\s*(.+?)\n)?### Soal (\d+):\s*\n([\s\S]*?)\*Kunci:\s*([A-E,\s]+)/i';
         preg_match_all($questionRegex, $text, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
+
             if (!empty($match[1])) {
                 $currentCategory = trim($match[1]);
             }
+
             $questionNumber = $match[2];
             $content = trim($match[3]);
             $keyStr = strtoupper(trim($match[4]));
 
-            // Ekstrak huruf kunci jawaban
             preg_match_all('/[A-E]/', $keyStr, $keyMatches);
             $correctLetters = $keyMatches[0] ?? [];
 
             if (empty($correctLetters)) {
-                continue; // Lewatkan jika tidak ada kunci yang valid
+                continue;
             }
 
-            // Parse konten: badan soal dan opsi
-            $lines = array_filter(
+            $lines = array_values(array_filter(
                 array_map('trim', explode("\n", $content)),
-                fn($line) => !empty($line)
-            );
+                fn($line) => $line !== ''
+            ));
 
+            $options = [];
+            $letters = ['A', 'B', 'C', 'D', 'E'];
+
+            /*
+        |--------------------------------------------------------------------------
+        | STEP 1 — Coba baca format manual (A. B. C.)
+        |--------------------------------------------------------------------------
+        */
+            foreach ($lines as $line) {
+                if (preg_match('/^\s*([A-E])[\.\)\:\-]\s*(.+)$/', $line, $m)) {
+                    $options[strtoupper($m[1])] = trim($m[2]);
+                }
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | STEP 2 — Jika tidak ada opsi manual → pakai auto detect
+        |--------------------------------------------------------------------------
+        */
+            if (empty($options)) {
+
+                // Ambil 5 baris terakhir sebagai opsi
+                $lastFive = array_slice($lines, -5);
+
+                if (count($lastFive) >= 4) {
+
+                    foreach ($lastFive as $index => $opt) {
+                        if (isset($letters[$index])) {
+                            $options[$letters[$index]] = $opt;
+                        }
+                    }
+
+                    // Hapus opsi dari lines agar tersisa body + question
+                    $lines = array_slice($lines, 0, count($lines) - count($lastFive));
+                }
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | STEP 3 — Pisahkan body dan question
+        |--------------------------------------------------------------------------
+        */
             $bodyText = '';
             $questionText = '';
-            $options = [];
-            $inOptions = false;
-            $currentOption = null;
 
             foreach ($lines as $line) {
-                // Cek apakah baris ini adalah opsi (A. B. C. D. E.)
-                if (preg_match('/^([A-E])\.\s*(.+)$/i', $line, $optionMatch)) {
-                    $inOptions = true;
-                    $options[strtoupper($optionMatch[1])] = $optionMatch[2];
-                    continue;
-                }
-                // Jika sudah di bagian opsi dan baris ini melanjutkan opsi sebelumnya
-                if ($inOptions) {
-                    // Lanjutan opsi terakhir
-                    if (!empty($options)) {
-                        end($options);
-                        $lastKey = key($options);
-                        $options[$lastKey] .= ' ' . $line;
-                    }
-                }
-                // Jika belum di bagian opsi, ini adalah badan soal/kalimat tanya
-                else {
-                    if (
-                        empty($questionText) &&
-                        (strpos($line, '?') !== false ||
-                            preg_match('/\b(siapa|apa|dimana|kapan|mengapa|bagaimana|berapa)\b/i', $line))
-                    ) {
-                        $questionText = $line;
-                    } else {
-                        $bodyText .= ($bodyText ? "\n" : '') . $line;
-                    }
+
+                if (
+                    empty($questionText) &&
+                    (str_contains($line, '?') ||
+                        preg_match('/\b(siapa|apa|dimana|kapan|mengapa|bagaimana|berapa)\b/i', $line))
+                ) {
+                    $questionText = $line;
+                } else {
+                    $bodyText .= ($bodyText ? "\n" : '') . $line;
                 }
             }
 
-            // Jika tidak ditemukan tanda tanya, ambil baris terakhir sebelum opsi sebagai kalimat tanya
-            if (empty($questionText)) {
-                $bodyLines = array_filter(
-                    array_map('trim', explode("\n", $bodyText)),
-                    fn($line) => !empty($line)
-                );
-                $questionText = end($bodyLines) ?: '';
-
-                // Hapus baris terakhir dari badan soal jika diambil sebagai kalimat tanya
-                if (!empty($bodyLines)) {
-                    array_pop($bodyLines);
-                    $bodyText = implode("\n", $bodyLines);
-                }
+            if (empty($questionText) && !empty($lines)) {
+                $questionText = end($lines);
+                array_pop($lines);
+                $bodyText = implode("\n", $lines);
             }
 
-            // Validasi
             if (empty($options) || empty($correctLetters)) {
                 continue;
             }
+
             $questions[] = [
                 'category' => $currentCategory,
                 'number' => $questionNumber,

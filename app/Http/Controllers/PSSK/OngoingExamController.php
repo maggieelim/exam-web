@@ -41,8 +41,10 @@ class OngoingExamController extends Controller
             },
         ])->where('exam_id', $exam->id);
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->status !== 'paused') {
             $attemptsQuery->where('status', $request->status);
+        } elseif ($request->status === 'paused') {
+            $attemptsQuery->where('is_paused', 1);
         }
 
         if ($request->filled('search')) {
@@ -114,8 +116,8 @@ class OngoingExamController extends Controller
         $availableStatuses = [
             'in_progress' => 'In Progress',
             'completed' => 'Completed',
-            'idle' => 'Idle',
             'timeout' => 'Timeout',
+            'paused' => 'Paused'
         ];
         if ($agent->isMobile()) {
             return view('pssk.exams.ongoing.index_mobile', compact('exam', 'attempts', 'stats', 'sort', 'dir', 'availableStatuses'));
