@@ -84,144 +84,204 @@
     <div class="px-0 pt-0 pb-2">
         <!-- MOBILE VIEW -->
         <div class="row d-block d-md-none">
-            @foreach ($results as $result)
+            @forelse ($results as $result)
             <div class="col-12 mb-3">
                 <div class="card h-auto">
                     <div class="card-body p-3 pb-2">
                         <p class="mb-1 fw-bold">
-                            Name: {{ $result['student']['name'] }}
+                            Name: {{ $result['student']->name ?? $result['student']['name'] ?? '-' }}
                         </p>
                         <p class="mb-1 fw-bold">
-                            NIM: {{ $result['student']['student']['nim'] }}
+                            NIM: {{ $result['student_data']->nim ?? $result['student']['nim'] ?? $result['nim'] ?? '-'
+                            }}
                         </p>
                         <p class="mb-2 fw-bold">
                             Total Answered:
-                            {{ $result['total_answered'] }}/{{ $exam->questions_count }}
+                            {{ $result['total_answered'] ?? 0 }}/{{ $exam->questions_count }}
                         </p>
 
                         <div class="category-container mb-2" style="max-height: 120px; overflow-y: auto;">
-                            @foreach ($result['categories_result'] as $cat)
+                            @forelse ($result['categories_result'] ?? [] as $cat)
                             <div class="d-flex align-items-center mb-2">
                                 <span class="badge bg-light text-dark me-2"
                                     style="min-width: 110px; font-size: 0.75rem;">
-                                    {{ Str::limit($cat['category_name'], 18) }}
+                                    {{ Str::limit($cat['category_name'] ?? 'Uncategorized', 18) }}
                                 </span>
 
                                 <div class="progress flex-grow-1" style="height: 8px;">
                                     <div class="progress-bar
-                                        @if ($cat['percentage'] == 0) bg-secondary opacity-50
-                                        @elseif($cat['percentage'] >= 80) bg-success
-                                        @elseif($cat['percentage'] >= 60) bg-info
-                                        @elseif($cat['percentage'] >= 40) bg-warning
-                                        @else bg-danger @endif" style="width: {{ max($cat['percentage'], 1) }}%">
+                                        @php $percentage = $cat['percentage'] ?? 0; @endphp
+                                        @if ($percentage == 0) bg-secondary opacity-50
+                                        @elseif($percentage >= 80) bg-success
+                                        @elseif($percentage >= 60) bg-info
+                                        @elseif($percentage >= 40) bg-warning
+                                        @else bg-danger @endif" style="width: {{ max($percentage, 1) }}%">
                                     </div>
                                 </div>
 
                                 <small class="ms-2 text-muted" style="min-width: 35px;">
-                                    {{ $cat['percentage'] }}%
+                                    {{ $percentage }}%
                                 </small>
                             </div>
-                            @endforeach
+                            @empty
+                            <p class="text-muted text-center">No category data available</p>
+                            @endforelse
                         </div>
 
                         <a href="{{ route('lecturer.feedback.' . $status, [
                         'exam_code' => $exam->exam_code,
-                        'nim' => $result['student']['student']['nim']
+                        'nim' => $result['student_data']->nim ?? $result['student']['nim'] ?? $result['nim'] ?? ''
                     ]) }}" class="btn btn-sm w-100 bg-gradient-warning">
                             <i class="fas fa-comment"></i> Feedback
                         </a>
                     </div>
                 </div>
             </div>
-            @endforeach
+            @empty
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p class="text-muted">No results found</p>
+                    </div>
+                </div>
+            </div>
+            @endforelse
         </div>
+
         <!-- DESKTOP VIEW -->
-        <div class="card table-responsive d-none d-md-block">
-            <table class="table align-items-center mb-0">
-                <thead>
-                    <tr>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                            <a
-                                href="{{ request()->fullUrlWithQuery(['sort' => 'nim', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc']) }}">
-                                NIM
-                                @if (request('sort') === 'nim')
-                                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                            <a
-                                href="{{ request()->fullUrlWithQuery(['sort' => 'name', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc']) }}">
-                                Name
-                                @if (request('sort') === 'name')
-                                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Answered
-                            Questions</th>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Score</th>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-                            <a
-                                href="{{ request()->fullUrlWithQuery(['sort' => 'feedback', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc']) }}">
-                                Feedback
-                                @if (request('sort') === 'feedback')
-                                <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($results as $result)
-                    <tr>
-                        <td class="align-middle text-center">{{ $result['student']['student']['nim'] }}</td>
-                        <td class="align-middle text-center">{{ $result['student']['name'] }}</td>
-                        <td class="align-middle text-center">{{ $result['total_answered'] }}/{{
-                            $exam->questions_count }}</td>
-                        <td class="align-middle">
-                            <div class="category-container" style="max-height: 120px; overflow-y: auto;">
-                                @foreach ($result['categories_result'] as $cat)
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="badge bg-light text-dark me-2"
-                                        style="min-width: 120px; font-size: 0.75rem;">
-                                        {{ Str::limit($cat['category_name'], 20) }}
-                                    </span>
-                                    <div class="progress flex-grow-1 align-items-center" style="height: 10px;">
-                                        <div class="progress-bar m-0 
-                                            @if ($cat['percentage'] == 0) bg-secondary opacity-50 
-                                            @elseif($cat['percentage'] >= 80) bg-success 
-                                            @elseif($cat['percentage'] >= 60) bg-info 
-                                            @elseif($cat['percentage'] >= 40) bg-warning 
-                                            @else bg-danger @endif" role="progressbar"
-                                            style="width: {{ max($cat['percentage'], 1) }}%" data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            title="{{ $cat['percentage'] }}% - {{ $cat['total_correct'] }}/{{ $cat['total_question'] }} correct">
+        <div class="d-none d-md-block">
+            <div class="card">
+                <div class="card-body pt-0 table-responsive">
+                    <table class="table align-items-center mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    <a
+                                        href="{{ request()->fullUrlWithQuery(['sort' => 'nim', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc']) }}">
+                                        NIM
+                                        @if (request('sort') === 'nim')
+                                        <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    <a
+                                        href="{{ request()->fullUrlWithQuery(['sort' => 'name', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc']) }}">
+                                        Name
+                                        @if (request('sort') === 'name')
+                                        <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="text-uppercase text-wrap text-dark text-sm font-weight-bolder">
+                                    Answered Questions
+                                </th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Score
+                                </th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    <a
+                                        href="{{ request()->fullUrlWithQuery(['sort' => 'feedback', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc']) }}">
+                                        Feedback
+                                        @if (request('sort') === 'feedback')
+                                        <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($results as $result)
+                            <tr>
+                                <td class="align-middle text-sm text-center">
+                                    {{ $result['student_data']->nim ?? $result['student']['nim'] ?? $result['nim'] ??
+                                    '-' }}
+                                </td>
+                                <td class="align-middle text-sm w-70 text-wrap text-center">
+                                    {{ $result['student']->name ?? $result['student']['name'] ?? '-' }}
+                                </td>
+                                <td class="align-middle text-sm text-center">
+                                    {{ $result['total_answered'] ?? 0 }}/{{ $exam->questions_count }}
+                                </td>
+                                <td class="align-middle">
+                                    <div class="category-container" style="overflow-y: auto;">
+                                        @forelse ($result['categories_result'] ?? [] as $cat)
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-light text-dark me-2"
+                                                style="min-width: 120px; font-size: 0.75rem;">
+                                                {{ Str::limit($cat['category_name'] ?? 'Uncategorized', 20) }}
+                                            </span>
+                                            <div class="progress flex-grow-1 align-items-center" style="height: 10px;">
+                                                @php $percentage = $cat['percentage'] ?? 0; @endphp
+                                                <div class="progress-bar m-0 
+                                                    @if ($percentage == 0) 
+                                                        bg-secondary opacity-50 
+                                                    @elseif($percentage >= 80) 
+                                                        bg-success 
+                                                    @elseif($percentage >= 60) 
+                                                        bg-info 
+                                                    @elseif($percentage >= 40) 
+                                                        bg-warning 
+                                                    @else 
+                                                        bg-danger 
+                                                    @endif" role="progressbar"
+                                                    style="width: {{ max($percentage, 1) }}%" data-bs-toggle="tooltip"
+                                                    data-bs-placement="top"
+                                                    title="{{ $percentage }}% - {{ $cat['total_correct'] ?? 0 }}/{{ $cat['total_question'] ?? 0 }} correct">
+                                                </div>
+                                            </div>
+                                            <small class="ms-2 text-muted" style="min-width: 40px;">
+                                                {{ $percentage }}%
+                                            </small>
                                         </div>
+                                        @empty
+                                        <div class="text-muted text-center">No data</div>
+                                        @endforelse
                                     </div>
-                                    <small class="ms-2 text-muted" style="min-width: 40px;">
-                                        {{ $cat['percentage'] }}%
-                                    </small>
-                                </div>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td class="align-middle text-center">{{ $result['feedback'] }}</td>
-                        <td class="align-middle text-center">
-                            <a href="{{ route('lecturer.feedback.' . $status, ['exam_code' => $exam->exam_code, 'nim' => $result['student']['student']['nim']]) }}"
-                                class="btn bg-gradient-warning m-1 p-2 px-3" title="Feedback">
-                                <i class="fas fa-comment"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <div class="d-flex justify-content-center mt-3">
-                <x-pagination :paginator="$attempts" />
+                                </td>
+                                <td class="align-middle text-sm text-center">
+                                    {{ $result['feedback'] ?? 0 }}
+                                </td>
+                                <td class="align-middle text-center">
+                                    <a href="{{ route('lecturer.feedback.' . $status, [
+                                        'exam_code' => $exam->exam_code, 
+                                        'nim' => $result['student_data']->nim ?? $result['student']['nim'] ?? $result['nim'] ?? ''
+                                    ]) }}" class="btn bg-gradient-warning m-1 p-2 px-3" title="Feedback">
+                                        <i class="fas fa-comment"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No results found
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <x-pagination :paginator="$attempts" />
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@push('js')
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+@endpush
 @endsection

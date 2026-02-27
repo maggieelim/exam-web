@@ -153,7 +153,6 @@ return [
                 'params' => ['status' => 'upcoming'],
                 'pattern' => 'student/exams/upcoming',
                 'icon' => 'fa-file',
-                'only_domain' => 'exam'
             ],
             [
                 'label' => 'Previous Exam',

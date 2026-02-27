@@ -2,6 +2,8 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\ExamAuthMiddleware;
+use App\Http\Middleware\ExamGuest;
 use App\Http\Middleware\RestrictToCampusIP;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
@@ -66,6 +68,8 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'campus.ip' => RestrictToCampusIP::class
+        'campus.ip' => RestrictToCampusIP::class,
+        'exam.auth' => ExamAuthMiddleware::class,
+        'exam.guest' => ExamGuest::class
     ];
 }

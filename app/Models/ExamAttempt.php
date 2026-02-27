@@ -13,6 +13,7 @@ class ExamAttempt extends Model
         'user_id',
         'exam_id',
         'status',
+        'credential_id',
         'finished_at',
         'started_at',
         'question_order',
@@ -35,6 +36,10 @@ class ExamAttempt extends Model
     public function exam()
     {
         return $this->belongsTo(Exam::class);
+    }
+    public function credential()
+    {
+        return $this->belongsTo(ExamCredential::class);
     }
     public function answers()
     {

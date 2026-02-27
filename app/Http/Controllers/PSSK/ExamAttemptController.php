@@ -17,8 +17,7 @@ class ExamAttemptController extends Controller
 {
     public function start(Request $request, $exam_code)
     {
-        $exam = Exam::with('questions')
-            ->where('exam_code', $exam_code)
+        $exam = Exam::where('exam_code', $exam_code)
             ->firstOrFail();
 
         $request->validate([
@@ -37,11 +36,14 @@ class ExamAttemptController extends Controller
             $attempt = ExamAttempt::where('user_id', $user->id)
                 ->where('exam_id', $exam->id)
                 ->where('status', 'in_progress')
-                ->lockForUpdate()
                 ->first();
 
             if (!$attempt) {
-                $questionOrder = $exam->questions->pluck('kode_soal')->shuffle()->values();
+                $questionOrder = DB::table('exam_questions')
+                    ->where('exam_id', $exam->id)
+                    ->pluck('kode_soal')
+                    ->shuffle()
+                    ->values();
 
                 $attempt = ExamAttempt::create([
                     'user_id' => $user->id,

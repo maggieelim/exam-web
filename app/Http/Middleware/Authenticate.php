@@ -15,6 +15,10 @@ class Authenticate extends Middleware
     protected function redirectTo($request)
     {
         if (! $request->expectsJson()) {
+            if ($request->getHost() === env('EXAM_DOMAIN')) {
+                return route('exam.examLogin');
+            }
+
             return route('login');
         }
     }

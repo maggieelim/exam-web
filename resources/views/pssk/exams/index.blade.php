@@ -171,6 +171,13 @@
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Exam Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
+                                    @if ($exam->status ==='upcoming')
+                                    <form method="POST" action="{{ route('exams.generate-credentials', $exam->id) }}">
+                                        @csrf
+                                        <button class="btn bg-gradient-primary m-1 p-2 px-3" type="submit">Generate
+                                            Token</button>
+                                    </form>
+                                    @endif
                                 </td>
                             </tr>
                             @empty

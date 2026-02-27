@@ -86,7 +86,7 @@
       <div class="d-flex flex-column-reverse flex-md-row justify-content-between">
 
         <div class="d-flex gap-2 w-md-90">
-          <p class="mb-1">{{ $index + 1 }}.</p>
+          <p class="mb-1">{{ $questions->firstItem() + $index }}.</p>
           <div>
             <p class="my-0">
               {!! nl2br(e(trim($question->badan_soal ))) !!}

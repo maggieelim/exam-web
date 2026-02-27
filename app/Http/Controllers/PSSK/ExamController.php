@@ -9,18 +9,82 @@ use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
 use App\Models\CourseStudent;
 use App\Models\Exam;
+use App\Models\ExamCredential;
 use App\Models\ExamQuestion;
 use App\Models\Lecturer;
-use App\Models\Semester;
 use App\Services\SemesterService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Jenssegers\Agent\Agent;
 use Maatwebsite\Excel\Facades\Excel;
+use Str;
 
 class ExamController extends Controller
 {
+    public function generateCredentials($examId)
+    {
+        $exam = Exam::findOrFail($examId);
+
+        $fileName = 'Token_' .
+            $exam->title . '_' .
+            Str::slug($exam->course->name) . '.pdf';
+
+        // 🔎 Kalau credential sudah ada → langsung download
+        $existingCredentials = ExamCredential::where('exam_id', $exam->id)->get();
+        if ($existingCredentials->count() > 0) {
+            $pdf = Pdf::loadView('pssk.exams.credentials', [
+                'credentials' => $existingCredentials
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->download($fileName);
+        }
+
+        $students = CourseStudent::where('semester_id', $exam->semester_id)
+            ->where('course_id', $exam->course_id)
+            ->get();
+
+        $credentials = [];
+        $usedUsernames = []; // ⬅️ penampung lokal
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+        $total = count($students) + 10;
+
+        for ($i = 0; $i < $total; $i++) {
+            $student = $students[$i] ?? null;
+
+            /** 🔐 Generate username unik */
+            do {
+                $username = substr(str_shuffle($chars), 0, 6);
+            } while (
+                in_array($username, $usedUsernames) ||
+                ExamCredential::where('username', $username)->exists()
+            );
+
+            $usedUsernames[] = $username;
+
+            /** 🔐 Generate password (unik dalam batch saja sudah cukup) */
+            do {
+                $plainPassword = substr(str_shuffle($chars), 0, 6);
+            } while (isset($usedPasswords[$plainPassword]));
+
+            $usedPasswords[$plainPassword] = true;
+
+            $credentials[] = ExamCredential::create([
+                'exam_id' => $exam->id,
+                'student_id' => $student->student_id ?? null,
+                'username' => $username,
+                'password' => bcrypt($plainPassword),
+                'plain_password' => $plainPassword,
+                'is_used' => false
+            ]);
+        }
+
+        $pdf = Pdf::loadView('pssk.exams.credentials', compact('credentials'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download($fileName);
+    }
 
     public function start(Exam $exam)
     {
