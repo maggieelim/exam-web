@@ -136,6 +136,12 @@
                                         class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
+                                    @if ($type === 'lecturer')
+                                    <a href="{{ route('schedules.index', ['lecturer_id' => $user->lecturer->id]) }}"
+                                        class="btn bg-gradient-info m-1 p-2 px-3" title="Lihat Jadwal">
+                                        <i class="fas fa-calendar"></i>
+                                    </a>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

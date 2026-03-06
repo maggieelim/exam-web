@@ -56,15 +56,14 @@ return [
                 'pattern' => 'admin/users/admin*',
                 'icon' => 'fa-user-gear'
             ],
-            [
-                'label' => 'Lecturer Schedules',
-                'route' => 'pssk.admin.schedules',
-                'pattern' => 'admin/schedules*',
-                'icon' => 'fa-calendar-alt'
-            ],
+            // [
+            //     'label' => 'Lecturer Schedules',
+            //     'route' => 'pssk.admin.schedules',
+            //     'pattern' => 'admin/schedules*',
+            //     'icon' => 'fa-calendar-alt'
+            // ],
         ]
     ],
-
     [
         'title' => 'Assessment',
         'roles' => ['lecturer'],
@@ -101,6 +100,14 @@ return [
                 'route' => 'pssk.admin.semester.index',
                 'pattern' => 'admin/semester*',
                 'icon' => 'fa-calendar',
+                'roles' => ['admin']
+            ],
+            [
+                'label' => 'All Exam Results',
+                'route' => 'pssk.admin.exams.all-results',
+                'params' => ['status' => 'previous', 'all' => 1],
+                'pattern' => 'admin/exams/all-results*',
+                'icon' => 'fa-clipboard-check',
                 'roles' => ['admin']
             ],
             [

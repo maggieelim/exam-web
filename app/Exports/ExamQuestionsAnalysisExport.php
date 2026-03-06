@@ -18,14 +18,12 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class ExamQuestionsAnalysisExport implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithStyles, WithColumnFormatting, WithTitle
 {
-    protected $exam;
     protected $questionsAnalysis;
-    protected $maxOptions = 0;
+    protected $rowNumber = 0;
 
-    public function __construct(Exam $exam)
+    public function __construct($questionsAnalysis)
     {
-        $this->exam = $exam;
-        $this->questionsAnalysis = $this->analyzeQuestions($exam);
+        $this->questionsAnalysis = collect($questionsAnalysis);
     }
 
     public function title(): string
@@ -40,38 +38,47 @@ class ExamQuestionsAnalysisExport implements FromCollection, WithHeadings, WithM
 
     public function map($analysis): array
     {
-        $no = $this->questionsAnalysis->search($analysis) + 1;
+        $this->rowNumber++;
 
-        // Prepare option analysis data
+        $question = $analysis->question;
+        $totalStudents = $analysis->total_students ?? 0;
+
+        $optionsSummary = $analysis->options_summary ?? [];
         $optionData = [];
-        $correctOption = '';
 
-        foreach (['A', 'B', 'C', 'D', 'E'] as $index => $optionLetter) {
-            $option = $analysis['options']->get($index);
-            if ($option) {
-                $optionData[] = number_format($option['count'] ?? 0);
-                $optionData[] = number_format(($option['percentage'] / 100), 4 ?? 0);
+        foreach (['A', 'B', 'C', 'D', 'E'] as $letter) {
 
-                if ($option['is_correct'] ?? false) {
-                    $correctOption = $optionLetter;
-                }
-            } else {
-                $optionData[] = number_format(0);
-                $optionData[] = number_format(0);
+            $value = $optionsSummary[$letter] ?? null;
+
+            $count = 0;
+
+            if (is_array($value)) {
+                $count = $value['total'] ?? 0; // ini yang benar
             }
+
+            $percentage = $totalStudents > 0
+                ? $count / $totalStudents
+                : 0;
+
+            $optionData[] = $count;
+            $optionData[] = $percentage;
         }
 
+        $correctOption = optional(
+            $question->options->where('is_correct', 1)->first()
+        )->option ?? 'N/A';
+
         return array_merge([
-            'No' => $no,
-            'Question Text' => strip_tags($analysis['question_text'] ?? ''),
-            'Question' => strip_tags($analysis['question'] ?? ''),
-            'Correct Option' => $correctOption ?: 'N/A',
-            'Total Students' => $analysis['total_students'],
-            'Correct Answers' => $analysis['correct_count'],
-            'Correct Percentage' => number_format(($analysis['correct_percentage'] / 100), 4),
-            'Difficulty Level' => $analysis['difficulty_level'],
-            'Discrimination Index' => number_format($analysis['discrimination_index'], 3),
-        ], $optionData,);
+            $this->rowNumber,
+            strip_tags($question->badan_soal ?? ''),
+            strip_tags($question->kalimat_tanya ?? ''),
+            $correctOption,
+            $totalStudents,
+            $analysis->correct_count ?? 0,
+            ($analysis->correct_percentage ?? 0) / 100,
+            $analysis->difficulty_level ?? '',
+            $analysis->discrimination_index ?? 0,
+        ], $optionData);
     }
 
     public function headings(): array
@@ -193,7 +200,7 @@ class ExamQuestionsAnalysisExport implements FromCollection, WithHeadings, WithM
             'I' => NumberFormat::FORMAT_NUMBER_00, // Discrimination Index
             'J' => NumberFormat::FORMAT_NUMBER, // Option A Count
             'K' => NumberFormat::FORMAT_PERCENTAGE_00, // Option A %
-            'M' => NumberFormat::FORMAT_NUMBER, // Option B Count
+            'L' => NumberFormat::FORMAT_NUMBER, // Option B Count
             'M' => NumberFormat::FORMAT_PERCENTAGE_00, // Option B %
             'N' => NumberFormat::FORMAT_NUMBER, // Option C Count
             'O' => NumberFormat::FORMAT_PERCENTAGE_00, // Option C %
@@ -202,85 +209,5 @@ class ExamQuestionsAnalysisExport implements FromCollection, WithHeadings, WithM
             'R' => NumberFormat::FORMAT_NUMBER, // Option E Count
             'S' => NumberFormat::FORMAT_PERCENTAGE_00, // Option E %
         ];
-    }
-
-    public function analyzeQuestions($exam)
-    {
-        $totalStudents = $exam->attempts->count();
-
-        return $exam->questions->map(function ($question) use ($exam, $totalStudents) {
-            $answers = $exam->answers->where('exam_question_id', $question->id);
-            $correct = $answers->where('is_correct', true)->count();
-            $correctPercentage = $totalStudents ? round(($correct / $totalStudents) * 100, 2) : 0;
-
-            $options = $question->options->map(function ($opt) use ($answers, $totalStudents) {
-                $count = $answers->where('answer', $opt->id)->count();
-                return [
-                    'option_id' => $opt->id,
-                    'option_text' => $opt->text,
-                    'is_correct' => $opt->is_correct,
-                    'count' => $count,
-                    'percentage' => $totalStudents ? round(($count / $totalStudents) * 100, 2) : 0
-                ];
-            })->values();
-
-            return [
-                'question_id' => $question->id,
-                'question_text' => $question->badan_soal,
-                'question' => $question->kalimat_tanya,
-                'image' => $question->image,
-                'correct_percentage' => $correctPercentage,
-                'correct_count' => $correct,
-                'total_students' => $totalStudents,
-                'options' => $options,
-                'discrimination_index' => $this->calculateDiscriminationIndex($exam, $question),
-                'difficulty_level' => $this->getDifficultyLevel($correct, $totalStudents)
-            ];
-        });
-    }
-
-    private function calculateDiscriminationIndex($exam, $question)
-    {
-        $totalStudents = $exam->attempts->count();
-        if ($totalStudents < 10) return 0;
-
-        $studentScores = [];
-        foreach ($exam->attempts as $attempt) {
-            $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
-            $score = $userAnswers->where('is_correct', true)->count();
-            $studentScores[$attempt->user_id] = $score;
-        }
-
-        arsort($studentScores);
-        $userIds = array_keys($studentScores);
-
-        $groupSize = max(1, round($totalStudents * 0.27));
-        $topUserIds = array_slice($userIds, 0, $groupSize);
-        $bottomUserIds = array_slice($userIds, -$groupSize);
-
-        $topCorrect = $exam->answers
-            ->whereIn('user_id', $topUserIds)
-            ->where('exam_question_id', $question->id)
-            ->where('is_correct', true)
-            ->count();
-
-        $bottomCorrect = $exam->answers
-            ->whereIn('user_id', $bottomUserIds)
-            ->where('exam_question_id', $question->id)
-            ->where('is_correct', true)
-            ->count();
-
-        $discriminationIndex = ($topCorrect / $groupSize) - ($bottomCorrect / $groupSize);
-        return round($discriminationIndex, 3);
-    }
-
-    private function getDifficultyLevel($correctAnswers, $totalStudents)
-    {
-        if ($totalStudents === 0) return 'N/A';
-        $ratio = $correctAnswers / $totalStudents;
-
-        if ($ratio >= 0.75) return 'Easy';
-        if ($ratio >= 0.2) return 'Fair';
-        return 'Hard';
     }
 }

@@ -6,6 +6,8 @@ use App\Exports\ExamQuestionsExport;
 use App\Http\Controllers\Controller;
 use App\Imports\ExamQuestionTemplateImport;
 use App\Models\Exam;
+use App\Models\ExamAnswer;
+use App\Models\ExamAttempt;
 use App\Models\ExamQuestion;
 use App\Models\ExamQuestionAnswer;
 use App\Models\ExamQuestionCategory;
@@ -33,7 +35,7 @@ class ExamQuestionController extends Controller
         } else {
             $status = $exam->status; // upcoming / ongoing
         }
-        // 🔍 Search
+        // ?? Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -158,12 +160,33 @@ class ExamQuestionController extends Controller
                 $option->update(['is_correct' => 1]);
             }
 
-            // Semua jawaban mahasiswa jadi benar
-            foreach ($question->answers as $answer) {
-                $answer->update([
-                    'is_correct' => 1,
-                    'score' => 1,
-                ]);
+            // Ambil semua mahasiswa yang ikut exam
+            $attemptUsers = ExamAttempt::where('exam_id', $exam->id)
+                ->pluck('user_id');
+
+            foreach ($attemptUsers as $userId) {
+
+                $answer = ExamAnswer::where([
+                    'exam_id' => $exam->id,
+                    'exam_question_id' => $question->id,
+                    'user_id' => $userId
+                ])->first();
+
+                if ($answer) {
+                    $answer->update([
+                        'is_correct' => 1,
+                        'score' => 1,
+                    ]);
+                } else {
+                    ExamAnswer::create([
+                        'exam_id' => $exam->id,
+                        'exam_question_id' => $question->id,
+                        'user_id' => $userId,
+                        'answer' => null,
+                        'is_correct' => 1,
+                        'score' => 1,
+                    ]);
+                }
             }
 
             $exam->update([
@@ -184,7 +207,7 @@ class ExamQuestionController extends Controller
         $request->validate([
             'category_id' => 'nullable|exists:exam_question_categories,id',
             'cpmk' => 'required',
-            'badan_soal' => 'required|string',
+            'badan_soal' => 'nullable|string',
             'kalimat_tanya' => 'nullable|string',
             'options.*.text' => 'nullable|string',
             'options.*.image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
@@ -499,7 +522,7 @@ class ExamQuestionController extends Controller
 
             /*
         |--------------------------------------------------------------------------
-        | STEP 2 — Jika tidak ada opsi manual → pakai auto detect
+        | STEP 2 — Jika tidak ada opsi manual ? pakai auto detect
         |--------------------------------------------------------------------------
         */
             if (empty($options)) {

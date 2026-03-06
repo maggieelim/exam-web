@@ -49,18 +49,38 @@
 
 <div class="card px-0 pt-0 pb-2">
     <div class="table-responsive">
+        @php
+        function sortLink($column, $label, $sort, $dir) {
+        $direction = ($sort === $column && $dir === 'asc') ? 'desc' : 'asc';
+        $icon = '';
+
+        if ($sort === $column) {
+        $icon = $dir === 'asc'
+        ? '<i class="fas fa-sort-up ms-1"></i>'
+        : '<i class="fas fa-sort-down ms-1"></i>';
+        }
+
+        $url = request()->fullUrlWithQuery([
+        'sort' => $column,
+        'dir' => $direction
+        ]);
+
+        return "<a href='$url' class='text-dark'>$label $icon</a>";
+        }
+        @endphp
         <table class="table mb-0">
             <thead>
                 <tr>
-                    <th class="text-center w-auto text-uppercase text-dark text-sm font-weight-bolder">No
+                    <th class="text-center w-auto text-uppercase text-dark text-sm font-weight-bolder">
+                        {!! sortLink('exam_question_id','No',$sort,$dir) !!}
                     </th>
                     <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">Question
                     </th>
                     <th class="text-center text-uppercase text-dark text-sm font-weight-bolder px-1">
-                        Discrimination<br>Index
+                        {!! sortLink('discrimination_index','Discrimination<br>Index',$sort,$dir) !!}
                     </th>
                     <th class="text-center text-uppercase text-dark text-sm font-weight-bolder px-2">
-                        Correct<br>(%)
+                        {!! sortLink('correct_percentage','Correct<br>(%)',$sort,$dir) !!}
                     </th>
                     <th class="text-center text-uppercase text-dark text-sm font-weight-bolder px-2">
                         Difficulty
@@ -68,28 +88,20 @@
                     <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
                         Anulir
                     </th>
-                    {{-- <th colspan="4" class="text-center text-uppercase text-dark text-sm font-weight-bolder">Option
-                    </th> --}}
                 </tr>
-                {{-- <tr>
-                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">A</th>
-                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">B</th>
-                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">C</th>
-                    <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">D</th>
-                </tr> --}}
             </thead>
 
             <tbody>
                 @foreach ($questionAnalysisPaginator as $index => $analysis)
                 @php
-                $isAnulir = $analysis['is_anulir'] ?? false;
+                $isAnulir = $analysis->question->is_anulir ?? false;
                 @endphp
                 <tr>
                     <td class="align-middle text-center text-sm">
-                        {{ $loop->iteration }}
+                        {{ (int) last(explode('-', $analysis->question->kode_soal)) }}
                     </td>
                     <td class="align-middle truncate-text text-sm">
-                        {{ $analysis['question_text'] }}
+                        {{ $analysis->question->badan_soal ?: $analysis->question->kalimat_tanya }}
                     </td>
 
                     {{-- Discrimination Index --}}
@@ -97,17 +109,20 @@
                         @if ($isAnulir)
                         <span class="badge bg-secondary">-</span>
                         @else
-                        <span class="badge 
-                                    {{ $analysis['discrimination_index'] > 0.4
-                                        ? 'bg-gradient-success'
-                                        : ($analysis['discrimination_index'] >= 0.3
-                                            ? 'bg-gradient-info'
-                                            : ($analysis['discrimination_index'] >= 0.2
-                                                ? 'bg-gradient-warning'
-                                                : ($analysis['discrimination_index'] >= 0.1
-                                                    ? 'bg-gradient-orange'
-                                                    : 'bg-gradient-danger'))) }}">
-                            {{ $analysis['discrimination_index'] }}
+                        @php
+                        $d = $analysis->discrimination_index;
+
+                        $class = match (true) {
+                        $d >= 0.4 => 'bg-gradient-success',
+                        $d >= 0.3 => 'bg-gradient-info',
+                        $d >= 0.2 => 'bg-gradient-warning',
+                        $d >= 0.01 => 'bg-gradient-secondary',
+                        default => 'bg-gradient-danger',
+                        };
+                        @endphp
+
+                        <span class="badge {{ $class }} text-white">
+                            {{ $analysis->discrimination_index }}
                         </span>
                         @endif
                     </td>
@@ -118,11 +133,11 @@
                         <span class="badge bg-secondary">-</span>
                         @else
                         <span class="badge ms-2 
-            {{ $analysis['correct_percentage'] >= 80
+            {{ $analysis['correct_percentage'] >= 75
                 ? 'bg-gradient-success'
                 : ($analysis['correct_percentage'] >= 60
                     ? 'bg-gradient-info'
-                    : ($analysis['correct_percentage'] >= 40
+                    : ($analysis['correct_percentage'] >= 20
                         ? 'bg-gradient-warning'
                         : 'bg-gradient-danger')) }}">
                             {{ $analysis['correct_percentage'] }}%
@@ -153,46 +168,17 @@
                             <i class="fas fa-check me-1"></i> Dianulir
                         </span>
                         @else
-                        <form class="question-form d-inline" data-question-id="{{ $analysis['question_id'] }}">
+                        <form class="question-form d-inline" data-question-id="{{ $analysis->question->id }}">
                             @csrf
                             @method('PUT')
                             <a class="btn btn-warning anulir-btn m-1 p-1 px-3"
-                                data-question-id="{{ $analysis['question_id'] }}"
+                                data-question-id="{{ $analysis->question->id }}"
                                 title="Anulir soal - semua jawaban dianggap benar">
                                 <i class="fas fa-ban me-1"></i> Anulir
                             </a>
                         </form>
                         @endif
                     </td>
-
-                    {{-- Options A-D --}}
-                    {{-- @php
-                    $options = $optionsAnalysis[$analysis['question_id']] ?? [];
-                    @endphp
-
-                    @foreach (['A', 'B', 'C', 'D'] as $optIndex => $optLabel)
-                    @php
-                    $option = $options[$optIndex] ?? null;
-                    @endphp
-                    <td class="align-middle text-center">
-                        @if ($option)
-                        <div class="d-flex gap-1 align-items-center">
-                            <span class="fw-semibold {{ $isAnulir ? 'text-decoration-line-through text-muted' : '' }}">
-                                {{ $option['percentage'] ?? 0 }}%
-                            </span>
-                            <small class="text-muted">({{ $option['count'] ?? 0 }})</small>
-                            @if (!empty($option['is_correct']) && !$isAnulir)
-                            <span class="text-success"><i class="fas fa-check"></i></span>
-                            @endif
-                            @if ($isAnulir)
-                            <span class="text-success small"><i class="fas fa-check-double"></i></span>
-                            @endif
-                        </div>
-                        @else
-                        <span class="text-muted">-</span>
-                        @endif
-                    </td>
-                    @endforeach --}}
                 </tr>
                 @endforeach
             </tbody>
@@ -263,18 +249,4 @@
                 button.innerHTML = originalText;
             });
     }
-
-    // ==== Efek hover tombol ====
-    document.addEventListener('mouseenter', e => {
-        if (e.target.matches('.anulir-btn')) {
-            e.target.style.transform = 'scale(1.05)';
-            e.target.style.transition = 'transform 0.2s ease';
-        }
-    }, true);
-
-    document.addEventListener('mouseleave', e => {
-        if (e.target.matches('.anulir-btn')) {
-            e.target.style.transform = 'scale(1)';
-        }
-    }, true);
 </script>

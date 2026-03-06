@@ -43,8 +43,7 @@ class ExamAttempt extends Model
     }
     public function answers()
     {
-        return $this->hasMany(ExamAnswer::class, 'exam_id', 'exam_id')
-            ->where('user_id', $this->user_id);
+        return $this->hasMany(ExamAnswer::class, 'user_id', 'user_id');
     }
     public function findAnswerByQuestion($questionId)
     {

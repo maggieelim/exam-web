@@ -29,7 +29,7 @@
                         @if ($option->image)
                         <div class="mt-0">
                             <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Soal"
-                                class="img-fluid rounded shadow-sm zoomable-image"
+                                class="img-fluid zoomable-image"
                                 style="max-width: 150px; max-height: 130px; cursor: zoom-in;" loading="lazy"
                                 data-bs-toggle="modal" data-bs-target="#imageZoomModal"
                                 data-image="{{ asset('storage/' . $option->image) }}">
@@ -86,7 +86,7 @@
         }
         
         clearTimeout(state.saveTimeout);
-        state.saveTimeout = setTimeout(saveAnswer, 800);
+        state.saveTimeout = setTimeout(saveAnswer, 200);
     }
 
     // Save answer with abort controller
@@ -265,20 +265,16 @@
         });
 
         // Navigation
-        document.querySelectorAll('.question-nav').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (this.dataset.isCurrent === 'true') return;
-                
-                this.disabled = true;
-                saveAnswer().then(() => {
-                    window.location.href = `{{ route("student.exams.do", $examData->exam_code) }}/${this.dataset.kodeSoal}`;
-                }).finally(() => {
-                    this.disabled = false;
-                });
-            });
-        });
+     document.querySelector('.grid-container').addEventListener('click', function(e) {
+    if (!e.target.classList.contains('question-nav')) return; // pastikan yang diklik tombol
+    const button = e.target;
+    if (button.dataset.isCurrent === 'true') return;
 
+    button.disabled = true;
+    saveAnswer().then(() => {
+        window.location.href = `{{ route("student.exams.do", $examData->exam_code) }}/${button.dataset.kodeSoal}`;
+    }).finally(() => button.disabled = false);
+});
         // Prev/Next buttons
         if (document.getElementById('prevQuestion')) {
             document.getElementById('prevQuestion').addEventListener('click', function() {

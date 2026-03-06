@@ -30,7 +30,7 @@ class ExamController extends Controller
             $exam->title . '_' .
             Str::slug($exam->course->name) . '.pdf';
 
-        // 🔎 Kalau credential sudah ada → langsung download
+        // Kalau credential sudah ada → langsung download
         $existingCredentials = ExamCredential::where('exam_id', $exam->id)->get();
         if ($existingCredentials->count() > 0) {
             $pdf = Pdf::loadView('pssk.exams.credentials', [
@@ -45,7 +45,7 @@ class ExamController extends Controller
             ->get();
 
         $credentials = [];
-        $usedUsernames = []; // ⬅️ penampung lokal
+        $usedUsernames = []; // penampung lokal
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
         $total = count($students) + 10;
@@ -63,7 +63,7 @@ class ExamController extends Controller
 
             $usedUsernames[] = $username;
 
-            /** 🔐 Generate password (unik dalam batch saja sudah cukup) */
+            /** Generate password (unik dalam batch saja sudah cukup) */
             do {
                 $plainPassword = substr(str_shuffle($chars), 0, 6);
             } while (isset($usedPasswords[$plainPassword]));
@@ -131,6 +131,9 @@ class ExamController extends Controller
                 'status' => 'completed',
                 'updated_at' => now(),
             ]);
+
+        app(ExamStatisticsController::class)->generate($exam);
+
         return redirect()
             ->route('exams.index', ['status' => 'previous'])
             ->with('success', 'exam ended successfully.');
@@ -141,6 +144,7 @@ class ExamController extends Controller
         $agent = new Agent();
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $user = auth()->user();
+        $isAllResults = $request->routeIs('pssk.admin.exams.all-results');
 
         // ===== Semester handling =====
         $activeSemester = SemesterService::active();
@@ -161,7 +165,12 @@ class ExamController extends Controller
         $courses = collect();
 
         // ===== ROLE BASED FILTER =====
-        if ($user->hasRole('koordinator')) {
+        if ($isAllResults && $user->hasRole('admin')) {
+
+            // ADMIN ALL RESULTS → lihat semua exam
+            $courses = Course::whereHas('exams')->get();
+        } elseif ($user->hasRole('koordinator')) {
+
             $lecturerId = Lecturer::where('user_id', $user->id)->value('id');
 
             $courseIds = CourseCoordinator::where('lecturer_id', $lecturerId)
@@ -169,7 +178,11 @@ class ExamController extends Controller
 
             $courses = Course::whereIn('id', $courseIds)->get();
             $query->whereIn('course_id', $courseIds);
+        } elseif ($user->hasRole('admin')) {
+
+            $courses = Course::whereHas('exams')->get();
         } elseif ($user->hasRole('student')) {
+
             $courses = CourseStudent::where('user_id', $user->id)
                 ->with('course')
                 ->get()
@@ -178,13 +191,15 @@ class ExamController extends Controller
             $query->whereNotNull('exam_date')
                 ->whereHas(
                     'course.courseStudents',
-                    fn($q) =>
-                    $q->where('user_id', $user->id)
+                    fn($q) => $q->where('user_id', $user->id)
                 );
         } else {
+
             $courses = Course::whereHas('exams')->get();
         }
-
+        if ($isAllResults) {
+            $status = 'previous';
+        }
         // ===== STATUS & SEMESTER =====
         $this->applyStatusFilter($query, $user, $status);
 
@@ -253,6 +268,11 @@ class ExamController extends Controller
             'semesterId',
             'activeSemester'
         ))->with(compact('sort', 'dir'));
+    }
+
+    public function allResults(Request $request)
+    {
+        return $this->index($request, 'previous');
     }
 
     private function applyStatusFilter($query, $user, &$status)
@@ -377,7 +397,7 @@ class ExamController extends Controller
         } else {
             $status = $exam->status; // upcoming / ongoing
         }
-        // 🔍 Search
+        // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {

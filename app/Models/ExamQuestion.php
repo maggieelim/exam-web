@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Controllers\PSSK\ExamStatisticsController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +38,12 @@ class ExamQuestion extends Model
         static::updating(function ($model) {
             if (Auth::check()) {
                 $model->updated_by = Auth::id();
+            }
+        });
+
+        static::saved(function ($question) {
+            if ($question->wasChanged('is_anulir')) {
+                app(ExamStatisticsController::class)->regenerateQuestion($question->exam, $question);
             }
         });
     }

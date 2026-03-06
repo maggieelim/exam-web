@@ -80,7 +80,7 @@
         <tbody>
           @forelse($exams as $exam)
           <tr>
-            <td class="align-middle px-3">
+            <td class="align-middle">
               <span class="text-sm font-weight-bold">
                 {{ $exam->title }} <br>
                 {{ $exam->course->name }} <br>

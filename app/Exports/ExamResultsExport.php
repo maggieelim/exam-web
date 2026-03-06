@@ -9,80 +9,95 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize, WithStyles, WithColumnFormatting
+class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize, WithStyles, WithColumnFormatting, WithEvents
 {
-    protected $exam;
+    protected $results;
     protected $categories;
 
-    public function __construct(Exam $exam)
+    public function __construct($results)
     {
-        $this->exam = $exam;
-        $this->categories = $exam->questions->pluck('category')->unique('id')->values();
+        // Kalau paginator
+        if ($results instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $this->results = $results->getCollection();
+        } else {
+            $this->results = collect($results);
+        }
+
+        $first = $this->results->first();
+
+        $this->categories = $first
+            ? collect($first['categories_result'])
+            : collect();
     }
 
     public function collection()
     {
-        $this->exam->load(['attempts.user.student', 'answers.user.student', 'answers.question.category', 'questions.category']);
-
-        $results = [];
         $no = 1;
 
-        foreach ($this->exam->attempts as $attempt) {
-            $userAnswers = $this->exam->answers->where('user_id', $attempt->user_id);
-            $totalAnswer = $this->exam->answers->where('answer', !null)->where('user_id', $attempt->user_id)->count();
-            $totalQuestions = $this->exam->questions->count();
-            $correctAnswers = number_format($userAnswers->where('is_correct', true)->count());
+        return collect($this->results)->map(function ($row) use (&$no) {
 
-            // Hitung nilai total
-            $scorePercentage = $totalQuestions > 0 ? $correctAnswers / $totalQuestions : 0;
+            $categories = $row['categories_result'] ?? [];
 
             $rowData = [
                 'No' => $no++,
-                'NIM' => $attempt->user->student->nim ?? '-',
-                'Nama' => $attempt->user->name ?? '-',
-                'Total Soal' => $totalQuestions,
-                'Dijawab' => $totalAnswer,
-                'Benar' => $correctAnswers,
+                'NIM' => $row['student_data']->nim ?? '-',
+                'Nama' => $row['student']->name ?? '-',
+                'Total Soal' => $row['total_questions'] ?? 0,
+                'Dijawab' => $row['total_answered'] ?? 0,
+                'Benar' => $row['correct_answers'] ?? 0,
             ];
 
-            // Data per kategori - format sebagai string dengan 2 desimal
-            foreach ($this->categories as $category) {
-                $categoryName = $category->name ?? 'Uncategorized';
-
-                $categoryAnswers = $userAnswers->filter(function ($answer) use ($category) {
-                    return $answer->question && $answer->question->category_id == $category->id;
-                });
-
-                $categoryCorrect = $categoryAnswers->where('is_correct', true)->count();
-                $categoryTotal = $this->exam->questions->where('category_id', $category->id)->count();
-
-                $categoryPercentage = $categoryTotal > 0 ? $categoryCorrect / $categoryTotal : 0;
-
-                // Format sebagai string dengan 2 desimal + simbol %
-                $rowData[$categoryName] = number_format(($categoryPercentage * 100) / 100, 4);
+            foreach ($categories as $category) {
+                $rowData[$category['category_name']] =
+                    isset($category['percentage'])
+                    ? (float) $category['percentage'] / 100
+                    : 0;
             }
 
-            // Nilai akhir - format sebagai string dengan 2 desimal
-            $rowData['Total Score (%)'] = number_format(($scorePercentage * 100) / 100, 4);
+            $rowData['Total Score (%)'] =
+                isset($row['score_percentage'])
+                ? (float) $row['score_percentage'] / 100
+                : 0;
 
-            $results[] = $rowData;
-        }
-
-        return collect($results);
+            return $rowData;
+        });
     }
 
     public function headings(): array
     {
         $categoryHeadings = $this->categories
-            ->map(function ($category) {
-                return $category->name ?? 'Uncategorized';
-            })
+            ->pluck('category_name')
             ->toArray();
 
-        return array_merge(['No', 'NIM', 'Nama', 'Total Soal', 'Dijawab', 'Benar'], $categoryHeadings, ['Total Score (%)']);
+        return array_merge(
+            ['No', 'NIM', 'Nama', 'Total Soal', 'Dijawab', 'Benar'],
+            $categoryHeadings,
+            ['Total Score (%)']
+        );
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $startColumn = 7;
+                $totalPercentageColumns = $this->categories->count() + 1;
+
+                for ($i = 0; $i < $totalPercentageColumns; $i++) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($startColumn + $i);
+
+                    $event->sheet->getStyle($columnLetter . '1:' . $columnLetter . $event->sheet->getHighestRow())
+                        ->getAlignment()
+                        ->setWrapText(true);
+                }
+            },
+        ];
     }
 
     public function styles(Worksheet $sheet)
@@ -140,17 +155,23 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
 
     public function columnFormats(): array
     {
-        // Format sebagai text (tidak ada format khusus)
-        return [
+        $formats = [
             'A' => NumberFormat::FORMAT_NUMBER,
             'B' => NumberFormat::FORMAT_TEXT,
             'C' => NumberFormat::FORMAT_TEXT,
             'D' => NumberFormat::FORMAT_NUMBER,
             'E' => NumberFormat::FORMAT_NUMBER,
             'F' => NumberFormat::FORMAT_NUMBER,
-            'G' => NumberFormat::FORMAT_PERCENTAGE_00,
-            'H' => NumberFormat::FORMAT_PERCENTAGE_00,
-            'I' => NumberFormat::FORMAT_PERCENTAGE_00,
         ];
+
+        // Kolom persentase mulai dari G
+        $startColumn = 7;
+        $totalPercentageColumns = $this->categories->count() + 1; // + total score
+
+        for ($i = 0; $i < $totalPercentageColumns; $i++) {
+            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($startColumn + $i);
+            $formats[$columnLetter] = NumberFormat::FORMAT_PERCENTAGE_00;
+        }
+        return $formats;
     }
 }

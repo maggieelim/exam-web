@@ -110,6 +110,7 @@ class OngoingExamController extends Controller
             'total_participants' => $exam->attempts_count,
             'active_participants' => $exam->attempts()->where('status', 'in_progress')->count(),
             'completed_participants' => $exam->attempts()->where('status', 'completed')->count(),
+            'timeout_participants' => $exam->attempts()->where('status', 'timeout')->count(),
             'average_progress' => $exam->attempts->count() > 0 ? round($attempts->getcollection()->avg('progress_percentage')) : 0,
         ];
 

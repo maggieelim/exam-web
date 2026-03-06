@@ -6,7 +6,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">{{ $exam->title }}</h5>
             <div>
-                @if ($exam->is_published)
+                {{-- @if ($exam->is_published)
                 <button type="button" class="btn btn-sm btn-success" disabled>Published</button>
                 @else
                 <form role="form" action="{{ route('lecturer.results.publish', [ $exam->exam_code]) }}" method="POST"
@@ -17,7 +17,7 @@
                         Publish Exam
                     </button>
                 </form>
-                @endif
+                @endif --}}
                 <a href="{{ route('lecturer.results.download', $exam->exam_code) }}"
                     class="btn btn-warning px-3 py-2"><i class="fas fa-download"></i>
                     <span class="d-none d-md-inline ms-1">Download</span>
@@ -207,39 +207,30 @@
                                     {{ $result['total_answered'] ?? 0 }}/{{ $exam->questions_count }}
                                 </td>
                                 <td class="align-middle">
-                                    <div class="category-container" style="overflow-y: auto;">
-                                        @forelse ($result['categories_result'] ?? [] as $cat)
+                                    <div class="category-container" style="max-height: 120px; overflow-y: auto;">
+                                        @foreach($result['categories_result'] as $cat)
                                         <div class="d-flex align-items-center mb-2">
                                             <span class="badge bg-light text-dark me-2"
                                                 style="min-width: 120px; font-size: 0.75rem;">
-                                                {{ Str::limit($cat['category_name'] ?? 'Uncategorized', 20) }}
+                                                {{ Str::limit($cat['category_name'], 20) }}
                                             </span>
                                             <div class="progress flex-grow-1 align-items-center" style="height: 10px;">
-                                                @php $percentage = $cat['percentage'] ?? 0; @endphp
-                                                <div class="progress-bar m-0 
-                                                    @if ($percentage == 0) 
-                                                        bg-secondary opacity-50 
-                                                    @elseif($percentage >= 80) 
-                                                        bg-success 
-                                                    @elseif($percentage >= 60) 
-                                                        bg-info 
-                                                    @elseif($percentage >= 40) 
-                                                        bg-warning 
-                                                    @else 
-                                                        bg-danger 
-                                                    @endif" role="progressbar"
-                                                    style="width: {{ max($percentage, 1) }}%" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top"
-                                                    title="{{ $percentage }}% - {{ $cat['total_correct'] ?? 0 }}/{{ $cat['total_question'] ?? 0 }} correct">
+                                                <div class="progress-bar m-0
+                                            @if($cat['percentage'] == 0) bg-secondary opacity-50
+                                            @elseif($cat['percentage'] >= 80) bg-success
+                                            @elseif($cat['percentage'] >= 60) bg-info
+                                            @elseif($cat['percentage'] >= 40) bg-warning
+                                            @else bg-danger
+                                            @endif" role="progressbar" style="width: {{ max($cat['percentage'], 1) }}%"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="{{ $cat['percentage'] }}% - {{ $cat['total_correct'] }}/{{ $cat['total_question'] }} correct">
                                                 </div>
                                             </div>
                                             <small class="ms-2 text-muted" style="min-width: 40px;">
-                                                {{ $percentage }}%
+                                                {{ $cat['percentage'] }}%
                                             </small>
                                         </div>
-                                        @empty
-                                        <div class="text-muted text-center">No data</div>
-                                        @endforelse
+                                        @endforeach
                                     </div>
                                 </td>
                                 <td class="align-middle text-sm text-center">

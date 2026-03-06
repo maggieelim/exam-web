@@ -18,65 +18,48 @@ class ExamAttemptController extends Controller
     public function start(Request $request, $exam_code)
     {
         $exam = Exam::where('exam_code', $exam_code)
+            ->select('id', 'exam_code', 'password')
             ->firstOrFail();
 
         $request->validate([
             'password' => 'required|string',
         ]);
-
         if ($exam->password !== $request->password) {
             return back()->with('error', 'Wrong exam password.');
         }
 
         $user = auth()->user();
 
-        // Gunakan database transaction untuk menghindari race condition
-        DB::beginTransaction();
-        try {
-            $attempt = ExamAttempt::where('user_id', $user->id)
-                ->where('exam_id', $exam->id)
-                ->where('status', 'in_progress')
-                ->first();
+        $attempt = ExamAttempt::where('user_id', $user->id)
+            ->where('exam_id', $exam->id)
+            ->where('status', 'in_progress')
+            ->first();
 
-            if (!$attempt) {
-                $questionOrder = DB::table('exam_questions')
-                    ->where('exam_id', $exam->id)
-                    ->pluck('kode_soal')
-                    ->shuffle()
-                    ->values();
+        if (!$attempt) {
+            $questionIds = ExamQuestion::where('exam_id', $exam->id)
+                ->pluck('kode_soal')
+                ->toArray();
 
-                $attempt = ExamAttempt::create([
-                    'user_id' => $user->id,
-                    'exam_id' => $exam->id,
-                    'status' => 'in_progress',
-                    'question_order' => $questionOrder->toJson(),
-                    'started_at' => now(),
-                ]);
-            }
+            // Random di PHP (lebih ringan dari ORDER BY RAND())
+            shuffle($questionIds);
 
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal memulai ujian. Silakan coba lagi.');
+            $attempt = ExamAttempt::create([
+                'user_id' => $user->id,
+                'exam_id' => $exam->id,
+                'status' => 'in_progress',
+                'question_order' => json_encode($questionIds),
+                'started_at' => now(),
+            ]);
         }
 
         return redirect()->route('student.exams.do', $exam->exam_code);
     }
-
     public function do($exam_code, $kode_soal = null)
     {
         // Gunakan caching untuk data yang jarang berubah
         $cacheKey = "exam_{$exam_code}_data";
         $examData = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($exam_code) {
-            return Exam::with([
-                'questions' => function ($query) {
-                    $query->select('id', 'exam_id', 'kode_soal', 'badan_soal', 'kalimat_tanya', 'image');
-                },
-                'questions.options' => function ($query) {
-                    $query->select('id', 'exam_question_id', 'text', 'image');
-                }
-            ])
-                ->where('exam_code', $exam_code)
+            return Exam::where('exam_code', $exam_code)
                 ->first(['id', 'exam_code', 'duration']);
         });
 
@@ -110,16 +93,21 @@ class ExamAttemptController extends Controller
 
         // Parse question order sekali
         $questionOrder = collect(json_decode($attempt->question_order, true));
+        $orderMap = array_flip($questionOrder->toArray());
 
-        // Urutkan questions berdasarkan question order
-        $questions = $examData->questions->sortBy(function ($q) use ($questionOrder) {
-            return $questionOrder->search($q->kode_soal);
-        })->values();
+        $questions = ExamQuestion::where('exam_id', $examData->id)
+            ->whereIn('kode_soal', $questionOrder)
+            ->get(['id', 'kode_soal'])
+            ->sortBy(function ($q) use ($orderMap) {
+                return $orderMap[$q->kode_soal] ?? 9999;
+            })
+            ->values();
+        $currentKode = $kode_soal ?? $questionOrder->first();
 
-        // Ambil current question
-        $currentQuestion = $kode_soal
-            ? $questions->where('kode_soal', $kode_soal)->first()
-            : $questions->first();
+        $currentQuestion = ExamQuestion::with(['options:id,exam_question_id,text,image'])
+            ->where('exam_id', $examData->id)
+            ->where('kode_soal', $currentKode)
+            ->first(['id', 'exam_id', 'kode_soal', 'badan_soal', 'kalimat_tanya', 'image']);
 
         if (!$currentQuestion) {
             return redirect()->route('student.studentExams.index')
@@ -134,7 +122,26 @@ class ExamAttemptController extends Controller
             ->keyBy('exam_question_id');
 
         // Hitung answered count dari collection (lebih ringan)
-        $answeredCount = $userAnswers->filter(fn($a) => !is_null($a->answer))->count();
+        $answeredCount = ExamAnswer::where('exam_id', $examData->id)
+            ->where('user_id', $userId)
+            ->whereNotNull('answer')
+            ->count();
+
+        $doubtQuestionIds = ExamAnswer::where('exam_id', $examData->id)
+            ->where('user_id', $userId)
+            ->where('marked_doubt', 1)
+            ->pluck('exam_question_id')
+            ->toArray();
+
+        $doubtMap = array_flip($doubtQuestionIds);
+
+        $answeredMap = [];
+        foreach ($userAnswers as $key => $val) {
+            $answeredMap[$key] = true;
+        }
+
+        $currentQuestionId = $currentQuestion->id;
+
         $totalQuestions = $questions->count();
         $allAnswered = $answeredCount >= $totalQuestions;
 
@@ -161,7 +168,11 @@ class ExamAttemptController extends Controller
             'userAnswers',
             'totalQuestions',
             'answeredCount',
-            'questions'
+            'questions',
+            'doubtQuestionIds',
+            'doubtMap',
+            'answeredMap',
+            'currentQuestionId'
         ));
     }
 

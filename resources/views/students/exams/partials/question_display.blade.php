@@ -1,10 +1,10 @@
 <div class="mt-2">
-    <p class="fw-bold my-0">{!! nl2br(e($currentQuestion->badan_soal ?? '')) !!}</p>
+    <p class="my-0">{!! nl2br(e($currentQuestion->badan_soal ?? '')) !!}</p>
     @if ($currentQuestion->image)
     <div class="my-2">
         <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"
             class="img-fluid rounded shadow-sm zoomable-image"
-            style="max-width: 600px; max-height: 170px; cursor: zoom-in;" loading="lazy" data-bs-toggle="modal"
+            style="max-width: 150px; max-height: 130px; cursor: zoom-in;" loading="lazy" data-bs-toggle="modal"
             data-bs-target="#imageZoomModal" data-image="{{ asset('storage/' . $currentQuestion->image) }}">
     </div>
     @endif
