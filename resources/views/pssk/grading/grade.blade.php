@@ -6,7 +6,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">{{ $exam->title }}</h5>
             <div>
-                {{-- @if ($exam->is_published)
+                @if ($exam->is_published)
                 <button type="button" class="btn btn-sm btn-success" disabled>Published</button>
                 @else
                 <form role="form" action="{{ route('lecturer.results.publish', [ $exam->exam_code]) }}" method="POST"
@@ -17,7 +17,7 @@
                         Publish Exam
                     </button>
                 </form>
-                @endif --}}
+                @endif
                 <a href="{{ route('lecturer.results.download', $exam->exam_code) }}"
                     class="btn btn-warning px-3 py-2"><i class="fas fa-download"></i>
                     <span class="d-none d-md-inline ms-1">Download</span>

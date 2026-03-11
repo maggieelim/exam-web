@@ -64,9 +64,10 @@ class ExamQuestionsAnalysisExport implements FromCollection, WithHeadings, WithM
             $optionData[] = $percentage;
         }
 
-        $correctOption = optional(
-            $question->options->where('is_correct', 1)->first()
-        )->option ?? 'N/A';
+        $correctOption = $question->options
+            ->where('is_correct', 1)
+            ->pluck('option')
+            ->implode(', ') ?: 'N/A';
 
         return array_merge([
             $this->rowNumber,

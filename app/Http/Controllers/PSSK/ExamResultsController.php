@@ -327,14 +327,28 @@ class ExamResultsController extends Controller
             ->firstOrFail();
         $exam->update(['is_published' => true]);
         $exam->attempts()->update(['grading_status' => 'published']);
+        $coordinator = CourseCoordinator::where('course_id', $exam->course_id)->where('semester_id', $exam->semester_id)->where('role', 'koordinator')->first();
+        $results = $this->buildRankingResultsOptimized($exam, request(), true);
 
-        foreach ($exam->attempts as $attempt) {
-            $user = $attempt->user;
-            if ($user && $user->email) {
-                Mail::to($user->email)->queue(new ExamPublishedNotification($exam, $user));
+        $results = collect($results);
+
+        $results->chunk(50)->each(function ($chunk) use ($exam, $coordinator) {
+            foreach ($chunk as $result) {
+                $userId = $result['student']->id;
+                $user = $exam->attempts->firstWhere('user_id', $userId)?->user;
+                if ($user && $user->email) {
+
+                    Mail::to($user->email)->queue(
+                        new ExamPublishedNotification(
+                            $exam,
+                            $user,
+                            $result['categories_result'],
+                            $coordinator
+                        )
+                    );
+                }
             }
-        }
-
+        });
         return back()->with('success', 'Exam berhasil dipublish! Email notifikasi sedang dikirim ke mahasiswa.');
     }
 

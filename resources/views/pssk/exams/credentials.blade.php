@@ -3,38 +3,50 @@
 
 <head>
     <style>
+        @page {
+            margin: 3;
+        }
+
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 10px;
-            margin: 0.5cm;
+            font-size: 15px;
+            margin: 3;
+            padding: 3;
         }
 
         table {
             border-collapse: collapse;
+            width: 100%;
         }
 
-        td,
-        th {
+        td {
             border: 1px solid #000;
-            padding: 6px;
-            text-align: center;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        .label {
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
+
     <table>
-        @foreach($credentials as $credential)
+        @foreach(collect($credentials)->chunk(4) as $row)
         <tr>
-            <th>Username</th>
-            <td>{{ $credential->username }}</td>
-        </tr>
-        <tr>
-            <th>Password</th>
-            <td>{{ $credential->plain_password }}</td>
+            @foreach($row as $credential)
+            <td>
+                <div>Username: {{ $credential->username }}</div>
+
+                <div style="margin-top:4px;">Password: {{ $credential->plain_password }}</div>
+            </td>
+            @endforeach
         </tr>
         @endforeach
     </table>
+
 </body>
 
 </html>

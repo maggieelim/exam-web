@@ -36,7 +36,8 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
     Route::middleware(['role:admin,koordinator'])->name('admin.')
         ->group(function () {
             /* ----- Course Recap ----- */
-            Route::resource('lecturer-recap', CourseRecapController::class);
+            Route::get('/lecturer-recap', [CourseRecapController::class, 'index'])->name('lecturer-recap.index');
+            Route::get('/lecturer-recap/download', [CourseRecapController::class, 'download'])->name('lecturer-recap.download');
             /* ----- Course Students & Groups ----- */
             Route::get('/courses/students', [CourseStudentController::class, 'index'])->name('courses.indexStudent');
             Route::post('/courses/{slug}/add-student', [CourseStudentController::class, 'store'])->name('courses.addStudent');
@@ -82,7 +83,7 @@ Route::middleware(['auth', 'context:pssk'])->prefix('pssk')->group(function () {
         });
 
     /* ================= KOORDINATOR (EXAM RESULTS) ================= */
-    Route::middleware(['role:koordinator'])
+    Route::middleware(['role:koordinator,admin'])
         ->name('lecturer.')
         ->group(function () {
             Route::get('/{status?}', [ExamResultsController::class, 'indexLecturer'])->where('status', '(ungraded|graded|published)')->name('results.index');

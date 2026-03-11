@@ -28,8 +28,8 @@ class ExamStatisticsController extends Controller
             $correctCount = $answers->where('is_correct', 1)->count();
             $correctPercentage = $totalStudents > 0 ? round(($correctCount / $totalStudents) * 100, 2) : 0;
             $difficultyLevel = match (true) {
-                $correctPercentage >= 76 => 'Easy',
-                $correctPercentage >= 21 => 'Medium',
+                $correctPercentage >= 75 => 'Easy',
+                $correctPercentage >= 20 => 'Medium',
                 default => 'Hard'
             };
 
@@ -167,8 +167,8 @@ class ExamStatisticsController extends Controller
                 : 0;
 
             $difficultyLevel = match (true) {
-                $correctPercentage >= 76 => 'Easy',
-                $correctPercentage >= 21 => 'Medium',
+                $correctPercentage >= 75 => 'Easy',
+                $correctPercentage >= 20 => 'Medium',
                 default => 'Hard'
             };
 

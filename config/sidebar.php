@@ -93,7 +93,8 @@ return [
                 'label' => 'Manage Courses',
                 'route' => 'courses.index',
                 'pattern' => 'course*',
-                'icon' => 'fa-book'
+                'icon' => 'fa-book',
+                'roles' => ['admin', 'koordinator']
             ],
             [
                 'label' => 'Academic Year',
@@ -160,13 +161,15 @@ return [
                 'params' => ['status' => 'upcoming'],
                 'pattern' => 'student/exams/upcoming',
                 'icon' => 'fa-file',
+                'only_domain' => 'exam'
             ],
             [
                 'label' => 'Previous Exam',
                 'route' => 'student.studentExams.index',
                 'params' => ['status' => 'previous'],
                 'pattern' => 'student/exams/previous*',
-                'icon' => 'fa-history'
+                'icon' => 'fa-history',
+                'only_domain' => 'main'
             ],
         ]
     ],

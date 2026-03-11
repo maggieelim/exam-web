@@ -27,8 +27,8 @@ $isExamDomain = str_starts_with($host, 'exam.');
 
             {{-- PRIORITAS 1: ADMIN --}}
             @hasrole('admin')
-            @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label)
-            {{-- @foreach (['pssk' => 'PSSK'] as $key => $label) --}}
+            {{-- @foreach (['pssk' => 'PSSK', 'pspd' => 'PSPD'] as $key => $label) --}}
+            @foreach (['pssk' => 'PSSK'] as $key => $label)
             <li class="nav-item mx-2 flex-fill">
                 <a href="{{ route('set.context', $key) }}" class="nav-link text-center shadow border-radius-md d-flex align-items-center justify-content-center fw-semibold
                    {{ $currentContext === $key ? 'fw-bold text-primary bg-white' : 'text-muted' }}">
@@ -78,9 +78,12 @@ $isExamDomain = str_starts_with($host, 'exam.');
 
             @foreach($section['items'] as $item)
             @if(
+            auth()->user()->hasAnyRole($item['roles'] ?? $section['roles']) &&
+            (
             (!isset($item['only_domain'])) ||
             ($item['only_domain'] === 'exam' && $isExamDomain) ||
             ($item['only_domain'] === 'main' && !$isExamDomain)
+            )
             ) @php
             $active = request()->is($item['pattern']);
             // Menyesuaikan pattern dengan context jika ada placeholder {context}

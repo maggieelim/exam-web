@@ -24,8 +24,7 @@
                             value="{{ $option->id }}" {{ $savedAnswer && $savedAnswer->answer == $option->id ? 'checked'
                         : '' }}>
                         <label class="form-check-label" for="option{{ $option->id }}">
-                            {{ $option->text }}
-                        </label>
+                            {!! nl2br(e($option->text)) !!} </label>
                         @if ($option->image)
                         <div class="mt-0">
                             <img src="{{ asset('storage/' . $option->image) }}" alt="Gambar Soal"

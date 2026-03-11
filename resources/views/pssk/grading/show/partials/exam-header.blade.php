@@ -10,7 +10,7 @@
                 <div class="d-flex gap-2 align-items-center">
                     <!-- Publication Status -->
                     <span class="badge {{ $exam->is_published ? 'bg-success' : 'bg-danger' }}">
-                        {{ $exam->is_published ? 'Published' : 'Unpublished' }}
+                        {{ $exam->is_published ? 'Graded' : 'Ungraded' }}
                     </span>
 
                     <!-- Filter Toggle -->

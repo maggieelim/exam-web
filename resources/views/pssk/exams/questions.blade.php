@@ -99,7 +99,7 @@
 
                     <div class="d-flex align-items-start gap-1 mb-1">
                         <textarea name="badan_soal" rows="1"
-                            class="form-control auto-resize">{{ $question->badan_soal }}</textarea>
+                            class="form-control auto-resize">{!! $question->badan_soal !!}</textarea>
 
                         @unless ($question->image)
                         <label for="image-{{ $question->id }}"
@@ -132,7 +132,7 @@
                     <label class="form-label">Kalimat Tanya</label>
                     <div class="d-flex align-items-center gap-2 mb-1">
                         <textarea name="kalimat_tanya" class="form-control auto-resize"
-                            rows="1">{{ $question->kalimat_tanya }}</textarea>
+                            rows="1">{!! $question->kalimat_tanya !!}</textarea>
                     </div>
                 </div>
 
@@ -152,7 +152,7 @@
                                 </div>
                                 <span class="fw-bold me-2">{{ $option->option }}.</span>
                                 <textarea name="options[{{ $option->id }}][text]" rows=1
-                                    class="form-control auto-resize me-2">{{ $option->text }}</textarea>
+                                    class="form-control auto-resize me-2">{!! $option->text !!}</textarea>
                                 @unless ($option->image)
                                 <label class="d-flex align-items-center p-0 mb-0 " style="cursor: pointer;">
                                     <div class="position-relative">

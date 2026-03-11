@@ -589,19 +589,20 @@ class ExamQuestionController extends Controller
 
     private function saveQuestionsToDatabase(array $questions, $exam): void
     {
-        foreach ($questions as $questionData) {
+        foreach ($questions as $index => $questionData) {
             $examCategory = ExamQuestionCategory::firstOrCreate([
                 'exam_id' => $exam->id,
                 'name' => $questionData['category']
             ]);
 
+            $questionNumber = $index + 1;
             $examQuestion = ExamQuestion::create([
                 'exam_id' => $exam->id,
                 'category_id' => $examCategory->id,
                 'badan_soal' => $questionData['body'],
                 'kalimat_tanya' => $questionData['question'],
                 'kode_soal' => $exam->exam_code . '-' . str_pad(
-                    $questionData['number'],
+                    $questionNumber,
                     3,
                     '0',
                     STR_PAD_LEFT

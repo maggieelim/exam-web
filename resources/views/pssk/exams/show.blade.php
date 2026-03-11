@@ -89,22 +89,21 @@
           <p class="mb-1">{{$questions->firstItem()+ $index }}.</p>
           <div>
             <p class="my-0">
-              {!! nl2br(e(trim($question->badan_soal ))) !!}
+              {!! nl2br(trim($question->badan_soal )) !!}
             </p>
             @if ($question->image)
             <img src="{{ asset('storage/' . $question->image) }}" alt="Gambar Soal"
               class="mx-3 my-1 img-fluid rounded shadow-sm" style="max-width: 150px;">
             @endif
             <p class="my-0">
-              {!! nl2br(e(trim($question->kalimat_tanya))) !!}
+              {!! nl2br(trim($question->kalimat_tanya)) !!}
             </p>
             <small class="fw-bold d-block mt-2">Jawaban:</small>
             <div class="row">
               @foreach ($question->options as $option)
               <div class="col-12 mb-2">
                 <span class="fw-bold">{{ $option->option }}.</span>
-                <span>{{ $option->text }}</span>
-
+                <span>{!! nl2br($option->text) !!}</span>
                 @if ($option->is_correct)
                 <i class="fas fa-check text-success ms-1"></i>
                 @endif

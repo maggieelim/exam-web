@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\LecturerRecapExport;
 use App\Models\Activity;
 use App\Models\AttendanceSessions;
 use App\Models\Course;
@@ -9,6 +10,7 @@ use App\Models\Lecturer;
 use App\Models\Semester;
 use App\Services\SemesterService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CourseRecapController extends Controller
 {
@@ -25,6 +27,9 @@ class CourseRecapController extends Controller
         $lecturers = Lecturer::with('courseLecturers', 'user')
             ->where('type', 'pssk')
             ->join('users', 'users.id', '=', 'lecturers.user_id')
+            ->when($request->name, function ($query) use ($request) {
+                $query->where('users.name', 'like', '%' . $request->name . '%');
+            })
             ->orderBy('users.name', 'asc')
             ->select('lecturers.*')
             ->get();
@@ -40,7 +45,6 @@ class CourseRecapController extends Controller
             'activity',
             'lecturerRecords.courseLecturer'
         ])
-            ->where('status', 'finished')
             ->whereHas('course', function ($q) use ($semester) {
                 $q->whereIn('semester', [
                     $semester->semester_name,
@@ -72,14 +76,8 @@ class CourseRecapController extends Controller
                     continue;
                 }
 
-                // skip activity yang tidak dimapping
-                if (!isset($activityMap[$attendance->activity_id])) {
-                    continue;
-                }
-
                 $lecturerId = $record->courseLecturer->lecturer_id;
                 $courseId   = $attendance->course_id;
-
                 $activityKey = $activityMap[$attendance->activity_id];
 
                 $summary[$lecturerId][$courseId][$activityKey] =
@@ -88,7 +86,17 @@ class CourseRecapController extends Controller
         }
 
         // 4. Ambil master data untuk header tabel
-        $courses    = Course::orderBy('sesi')->whereIn('semester', [$semester->semester_name, 'Ganjil/Genap'])->get();
+        $courses = Course::orderBy('sesi')
+            ->whereIn('semester', [$semester->semester_name, 'Ganjil/Genap'])
+            ->whereNotIn('id', [24, 25])
+            ->when($request->sesi, function ($query) use ($request) {
+                $query->where('sesi', $request->sesi);
+            })
+            ->get();
+
+        $sesi = Course::whereIn('semester', [$semester->semester_name, 'Ganjil/Genap'])
+            ->whereNotIn('id', [24, 25])->distinct()->orderBy('sesi')->pluck('sesi');
+
         $activities = collect([
             'Kuliah',
             'Pleno',
@@ -105,56 +113,23 @@ class CourseRecapController extends Controller
             'semesterId',
             'semester',
             'semesters',
-            'activeSemester'
+            'activeSemester',
+            'sesi'
         ));
     }
 
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function download(Request $request)
     {
-        //
-    }
+        $data = $this->index($request)->getData();
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return Excel::download(
+            new LecturerRecapExport(
+                $data['lecturers'],
+                $data['courses'],
+                $data['activities'],
+                $data['summary']
+            ),
+            'lecturer_recap.xlsx'
+        );
     }
 }

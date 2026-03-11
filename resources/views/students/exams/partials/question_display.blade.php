@@ -1,5 +1,5 @@
 <div class="mt-2">
-    <p class="my-0">{!! nl2br(e($currentQuestion->badan_soal ?? '')) !!}</p>
+    <p class="my-0">{!! nl2br($currentQuestion->badan_soal ?? '') !!}</p>
     @if ($currentQuestion->image)
     <div class="my-2">
         <img src="{{ asset('storage/' . $currentQuestion->image) }}" alt="Gambar Soal"
@@ -9,7 +9,7 @@
     </div>
     @endif
     <p class="my-0">
-        {!! nl2br(e($currentQuestion->kalimat_tanya ?? '')) !!}
+        {!! nl2br($currentQuestion->kalimat_tanya ?? '') !!}
     </p>
 </div>
 

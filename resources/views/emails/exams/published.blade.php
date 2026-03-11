@@ -1,11 +1,8 @@
-<x-mail::message>
-  Hasil **{{ $exam->title }} {{ $course->name }}** telah dipublish oleh dosen.
-
-  Silakan login untuk melihat nilai dan feedback dari ujian Anda.
-
-  <x-mail::button :url="route('student.results.show', $exam->exam_code)">
-    Lihat Hasil Ujian
-  </x-mail::button>
-
-  Terima kasih, Admin PSSK FK Untar
-</x-mail::message>
+Berikut terlampir presentase penguasaan materi pada {{ $exam->title }} Blok {{ $course->name ?? '' }} Semester {{
+$exam->semester->semester_name }} {{ $exam->semester->academicYear->year_name ?? '' }}. Harap hasil ini dapat Saudara
+jadikan bahan refleksi diri untuk perbaikan selanjutnya.
+<br>
+<br>
+Terima kasih,
+<br>
+PSSK Fakultas Kedokteran Universitas Tarumanagara
