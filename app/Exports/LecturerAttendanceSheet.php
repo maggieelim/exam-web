@@ -29,9 +29,9 @@ class LecturerAttendanceSheet implements
 
     public function __construct($records, $activityName, $scheduleTime)
     {
-        $this->records       = $records;
-        $this->activityName  = $activityName;
-        $this->scheduleTime  = $scheduleTime;
+        $this->records = $records;
+        $this->activityName = $activityName;
+        $this->scheduleTime = $scheduleTime;
     }
 
     /**

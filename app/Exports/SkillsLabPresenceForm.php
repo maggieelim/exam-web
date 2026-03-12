@@ -218,7 +218,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
                 $headerRow1[$colIndex] = 'PEMICU ' . $pemicuKe;
 
                 // Baris 2 → D1 & D2
-                $headerRow2[$colIndex]     = 'D1';
+                $headerRow2[$colIndex] = 'D1';
                 $headerRow2[$colIndex + 1] = 'D2';
                 $headerRow1[$colIndex + 2] = 'PLENO ' . $pemicuKe;
 
@@ -490,7 +490,7 @@ class PresenceSheet implements FromArray, WithEvents, WithTitle
             for ($i = 0; $i < $pemicuCount; $i++) {
 
                 $pemicuStart = Coordinate::stringFromColumnIndex($colIndex);
-                $pemicuEnd   = Coordinate::stringFromColumnIndex($colIndex + 1);
+                $pemicuEnd = Coordinate::stringFromColumnIndex($colIndex + 1);
 
                 $sheet->mergeCells("{$pemicuStart}{$headerRow1}:{$pemicuEnd}{$headerRow1}");
                 $this->applyCellStyle($sheet, "{$pemicuStart}{$headerRow1}", [

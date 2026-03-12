@@ -4,6 +4,12 @@ use App\Http\Controllers\Exam\Auth\ExamAuthController;
 
 Route::domain(env('EXAM_DOMAIN'))->group(function () {
 
+    Route::get('/', function () {
+        return auth()->check()
+            ? redirect()->route('exam.identity')
+            : redirect()->route('exam.examLogin');
+    });
+
     Route::middleware('exam.guest')->group(function () {
         Route::get('/login', [ExamAuthController::class, 'showLogin'])
             ->name('examLogin');

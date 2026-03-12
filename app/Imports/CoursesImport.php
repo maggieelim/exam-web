@@ -39,15 +39,15 @@ class CoursesImport implements ToModel, WithHeadingRow
             throw new Exception("Semester invalid pada blok {$nama}: '{$semester}'. Hanya boleh Ganjil, Genap, atau Ganjil/Genap.");
         }
 
-        if(Course::where('kode_blok', $row['kode_blok'])->exists()){
-          throw new Exception("Kode Blok {$row['kode_blok']} sudah terdaftar");
+        if (Course::where('kode_blok', $row['kode_blok'])->exists()) {
+            throw new Exception("Kode Blok {$row['kode_blok']} sudah terdaftar");
         }
-        
+
         return new Course([
             'kode_blok' => $kodeBlok,
-            'name'      => $nama,
-            'slug'      => Str::slug($nama),
-            'semester'  => $semester,
+            'name' => $nama,
+            'slug' => Str::slug($nama),
+            'semester' => $semester,
         ]);
     }
 }

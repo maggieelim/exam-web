@@ -149,16 +149,16 @@ class CourseController extends Controller
     public function updateKoor(Request $request)
     {
         $request->validate([
-            'course_id'      => 'required|exists:courses,id',
-            'semester_id'    => 'required|exists:semesters,id',
+            'course_id' => 'required|exists:courses,id',
+            'semester_id' => 'required|exists:semesters,id',
             'koordinator_id' => 'nullable|exists:lecturers,id',
-            'sekretaris_id'  => 'nullable|exists:lecturers,id',
+            'sekretaris_id' => 'nullable|exists:lecturers,id',
         ]);
 
         try {
             DB::beginTransaction();
 
-            $courseId   = $request->course_id;
+            $courseId = $request->course_id;
             $semesterId = $request->semester_id;
 
             // Helper: memastikan lecturer masuk ke CourseLecturer
@@ -166,7 +166,7 @@ class CourseController extends Controller
                 if ($lecturerId) {
                     CourseLecturer::updateOrCreate(
                         [
-                            'course_id'   => $courseId,
+                            'course_id' => $courseId,
                             'semester_id' => $semesterId,
                             'lecturer_id' => $lecturerId,
                         ],
@@ -178,7 +178,7 @@ class CourseController extends Controller
             // roles yang ingin diatur
             $roles = [
                 'koordinator' => $request->koordinator_id,
-                'sekretaris'  => $request->sekretaris_id,
+                'sekretaris' => $request->sekretaris_id,
             ];
 
             $oldKoor = CourseCoordinator::where([
@@ -197,9 +197,9 @@ class CourseController extends Controller
                 if ($lecturerId) {
                     CourseCoordinator::updateOrCreate(
                         [
-                            'course_id'   => $courseId,
+                            'course_id' => $courseId,
                             'semester_id' => $semesterId,
-                            'role'        => $role,
+                            'role' => $role,
                         ],
                         ['lecturer_id' => $lecturerId,]
                     );

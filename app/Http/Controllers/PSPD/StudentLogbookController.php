@@ -70,14 +70,14 @@ class StudentLogbookController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'date'      => ['required', 'date'],
+            'date' => ['required', 'date'],
             'start_time' => ['required', 'before:end_time'],
             'end_time' => ['required', 'after:start_time'],
-            'rotation'      => ['required', 'exists:student_koas,id'],
-            'activity'  => ['required', 'exists:activity_koas,id'],
-            'desc'      => ['required', 'string', 'max:1000'],
-            'lecturer'  => ['required', 'exists:lecturers,id'],
-            'proof'    => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
+            'rotation' => ['required', 'exists:student_koas,id'],
+            'activity' => ['required', 'exists:activity_koas,id'],
+            'desc' => ['required', 'string', 'max:1000'],
+            'lecturer' => ['required', 'exists:lecturers,id'],
+            'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ]);
 
         $filePath = null;
@@ -90,15 +90,15 @@ class StudentLogbookController extends Controller
         }
 
         Logbook::create([
-            'student_koas_id'   => $validated['rotation'],
-            'lecturer_id'       => $validated['lecturer'],
-            'activity_koas_id'  => $validated['activity'],
-            'date'              => $validated['date'],
-            'start_time'        => Carbon::parse($validated['start_time'])->format('H:i'),
-            'end_time'          => Carbon::parse($validated['end_time'])->format('H:i'),
-            'description'       => $validated['desc'],
-            'file_path'         => $filePath,
-            'status'            => 'pending',
+            'student_koas_id' => $validated['rotation'],
+            'lecturer_id' => $validated['lecturer'],
+            'activity_koas_id' => $validated['activity'],
+            'date' => $validated['date'],
+            'start_time' => Carbon::parse($validated['start_time'])->format('H:i'),
+            'end_time' => Carbon::parse($validated['end_time'])->format('H:i'),
+            'description' => $validated['desc'],
+            'file_path' => $filePath,
+            'status' => 'pending',
         ]);
         return redirect()
             ->route('student-logbook.index')
@@ -140,14 +140,14 @@ class StudentLogbookController extends Controller
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'date'      => ['required', 'date'],
+            'date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
-            'end_time'  => ['required', 'date_format:H:i', 'after:start_time'],
-            'rotation'  => ['required', 'exists:student_koas,id'],
-            'activity'  => ['required', 'exists:activity_koas,id'],
-            'desc'      => ['required', 'string', 'max:1000'],
-            'lecturer'  => ['required', 'exists:lecturers,id'],
-            'proof'     => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'rotation' => ['required', 'exists:student_koas,id'],
+            'activity' => ['required', 'exists:activity_koas,id'],
+            'desc' => ['required', 'string', 'max:1000'],
+            'lecturer' => ['required', 'exists:lecturers,id'],
+            'proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ]);
 
         $logbook = Logbook::findOrFail($id);
@@ -160,13 +160,13 @@ class StudentLogbookController extends Controller
         }
 
         $logbook->update([
-            'lecturer_id'       => $validated['lecturer'],
-            'activity_koas_id'  => $validated['activity'],
-            'date'              => $validated['date'],
-            'start_time'        => $validated['start_time'],
-            'end_time'          => $validated['end_time'],
-            'description'       => $validated['desc'],
-            'file_path'         => $filePath,
+            'lecturer_id' => $validated['lecturer'],
+            'activity_koas_id' => $validated['activity'],
+            'date' => $validated['date'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'description' => $validated['desc'],
+            'file_path' => $filePath,
         ]);
 
         return redirect()->back()->with('success', 'Logbook berhasil diperbarui');

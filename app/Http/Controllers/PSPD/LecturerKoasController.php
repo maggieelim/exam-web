@@ -29,9 +29,9 @@ class LecturerKoasController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'rotation'      => 'required|exists:hospital_rotations,id',
-            'lecturers'     => 'required|array',
-            'lecturers.*'   => 'exists:lecturers,id',
+            'rotation' => 'required|exists:hospital_rotations,id',
+            'lecturers' => 'required|array',
+            'lecturers.*' => 'exists:lecturers,id',
         ]);
         $rotationId = $request->rotation;
         $lecturerIds = $request->lecturers;

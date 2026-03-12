@@ -4,6 +4,7 @@ use App\Http\Controllers\AttendanceSessionsController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
+use App\Http\Controllers\PSSK\ExamController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SemesterController;
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'role:admin', 'context'])->group(function () {
         });
         Route::get('schedules', [AttendanceSessionsController::class, 'lecturersSchedule'])->name('schedules');
         Route::resource('semester', SemesterController::class);
+        Route::get('/exams/all-results', [ExamController::class, 'allResults'])->name('exams.all-results');
     });
 
     // PSPD ADMIN
@@ -66,7 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::get('static-sign-in', fn() => view('static-sign-in'))->name('sign-in');
     Route::get('static-sign-up', fn() => view('static-sign-up'))->name('sign-up');
 
-    Route::get('logout', [SessionsController::class, 'destroy']);
+    Route::get('logout', [SessionsController::class, 'destroy'])->name('logout');
     Route::get('user-profile', [InfoUserController::class, 'create']);
     Route::post('user-profile', [InfoUserController::class, 'store']);
 });

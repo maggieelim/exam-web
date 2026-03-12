@@ -79,8 +79,8 @@ class StudentKoasController extends Controller
                         $existing->restore();
                         $existing->update([
                             'start_date' => $request->start_date,
-                            'end_date'   => $request->end_date,
-                            'status'     => 'active',
+                            'end_date' => $request->end_date,
+                            'status' => 'active',
                         ]);
                         $added[] = "$nim (dipulihkan)";
                     } else {
@@ -88,12 +88,12 @@ class StudentKoasController extends Controller
                     }
                 } else {
                     StudentKoas::create([
-                        'student_id'            => $student->id,
-                        'hospital_rotation_id'  => $rotationId,
-                        'semester_id'           => $request->semester,
-                        'status'                => 'active',
-                        'start_date'            => $request->start_date,
-                        'end_date'              => $request->end_date,
+                        'student_id' => $student->id,
+                        'hospital_rotation_id' => $rotationId,
+                        'semester_id' => $request->semester,
+                        'status' => 'active',
+                        'start_date' => $request->start_date,
+                        'end_date' => $request->end_date,
                     ]);
                     $added[] = $nim;
                 }
@@ -120,8 +120,8 @@ class StudentKoasController extends Controller
                 $existsKoas = StudentKoas::where(
                     [
                         'hospital_rotation_id' => $rotationId,
-                        'student_id'           => $student->id,
-                        'semester_id'          => $request->semester,
+                        'student_id' => $student->id,
+                        'semester_id' => $request->semester,
                     ]
                 )->exists();
 
@@ -131,12 +131,12 @@ class StudentKoasController extends Controller
                 }
 
                 StudentKoas::create([
-                    'student_id'            => $student->id,
-                    'hospital_rotation_id'  => $rotationId,
-                    'semester_id'           => $request->semester,
-                    'status'                => 'active',
-                    'start_date'            => $request->start_date,
-                    'end_date'              => $request->end_date,
+                    'student_id' => $student->id,
+                    'hospital_rotation_id' => $rotationId,
+                    'semester_id' => $request->semester,
+                    'status' => 'active',
+                    'start_date' => $request->start_date,
+                    'end_date' => $request->end_date,
                 ]);
 
                 $added[] = $nim;
@@ -148,9 +148,9 @@ class StudentKoasController extends Controller
         return redirect()
             ->route('kepaniteraan.index')
             ->with([
-                'success'    => $added ? 'Berhasil ditambahkan: ' . implode(', ', $added) : null,
-                'warning'    => $exists ? 'Sudah terdaftar: ' . implode(', ', $exists) : null,
-                'error'      => $notFound ? 'NIM tidak ditemukan: ' . implode(', ', $notFound) : null,
+                'success' => $added ? 'Berhasil ditambahkan: ' . implode(', ', $added) : null,
+                'warning' => $exists ? 'Sudah terdaftar: ' . implode(', ', $exists) : null,
+                'error' => $notFound ? 'NIM tidak ditemukan: ' . implode(', ', $notFound) : null,
             ]);
     }
 

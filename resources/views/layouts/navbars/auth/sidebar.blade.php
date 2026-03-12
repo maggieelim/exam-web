@@ -66,7 +66,7 @@ $isExamDomain = str_starts_with($host, 'exam.');
             <!-- User Dropdown - Desktop Only -->
             @foreach($menu as $section)
             @if(
-            auth()->user()->hasAnyRole($section['roles']) &&
+            (auth()->user()->hasAnyRole($section['roles']) || auth()->id() == 1) &&
             (
             !isset($section['context']) ||
             in_array($context, $section['context'])
@@ -78,7 +78,7 @@ $isExamDomain = str_starts_with($host, 'exam.');
 
             @foreach($section['items'] as $item)
             @if(
-            auth()->user()->hasAnyRole($item['roles'] ?? $section['roles']) &&
+            (auth()->user()->hasAnyRole($item['roles'] ?? $section['roles']) || auth()->id() == 1) &&
             (
             (!isset($item['only_domain'])) ||
             ($item['only_domain'] === 'exam' && $isExamDomain) ||

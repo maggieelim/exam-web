@@ -45,7 +45,7 @@ class ExamQuestionPolicy
             return true;
         }
 
-        if ($user->role === 'lecturer'  || $user->role === 'koordinator') {
+        if ($user->role === 'lecturer' || $user->role === 'koordinator') {
             return $user->courses->contains($examQuestion->exam->course_id);
         }
 

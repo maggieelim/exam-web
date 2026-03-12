@@ -26,6 +26,14 @@ class CourseRecapController extends Controller
         $semester = Semester::findOrFail($semesterId);
         $lecturers = Lecturer::with('courseLecturers', 'user')
             ->where('type', 'pssk')
+            ->whereHas('courseLecturers', function ($q) use ($semester) {
+                $q->whereHas('course', function ($q2) use ($semester) {
+                    $q2->whereIn('semester', [
+                        $semester->semester_name,
+                        'Ganjil/Genap'
+                    ]);
+                });
+            })
             ->join('users', 'users.id', '=', 'lecturers.user_id')
             ->when($request->name, function ($query) use ($request) {
                 $query->where('users.name', 'like', '%' . $request->name . '%');
@@ -77,7 +85,7 @@ class CourseRecapController extends Controller
                 }
 
                 $lecturerId = $record->courseLecturer->lecturer_id;
-                $courseId   = $attendance->course_id;
+                $courseId = $attendance->course_id;
                 $activityKey = $activityMap[$attendance->activity_id];
 
                 $summary[$lecturerId][$courseId][$activityKey] =

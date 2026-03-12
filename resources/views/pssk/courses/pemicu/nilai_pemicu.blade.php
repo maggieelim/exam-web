@@ -29,9 +29,12 @@
     <tbody>
         @foreach ($groupedStudents as $kelompok => $students)
         <tr>
-            <td colspan="14" style="font-weight: bold; background: #d9d9d9;">
+            <td style="font-weight: bold; background: #d9d9d9;">
                 Kelompok: {{ $kelompok }} ({{ $students->count() }} Siswa)
             </td>
+            @for ($i = 2; $i <= 14; $i++) <td style="background: #d9d9d9;">
+                </td>
+                @endfor
         </tr>
 
         @foreach ($students as $cs)

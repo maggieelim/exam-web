@@ -40,8 +40,8 @@ class NilaiPemicuExport implements FromView, WithStyles, WithEvents
     {
         $centerAlignment = [
             'horizontal' => Alignment::HORIZONTAL_CENTER,
-            'vertical'   => Alignment::VERTICAL_CENTER,
-            'wrapText'   => true
+            'vertical' => Alignment::VERTICAL_CENTER,
+            'wrapText' => true
         ];
 
         return [
@@ -69,8 +69,8 @@ class NilaiPemicuExport implements FromView, WithStyles, WithEvents
                     ],
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical'   => Alignment::VERTICAL_CENTER,
-                        'wrapText'   => true,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
                     ],
                     'font' => ['bold' => true],
                     'borders' => [
@@ -97,8 +97,8 @@ class NilaiPemicuExport implements FromView, WithStyles, WithEvents
                 // Alignment untuk kolom C-L
                 $sheet->getStyle('C1:L1000')->getAlignment()->applyFromArray([
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical'   => Alignment::VERTICAL_CENTER,
-                    'wrapText'   => true,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
                 ]);
             }
         ];

@@ -42,21 +42,21 @@ class KelasExport implements FromCollection, WithHeadings, WithTitle, WithStyles
 
         foreach ($kelas as $kel) {
             $data->push([
-                'Kelas'   => 'K' . sprintf('%02d', $kel->session_number),
+                'Kelas' => 'K' . sprintf('%02d', $kel->session_number),
                 'Tanggal' => $kel->scheduled_date
                     ? Carbon::parse($kel->scheduled_date)->translatedFormat('D, d M Y')
                     : '',
-                'Mulai'   => $kel->start_time
+                'Mulai' => $kel->start_time
                     ? Carbon::parse($kel->start_time)->format('H:i')
                     : '',
                 'Selesai' => $kel->end_time
                     ? Carbon::parse($kel->end_time)->format('H:i')
                     : '',
-                'Zona'    => $kel->zone ?? '',
-                'Grup'    => $kel->group ?? '',
-                'Topik'   => $kel->topic ?? '',
-                'Dosen'   => $kel->lecturer->user->name ?? '',
-                'Ruang'   => $kel->room ?? '',
+                'Zona' => $kel->zone ?? '',
+                'Grup' => $kel->group ?? '',
+                'Topik' => $kel->topic ?? '',
+                'Dosen' => $kel->lecturer->user->name ?? '',
+                'Ruang' => $kel->room ?? '',
             ]);
         }
 

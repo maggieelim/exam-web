@@ -46,9 +46,9 @@ class AttendanceSessionsController extends Controller
                 // Tambahkan pengecekan jika sudah finished
                 if ($attendance->status === 'finished') {
                     $url = route('attendances.report.show', [
-                        'course'      => $attendance->course->slug,
+                        'course' => $attendance->course->slug,
                         'semester_id' => $attendance->semester_id,
-                        'session'     => $attendance->id
+                        'session' => $attendance->id
                     ]);
                 } else {
                     $url = $hasAttendance
@@ -58,16 +58,16 @@ class AttendanceSessionsController extends Controller
                 return [
                     'title' => $attendance->course->name . ' - ' . $attendance->activity->activity_name,
                     'start' => $attendance->start_time,
-                    'end'   => $attendance->end_time,
-                    'url'   => $url,
+                    'end' => $attendance->end_time,
+                    'url' => $url,
                     'extendedProps' => [
                         'status' => $attendance->status,
-                        'total'  => $attendance->total_attendance,
+                        'total' => $attendance->total_attendance,
                     ],
                     'color' => match ($attendance->status) {
                         'finished' => '#5fb374ff', // hijau
-                        'active'  => '#5da4f0ff', // biru
-                        default    => '#ecc13eff', // kuning
+                        'active' => '#5da4f0ff', // biru
+                        default => '#ecc13eff', // kuning
                     },
                 ];
             });
@@ -79,7 +79,7 @@ class AttendanceSessionsController extends Controller
     {
         // ambil parameter sorting
         $sort = $request->get('sort', 'name'); // default sort by name
-        $dir  = $request->get('dir', 'asc');   // default asc
+        $dir = $request->get('dir', 'asc');   // default asc
 
         // whitelist kolom yang boleh di-sort (AMAN)
         $allowedSorts = ['name'];
@@ -464,8 +464,8 @@ class AttendanceSessionsController extends Controller
 
             $attendance = AttendanceSessions::where('absensi_code', $attendanceCode)->firstOrFail();
             $startTime = Carbon::parse($attendance->start_time);
-            $endTime   = Carbon::parse($attendance->end_time);
-            $now       = Carbon::now();
+            $endTime = Carbon::parse($attendance->end_time);
+            $now = Carbon::now();
             if ($now->lt($startTime->copy()->subMinutes(10))) {
                 return redirect()
                     ->back()

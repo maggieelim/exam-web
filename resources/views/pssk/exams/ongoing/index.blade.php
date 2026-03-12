@@ -16,22 +16,28 @@
     </div>
     <div class="card-body mt-0 pt-0">
         <div class="row ">
-            <div class="col-md-4 col-6">
+            <div class="col-md-3 col-6">
                 <div class="text-center">
                     <h3 class="text-primary">{{ $stats['total_participants'] ?? 0 }}</h3>
                     <p class="text-muted mb-0">Total Participants</p>
                 </div>
             </div>
-            <div class="col-md-4 col-6">
+            <div class="col-md-3 col-6">
                 <div class="text-center">
                     <h3 class="text-primary">{{ $stats['active_participants'] ?? 0 }}</h3>
                     <p class="text-muted mb-0">Active Participants</p>
                 </div>
             </div>
-            <div class="col-md-4 col-6">
+            <div class="col-md-3 col-6">
                 <div class="text-center">
                     <h3 class="text-info">{{ $stats['completed_participants'] ?? 0 }}</h3>
                     <p class="text-muted mb-0">Completed Participants</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="text-center">
+                    <h3 class="text-secondary">{{ $stats['timeout_participants'] ?? 0 }}</h3>
+                    <p class="text-muted mb-0">Timeout Participants</p>
                 </div>
             </div>
         </div>

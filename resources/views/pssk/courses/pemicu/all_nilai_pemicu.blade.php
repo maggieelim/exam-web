@@ -29,9 +29,12 @@
                 @php
                 $colspan = 3 + ($preGroup * 2);
                 @endphp
-                <td class="group-header" colspan="{{ $colspan }}" style="font-weight: bold; background: #d9d9d9;">
+                <td class="group-header" style="font-weight: bold; background: #d9d9d9;">
                     Kelompok: {{ $kelompok }} (Jumlah = {{ $students->count() }} Siswa)
                 </td>
+                @for ($i = 2; $i <= $colspan; $i++) <td style="background: #d9d9d9;">
+                    </td>
+                    @endfor
             </tr>
 
             @foreach ($students as $cs)

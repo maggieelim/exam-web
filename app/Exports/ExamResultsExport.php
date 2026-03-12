@@ -2,8 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Exam;
-use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -12,6 +11,8 @@ use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
@@ -23,7 +24,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
     public function __construct($results)
     {
         // Kalau paginator
-        if ($results instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+        if ($results instanceof LengthAwarePaginator) {
             $this->results = $results->getCollection();
         } else {
             $this->results = collect($results);
@@ -60,10 +61,19 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
                     : 0;
             }
 
-            $rowData['Total Score (%)'] =
-                isset($row['score_percentage'])
-                ? (float) $row['score_percentage'] / 100
+            $score = isset($row['score_percentage'])
+                ? (float) $row['score_percentage']
                 : 0;
+
+            $rowData['Nilai'] = $score;
+
+            if ($score >= 70) {
+                $rowData['Keterangan'] = 'BAIK';
+            } elseif ($score < 56) {
+                $rowData['Keterangan'] = 'KURANG';
+            } else {
+                $rowData['Keterangan'] = 'CUKUP';
+            }
 
             return $rowData;
         });
@@ -78,7 +88,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
         return array_merge(
             ['No', 'NIM', 'Nama', 'Total Soal', 'Dijawab', 'Benar'],
             $categoryHeadings,
-            ['Total Score (%)']
+            ['Nilai', 'Keterangan']
         );
     }
 
@@ -86,13 +96,27 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $startColumn = 7;
-                $totalPercentageColumns = $this->categories->count() + 1;
 
-                for ($i = 0; $i < $totalPercentageColumns; $i++) {
+                $startColumn = 7; // G
+                $totalCategoryColumns = $this->categories->count();
+
+                for ($i = 0; $i < $totalCategoryColumns; $i++) {
+
                     $columnLetter = Coordinate::stringFromColumnIndex($startColumn + $i);
 
-                    $event->sheet->getStyle($columnLetter . '1:' . $columnLetter . $event->sheet->getHighestRow())
+                    // override autosize
+                    $event->sheet->getDelegate()
+                        ->getColumnDimension($columnLetter)
+                        ->setAutoSize(false);
+
+                    // set fixed width
+                    $event->sheet->getDelegate()
+                        ->getColumnDimension($columnLetter)
+                        ->setWidth(25);
+
+                    // wrap text
+                    $event->sheet->getDelegate()
+                        ->getStyle($columnLetter)
                         ->getAlignment()
                         ->setWrapText(true);
                 }
@@ -113,12 +137,12 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
                 'size' => 12,
             ],
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['argb' => 'FF5CB6ED'], // warna biru muda #5cb6ed
             ],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
             'borders' => [
                 'allBorders' => [
@@ -148,7 +172,7 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
         }
 
         // Freeze header
-        $sheet->freezePane('A2');
+        $sheet->freezePane('D2');
 
         return [];
     }
@@ -166,10 +190,10 @@ class ExamResultsExport implements FromCollection, WithHeadings, ShouldAutoSize,
 
         // Kolom persentase mulai dari G
         $startColumn = 7;
-        $totalPercentageColumns = $this->categories->count() + 1; // + total score
+        $totalPercentageColumns = $this->categories->count();
 
         for ($i = 0; $i < $totalPercentageColumns; $i++) {
-            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($startColumn + $i);
+            $columnLetter = Coordinate::stringFromColumnIndex($startColumn + $i);
             $formats[$columnLetter] = NumberFormat::FORMAT_PERCENTAGE_00;
         }
         return $formats;

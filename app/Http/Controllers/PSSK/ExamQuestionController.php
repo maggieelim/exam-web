@@ -62,7 +62,7 @@ class ExamQuestionController extends Controller
         // VALIDASI
         $validated = $request->validate([
             'category_name' => 'required|string|max:255',
-            'badan_soal' => 'required|string',
+            'badan_soal' => 'nullable|string',
             'kalimat_tanya' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
 

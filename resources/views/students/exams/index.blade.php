@@ -86,10 +86,9 @@
         <div class="mt-auto">
           @if($exam->has_completed)
           @if($exam->is_published)
-          <a href="{{ route('student.results.show', $exam->exam_code) }}" class="btn bg-gradient-success py-2 w-100"
-            title="Results">
-            <i class="fas fa-clipboard-check me-2"></i> See Results
-          </a>
+          <div class="btn bg-gradient-secondary opacity-75 w-100 py-2" disabled>
+            <i class="fas fa-hourglass-half me-2"></i> Waiting for Grading
+          </div>
           @else
           <div class="btn bg-gradient-secondary opacity-75 w-100 py-2" disabled>
             <i class="fas fa-hourglass-half me-2"></i> Waiting for Grading

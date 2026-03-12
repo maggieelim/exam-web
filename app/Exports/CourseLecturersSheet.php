@@ -35,12 +35,12 @@ class CourseLecturersSheet implements FromCollection, WithHeadings, WithTitle, W
     $sorted = $sorter->sort($lecturers, $this->course->id, $this->semesterId);
     return $sorted->map(function ($item) {
       return [
-        'NIDN'   => $item->lecturer->nidn,
-        'Nama'   => $item->lecturer->user->name,
+        'NIDN' => $item->lecturer->nidn,
+        'Nama' => $item->lecturer->user->name,
         'Strata' => $item->lecturer->strata,
-        'Gelar'  => $item->lecturer->gelar,
+        'Gelar' => $item->lecturer->gelar,
         'Tipe Dosen' => $item->lecturer->tipe_dosen,
-        'Email'  => $item->lecturer->user->email,
+        'Email' => $item->lecturer->user->email,
         'Gender' => $item->lecturer->user->gender,
       ];
     });

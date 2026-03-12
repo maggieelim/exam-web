@@ -22,7 +22,7 @@ class AttendanceReportController extends Controller
         $semesterId = $request->query('semester_id');
 
         $startDate = $request->query('start_date');
-        $endDate   = $request->query('end_date');
+        $endDate = $request->query('end_date');
 
         $totalStudents = CourseStudent::where('course_id', $course->id)
             ->where('semester_id', $semesterId)
@@ -76,7 +76,7 @@ class AttendanceReportController extends Controller
         $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
         // Filter date
         $startDate = $request->query('start_date');
-        $endDate   = $request->query('end_date');
+        $endDate = $request->query('end_date');
 
         // Ambil attendance sessions yang terkait dosen
         $attendances = AttendanceSessions::with(['course', 'activity', 'lecturerRecords'])

@@ -25,11 +25,11 @@ class TutorGradingController extends Controller
     {
         $activeSemester = SemesterService::active();
         $semesterId = $request->query('semester_id', $activeSemester->id);
-        $courseId   = $request->query('course_id');
+        $courseId = $request->query('course_id');
 
         $user = Auth::id();
         $semesters = SemesterService::list();
-        $lecturer  = Lecturer::where('user_id', $user)->firstOrFail();
+        $lecturer = Lecturer::where('user_id', $user)->firstOrFail();
 
         $details = PemicuDetails::with('teachingSchedule.course')
             ->where('lecturer_id', $lecturer->id)
@@ -61,10 +61,10 @@ class TutorGradingController extends Controller
 
         $tutors = $grouped->map(function ($group) use ($lecturer) {
 
-            $first     = $group->first();
-            $schedule  = $first->teachingSchedule;
-            $courseId  = $schedule->course_id;
-            $kelompok  = $first->kelompok_num;
+            $first = $group->first();
+            $schedule = $first->teachingSchedule;
+            $courseId = $schedule->course_id;
+            $kelompok = $first->kelompok_num;
 
             $pemicuKeList = $group->pluck('teachingSchedule.pemicu_ke')
                 ->unique()
@@ -93,28 +93,28 @@ class TutorGradingController extends Controller
 
                     PemicuScore::firstOrCreate(
                         [
-                            'course_student_id'      => $student->id,
-                            'pemicu_detail_id'       => $detail->id,
-                            'teaching_schedule_id'   => $schedule->id,
+                            'course_student_id' => $student->id,
+                            'pemicu_detail_id' => $detail->id,
+                            'teaching_schedule_id' => $schedule->id,
                         ],
                         [
-                            'disiplin'          => 0,
-                            'keaktifan'         => 0,
-                            'berpikir_kritis'   => 0,
-                            'info_baru'         => 0,
-                            'analisis_rumusan'  => 0,
-                            'total_score'       => 0,
+                            'disiplin' => 0,
+                            'keaktifan' => 0,
+                            'berpikir_kritis' => 0,
+                            'info_baru' => 0,
+                            'analisis_rumusan' => 0,
+                            'total_score' => 0,
                         ]
                     );
                 }
             });
 
             return [
-                'course'            => $schedule->course,
-                'kelompok'          => $kelompok,
-                'pemicu_ke'         => $pemicuKeList,
-                'pemicu'            => $pemicu,
-                'student_count'     => $studentCount,
+                'course' => $schedule->course,
+                'kelompok' => $kelompok,
+                'pemicu_ke' => $pemicuKeList,
+                'pemicu' => $pemicu,
+                'student_count' => $studentCount,
                 'pemicu_detail_ids' => $group->pluck('id')->values(),
             ];
         })->values();
@@ -170,7 +170,7 @@ class TutorGradingController extends Controller
         ]);
 
         $user = Auth::id();
-        $lecturer  = Lecturer::where('user_id', $user)->firstOrFail();
+        $lecturer = Lecturer::where('user_id', $user)->firstOrFail();
         $courseId = CourseStudent::where('id', $request->course_student_id)->firstOrFail()->course_id;
         $courseLecturer = $lecturer->courseLecturers()
             ->where('course_id', $courseId)

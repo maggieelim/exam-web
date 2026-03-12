@@ -8,6 +8,9 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class CourseStudentsSheet implements FromCollection, WithHeadings, WithTitle, WithStyles, ShouldAutoSize
@@ -29,8 +32,8 @@ class CourseStudentsSheet implements FromCollection, WithHeadings, WithTitle, Wi
       ->get()
       ->map(function ($item) {
         return [
-          'NIM'   => $item->student->nim,
-          'Nama'  => $item->student->user->name,
+          'NIM' => $item->student->nim,
+          'Nama' => $item->student->user->name,
           'Email' => $item->student->user->email,
           'Gender' => $item->student->user->gender,
           'Angkatan' => $item->student->angkatan
@@ -58,18 +61,18 @@ class CourseStudentsSheet implements FromCollection, WithHeadings, WithTitle, Wi
         'size' => 12,
       ],
       'alignment' => [
-        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        'vertical' => Alignment::VERTICAL_CENTER,
       ],
       'fill' => [
-        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+        'fillType' => Fill::FILL_SOLID,
         'startColor' => ['argb' => 'FF5CB6ED'], // warna biru muda #5cb6ed
       ],
     ]);
 
     // Tambahkan border tipis untuk semua sel
     $sheet->getStyle('A1:' . $sheet->getHighestColumn() . $sheet->getHighestRow())
-      ->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+      ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
     return [];
   }

@@ -76,7 +76,7 @@ class ExamAttemptController extends Controller
             ->first(['id', 'status', 'total_pause_seconds', 'is_paused', 'paused_at', 'started_at', 'question_order']);
 
         if (!$attempt || in_array($attempt->status, ['completed', 'timeout'])) {
-            return redirect()->route('student.studentExams.index')
+            return redirect()->route('exam.logout')
                 ->with('info', 'Ujian telah diselesaikan atau diakhiri oleh pengawas.');
         }
 
@@ -87,7 +87,7 @@ class ExamAttemptController extends Controller
 
         if (now()->greaterThan($endTime)) {
             $this->handleTimeout($attempt);
-            return redirect()->route('student.studentExams.index', ['status' => 'previous'])
+            return redirect()->route('exam.logout')
                 ->with('error', 'Waktu ujian telah habis.');
         }
 
@@ -207,7 +207,6 @@ class ExamAttemptController extends Controller
                 $score = $isCorrect ? 1 : 0;
             }
 
-            // Gunakan upsert untuk performa lebih baik (Laravel 8+)
             DB::table('exam_answers')->updateOrInsert(
                 [
                     'exam_id' => $examId,
@@ -286,7 +285,7 @@ class ExamAttemptController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('student.studentExams.index', ['status' => 'previous'])
+                ->route('exam.logout')
                 ->with('success', 'Ujian selesai!');
         } catch (\Exception $e) {
             DB::rollBack();

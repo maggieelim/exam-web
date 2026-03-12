@@ -16,7 +16,7 @@ class ExamAnalyticsService
 
     $nameFilter = $request?->get('name');
     $sortField = $request?->get('sort', 'rank');
-    $sortDir   = $request?->get('dir', 'asc');
+    $sortDir = $request?->get('dir', 'asc');
 
     $ranking = $exam->attempts->map(function ($attempt) use ($exam) {
       $userAnswers = $exam->answers->where('user_id', $attempt->user_id);
@@ -30,17 +30,17 @@ class ExamAnalyticsService
 
       $categoriesResult = $categories->map(function ($cat) use ($groupedAnswers, $exam) {
         $answers = $groupedAnswers->get($cat?->id, collect());
-        $totalCorrect  = $answers->where('is_correct', 1)->count();
+        $totalCorrect = $answers->where('is_correct', 1)->count();
         $totalQuestion = $exam->questions->where('category_id', $cat?->id)->count();
 
         return [
-          'category_id'    => $cat?->id,
-          'category_name'  => $cat?->name ?? 'Uncategorized',
-          'total_correct'  => $totalCorrect,
-          'total_wrong'    => max($totalQuestion - $totalCorrect, 0),
-          'total_score'    => $answers->sum('score'),
+          'category_id' => $cat?->id,
+          'category_name' => $cat?->name ?? 'Uncategorized',
+          'total_correct' => $totalCorrect,
+          'total_wrong' => max($totalQuestion - $totalCorrect, 0),
+          'total_score' => $answers->sum('score'),
           'total_question' => $totalQuestion,
-          'percentage'     => $totalQuestion ? round(($totalCorrect / $totalQuestion) * 100, 2) : 0,
+          'percentage' => $totalQuestion ? round(($totalCorrect / $totalQuestion) * 100, 2) : 0,
         ];
       })->values();
 
@@ -91,7 +91,7 @@ class ExamAnalyticsService
     $ranking = match ($sortField) {
       'rank' => $sortDir === 'asc' ? $ranking->sortBy('rank') : $ranking->sortByDesc('rank'),
       'score' => $sortDir === 'asc' ? $ranking->sortBy('score_percentage') : $ranking->sortByDesc('score_percentage'),
-      'nim'  => $sortDir === 'asc' ? $ranking->sortBy(fn($r) => $r['student_data']->nim ?? '') : $ranking->sortByDesc(fn($r) => $r['student_data']->nim ?? ''),
+      'nim' => $sortDir === 'asc' ? $ranking->sortBy(fn($r) => $r['student_data']->nim ?? '') : $ranking->sortByDesc(fn($r) => $r['student_data']->nim ?? ''),
       'name' => $sortDir === 'asc' ? $ranking->sortBy(fn($r) => $r['student']->name ?? '') : $ranking->sortByDesc(fn($r) => $r['student']->name ?? ''),
       default => $ranking->sortBy('rank'),
     };
@@ -141,28 +141,28 @@ class ExamAnalyticsService
 
     $discriminationData = [
       'Excellent (>0.4)' => 0,
-      'Good (0.3-0.39)'  => 0,
-      'Fair (0.2-0.29)'  => 0,
-      'Poor (0.1-0.19)'  => 0,
+      'Good (0.3-0.39)' => 0,
+      'Fair (0.2-0.29)' => 0,
+      'Poor (0.1-0.19)' => 0,
       'Very Poor (<0.1)' => 0,
     ];
 
     $questionAnalysis->each(function ($q) use (&$discriminationData) {
       $di = $q['discrimination_index'];
       match (true) {
-        $di > 0.4   => $discriminationData['Excellent (>0.4)']++,
-        $di >= 0.3  => $discriminationData['Good (0.3-0.39)']++,
-        $di >= 0.2  => $discriminationData['Fair (0.2-0.29)']++,
-        $di >= 0.1  => $discriminationData['Poor (0.1-0.19)']++,
-        default     => $discriminationData['Very Poor (<0.1)']++,
+        $di > 0.4 => $discriminationData['Excellent (>0.4)']++,
+        $di >= 0.3 => $discriminationData['Good (0.3-0.39)']++,
+        $di >= 0.2 => $discriminationData['Fair (0.2-0.29)']++,
+        $di >= 0.1 => $discriminationData['Poor (0.1-0.19)']++,
+        default => $discriminationData['Very Poor (<0.1)']++,
       };
     });
 
     $scoreRanges = [
-      '0-20'   => 0,
-      '21-40'  => 0,
-      '41-60'  => 0,
-      '61-80'  => 0,
+      '0-20' => 0,
+      '21-40' => 0,
+      '41-60' => 0,
+      '61-80' => 0,
       '81-100' => 0,
     ];
 
@@ -176,16 +176,16 @@ class ExamAnalyticsService
         $percentage <= 40 => '21-40',
         $percentage <= 60 => '41-60',
         $percentage <= 80 => '61-80',
-        default           => '81-100',
+        default => '81-100',
       };
 
       $scoreRanges[$range]++;
     });
 
     return [
-      'difficulty'    => $difficultyData,
+      'difficulty' => $difficultyData,
       'discrimination' => $discriminationData,
-      'scores'        => $scoreRanges,
+      'scores' => $scoreRanges,
     ];
   }
 

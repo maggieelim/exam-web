@@ -121,13 +121,13 @@ class CourseSkillsLabController extends Controller
                         SkillslabDetails::updateOrCreate(
                             [
                                 'teaching_schedule_id' => $skillLabId,
-                                'kelompok_num'        => $kelompok,
-                                'group_code'          => $detail->group_code ?? $schedule->group,
+                                'kelompok_num' => $kelompok,
+                                'group_code' => $detail->group_code ?? $schedule->group,
                             ],
                             [
-                                'lecturer_id'        => $lecturerId,
-                                'practicum_group_id'  => null,
-                                'course_schedule_id'  => $detail->course_schedule_id ?? $schedule->course_schedule_id,
+                                'lecturer_id' => $lecturerId,
+                                'practicum_group_id' => null,
+                                'course_schedule_id' => $detail->course_schedule_id ?? $schedule->course_schedule_id,
                             ]
                         );
 
