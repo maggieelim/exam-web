@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\PSSK;
 
 use App\Http\Controllers\Controller;
+use App\Models\CourseCoordinator;
 use App\Models\CourseLecturer;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
+use App\Models\ExamCredential;
 use App\Models\Lecturer;
 use DB;
 use Illuminate\Http\Request;
@@ -171,13 +173,18 @@ class OngoingExamController extends Controller
     public function resetAttempt(Request $request, $exam_code, $attempt_id)
     {
         $exam = Exam::where('exam_code', $exam_code)->firstOrFail();
-        $lecturer = CourseLecturer::where('course_id', $exam->course_id)->where('semester_id', $exam->semester_id)->get();
         $attempt = ExamAttempt::where('id', $attempt_id)->where('exam_id', $exam->id)->firstOrFail();
 
         // Authorization check
         /** @var \App\Models\User|\Spatie\Permission\Traits\HasRoles $user */
         $user = auth()->user();
-        if (!$user->hasRole('admin') && !$lecturer) {
+        $lecturerId = $user->lecturer?->id;
+        $koor = CourseCoordinator::where('course_id', $exam->course_id)
+            ->where('semester_id', $exam->semester_id)
+            ->where('lecturer_id', $lecturerId)
+            ->exists();
+
+        if (!$user->hasRole('admin') && !$koor) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -187,7 +194,11 @@ class OngoingExamController extends Controller
             DB::beginTransaction();
 
             ExamAnswer::where('exam_id', $exam->id)->where('user_id', $attempt->user_id)->delete();
-
+            ExamCredential::where('id', $attempt->credential_id)->update([
+                'nim' => null,
+                'is_used' => 0,
+                'used_at' => null
+            ]);
             $attempt->delete();
 
             DB::commit();

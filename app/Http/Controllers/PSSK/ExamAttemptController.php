@@ -297,12 +297,16 @@ class ExamAttemptController extends Controller
     public function checkExamStatus($exam_code)
     {
         $userId = auth()->id();
+        $examId = Cache::remember(
+            "exam_code_{$exam_code}",
+            3600,
+            fn() => Exam::where('exam_code', $exam_code)->value('id')
+        );
 
         $attempt = DB::table('exam_attempts')
-            ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
-            ->where('exams.exam_code', $exam_code)
-            ->where('exam_attempts.user_id', $userId)
-            ->first(['exam_attempts.status', 'exam_attempts.is_paused', 'exam_attempts.paused_at']);
+            ->where('exam_id', $examId)
+            ->where('user_id', $userId)
+            ->first(['status', 'is_paused', 'paused_at']);
 
         return response()->json([
             'user' => $userId,

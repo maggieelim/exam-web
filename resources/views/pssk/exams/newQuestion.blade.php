@@ -1,4 +1,3 @@
-<!-- Modal Upload Excel -->
 <div class="modal fade" id="reuploadModal" tabindex="-1" aria-labelledby="reuploadModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -48,8 +47,6 @@
 <div class="modal fade" id="newQuestionModal" tabindex="-1" aria-labelledby="newQuestionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-
-
             <form action="{{ route('exams.newQuestion', $exam->exam_code) }}" method="POST"
                 enctype="multipart/form-data">
                 @csrf
@@ -74,7 +71,7 @@
                     {{-- BADAN SOAL --}}
                     <div class="mb-2">
                         <label class="form-label">Badan Soal</label>
-                        <textarea name="badan_soal" class="form-control form-control-sm" rows="1" required></textarea>
+                        <textarea name="badan_soal" class="form-control form-control-sm" rows="1"></textarea>
                     </div>
 
                     {{-- KALIMAT TANYA + IMAGE --}}
@@ -114,7 +111,6 @@
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-sm btn-primary">Tambah Soal</button>
                 </div>
-
             </form>
         </div>
     </div>

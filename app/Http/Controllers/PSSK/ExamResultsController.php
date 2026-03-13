@@ -522,10 +522,10 @@ class ExamResultsController extends Controller
 
         // SORT
         $sortable = [
-            'nim'   => 'students.nim',
-            'name'  => 'users.name',
+            'nim' => 'students.nim',
+            'name' => 'users.name',
             'score' => 'correct_count',
-            'rank'  => 'correct_count',
+            'rank' => 'correct_count',
         ];
 
         if (isset($sortable[$sortField])) {

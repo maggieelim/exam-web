@@ -75,13 +75,13 @@ class StudentExamResultsController extends Controller
                 $totalQuestions = $questions->count();
 
                 $categoriesResult->push([
-                    'category_id'    => $categoryId,
-                    'category_name'  => $questions->first()->category->name ?? 'Uncategorized',
-                    'total_correct'  => $totalCorrect,
-                    'total_wrong'    => $totalQuestions - $totalCorrect,
-                    'total_score'    => $categoryAnswers->sum('score'),
+                    'category_id' => $categoryId,
+                    'category_name' => $questions->first()->category->name ?? 'Uncategorized',
+                    'total_correct' => $totalCorrect,
+                    'total_wrong' => $totalQuestions - $totalCorrect,
+                    'total_score' => $categoryAnswers->sum('score'),
                     'total_question' => $totalQuestions,
-                    'percentage'     => $totalQuestions > 0
+                    'percentage' => $totalQuestions > 0
                         ? round(($totalCorrect / $totalQuestions) * 100, 2)
                         : 0,
                 ]);
@@ -94,13 +94,13 @@ class StudentExamResultsController extends Controller
                 $totalQuestions = $uncategorizedAnswers->count(); // Karena tidak ada question data
 
                 $categoriesResult->push([
-                    'category_id'    => null,
-                    'category_name'  => 'Uncategorized',
-                    'total_correct'  => $totalCorrect,
-                    'total_wrong'    => $totalQuestions - $totalCorrect,
-                    'total_score'    => $uncategorizedAnswers->sum('score'),
+                    'category_id' => null,
+                    'category_name' => 'Uncategorized',
+                    'total_correct' => $totalCorrect,
+                    'total_wrong' => $totalQuestions - $totalCorrect,
+                    'total_score' => $uncategorizedAnswers->sum('score'),
                     'total_question' => $totalQuestions,
-                    'percentage'     => $totalQuestions > 0
+                    'percentage' => $totalQuestions > 0
                         ? round(($totalCorrect / $totalQuestions) * 100, 2)
                         : 0,
                 ]);
@@ -110,7 +110,7 @@ class StudentExamResultsController extends Controller
         });
 
         $sort = $request->get('sort', 'exam_date');
-        $dir  = $request->get('dir', 'desc');
+        $dir = $request->get('dir', 'desc');
 
         return view('students.results.index', compact('exams', 'courses', 'sort', 'dir'));
     }
@@ -164,21 +164,21 @@ class StudentExamResultsController extends Controller
         $totalQuestions = $exam->questions->count();
 
         $questionsByCategory = $exam->questions->groupBy('category_id');
-        $answersByCategory   = $allUserAnswers->groupBy(fn($ans) => $ans->question->category_id ?? 'uncategorized');
+        $answersByCategory = $allUserAnswers->groupBy(fn($ans) => $ans->question->category_id ?? 'uncategorized');
 
         $categoriesResult = $questionsByCategory->map(function ($questions, $categoryId) use ($answersByCategory) {
-            $answers       = $answersByCategory->get($categoryId, collect());
-            $totalCorrect  = $answers->where('is_correct', true)->count();
+            $answers = $answersByCategory->get($categoryId, collect());
+            $totalCorrect = $answers->where('is_correct', true)->count();
             $totalQuestion = $questions->count();
 
             return [
-                'category_id'    => $categoryId,
-                'category_name'  => $questions->first()->category->name ?? 'Uncategorized',
-                'total_correct'  => $totalCorrect,
-                'total_wrong'    => $totalQuestion - $totalCorrect,
-                'total_score'    => $answers->sum('score'),
+                'category_id' => $categoryId,
+                'category_name' => $questions->first()->category->name ?? 'Uncategorized',
+                'total_correct' => $totalCorrect,
+                'total_wrong' => $totalQuestion - $totalCorrect,
+                'total_score' => $answers->sum('score'),
                 'total_question' => $totalQuestion,
-                'percentage'     => $totalQuestion > 0 ? round(($totalCorrect / $totalQuestion) * 100, 2) : 0,
+                'percentage' => $totalQuestion > 0 ? round(($totalCorrect / $totalQuestion) * 100, 2) : 0,
             ];
         })->values();
 
@@ -187,13 +187,13 @@ class StudentExamResultsController extends Controller
             $uncat = $answersByCategory->get('uncategorized');
 
             $categoriesResult->push([
-                'category_id'    => null,
-                'category_name'  => 'Uncategorized',
-                'total_correct'  => $uncat->where('is_correct', true)->count(),
-                'total_wrong'    => $uncat->count() - $uncat->where('is_correct', true)->count(),
-                'total_score'    => $uncat->sum('score'),
+                'category_id' => null,
+                'category_name' => 'Uncategorized',
+                'total_correct' => $uncat->where('is_correct', true)->count(),
+                'total_wrong' => $uncat->count() - $uncat->where('is_correct', true)->count(),
+                'total_score' => $uncat->sum('score'),
                 'total_question' => $uncat->count(),
-                'percentage'     => round(($uncat->where('is_correct', true)->count() / max($uncat->count(), 1)) * 100, 2),
+                'percentage' => round(($uncat->where('is_correct', true)->count() / max($uncat->count(), 1)) * 100, 2),
             ]);
         }
 

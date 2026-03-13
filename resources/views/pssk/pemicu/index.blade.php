@@ -32,8 +32,7 @@
                             <label for="semester_id" class="form-label mb-1">Semester</label>
                             <select name="semester_id" id="semester_id" class="form-select">
                                 @foreach ($semesters as $semester)
-                                <option value="{{ $semester->id }}" {{ $semesterId==$semester->id ? 'selected' : ''
-                                    }}>
+                                <option value="{{ $semester->id }}" {{ $semesterId==$semester->id ? 'selected' : '' }}>
                                     {{ $semester->semester_name }} - {{ $semester->academicYear->year_name }}
                                     @if ($activeSemester && $semester->id == $activeSemester->id)
                                     (Active)
@@ -48,8 +47,7 @@
                                 <option value="">All</option>
 
                                 @foreach ($courses ?? [] as $course)
-                                <option value="{{ $course->id }}" @selected(request('course_id')==$course->id)
-                                    >
+                                <option value="{{ $course->id }}" @selected(request('course_id')==$course->id)>
                                     {{ $course->name }}
                                 </option>
                                 @endforeach
@@ -92,22 +90,22 @@
                         @forelse ($tutors as $tutor)
                         <tr>
                             <td class="align-middle text-sm text-center">
-                                {{ $tutor['course']->name}}
+                                {{ $tutor['course']->name }}
                             </td>
                             <td class="align-middle text-sm text-center">
                                 Pemicu-{{ $tutor['pemicu'] }}
                             </td>
                             <td class="align-middle text-sm text-center">
-                                {{ $tutor['kelompok']}}
+                                {{ $tutor['kelompok'] }}
                             </td>
                             <td class="align-middle text-center text-sm">
-                                {{ $tutor['student_count']}}
+                                {{ $tutor['student_count'] }}
                             </td>
                             <td class="align-middle text-sm text-center">
                                 <a href="{{ route('tutors.detail', [
-                                  'course' =>  $tutor['course']->id,
-                                    'kelompok' => $tutor['kelompok'],
-                                    'pemicu' => json_encode($tutor['pemicu_detail_ids'])
+                                            'course' => $tutor['course']->id,
+                                            'kelompok' => $tutor['kelompok'],
+                                            'pemicu' => json_encode($tutor['pemicu_detail_ids']),
                                         ]) }}" class="btn bg-gradient-secondary m-1 p-2 px-3" title="Info">
                                     <i class="fas fa-info-circle"></i>
                                 </a>
@@ -135,11 +133,10 @@
     </div>
     <div class="d-block d-md-none">
         @forelse ($tutors as $tutor)
-
         <div class="card mb-3 shadow-sm">
             <div class="card-body p-2 m-2 mb-0">
                 <div class="d-flex justify-content-between align-items-start">
-                    <h6>{{ $tutor['course']->name}}</h6>
+                    <h6>{{ $tutor['course']->name }}</h6>
                     <h6>Pemicu-{{ $tutor['pemicu'] }}</h6>
                 </div>
 
@@ -150,9 +147,9 @@
 
                 <div class="d-flex flex-wrap">
                     <a href="{{ route('tutors.detail', [
-                      'course' =>  $tutor['course']->id,
-                        'kelompok' => $tutor['kelompok'],
-                        'pemicu' => json_encode($tutor['pemicu_detail_ids'])
+                                'course' => $tutor['course']->id,
+                                'kelompok' => $tutor['kelompok'],
+                                'pemicu' => json_encode($tutor['pemicu_detail_ids']),
                             ]) }}" class="btn btn-sm btn-info flex-fill" title="Info">
                         <i class="fas fa-info-circle"></i> Detail
                     </a>

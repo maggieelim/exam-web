@@ -24,11 +24,12 @@
                                 @csrf
 
                                 <input type="hidden" name="credential" value="{{ $credential->id }}">
-
                                 <!-- Student Info -->
-                                <div class="text-center">
-                                    <h5 class="mb-1">{{ $student->user->name ?? '-' }}</h5>
-                                    <span class="text-muted">NIM: {{ $student->nim ?? '-' }}</span>
+                                <div class="text-center mb-3">
+                                    <h4>{{ $credential->exam->title }} Blok {{ $credential->exam->course->name }}</h4>
+                                    <span class="fw-bold">Name: {{ $student->user->name ?? '-' }}</span>
+                                    <br>
+                                    <span class="fw-bold">NIM: {{ $student->nim ?? '-' }}</span>
                                 </div>
 
                                 <!-- Password -->
@@ -48,7 +49,6 @@
                                         <i class="fas fa-play me-1"></i> Start Exam
                                     </button>
                                 </div>
-
                             </form>
                         </div>
                     </div>

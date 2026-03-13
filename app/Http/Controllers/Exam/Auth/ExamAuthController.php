@@ -31,8 +31,6 @@ class ExamAuthController extends Controller
             'nim' => 'required'
         ]);
 
-        DB::beginTransaction();
-
         try {
 
             $credential = ExamCredential::where('username', $request->username)->first();
@@ -51,13 +49,24 @@ class ExamAuthController extends Controller
                 return back()->with('error', 'Ujian sudah berakhir');
             }
 
-            $student = Student::where('nim', $request->nim)->first();
+            $student = Student::with('user')
+                ->where('nim', $request->nim)
+                ->first();
 
             if (!$student) {
                 return back()->with('error', 'NIM tidak ditemukan.');
             }
 
-            $user = User::findOrFail($student->user_id);
+            $user = $student->user;
+
+            $nimExists = ExamCredential::where('exam_id', $credential->exam_id)
+                ->where('nim', $student->nim)
+                ->where('id', '!=', $credential->id)
+                ->exists();
+
+            if ($nimExists) {
+                return back()->with('error', 'Anda sudah memiliki credential untuk ujian ini.');
+            }
 
             if ($credential->nim && $credential->nim !== $student->nim) {
                 return back()->with('error', 'Credential sudah digunakan oleh mahasiswa lain.');
@@ -73,12 +82,11 @@ class ExamAuthController extends Controller
 
             $attempt = ExamAttempt::where('user_id', $user->id)
                 ->where('exam_id', $exam->id)
-                ->lockForUpdate()
                 ->first();
 
             if ($attempt) {
 
-                if ($attempt->status === 'completed') {
+                if ($attempt->status === 'completed' || $attempt->status === 'timeout') {
                     if ($attempt->credential_id !== $credential->id) {
                         return back()->with('error', 'Anda sudah menyelesaikan ujian ini menggunakan token yang berbeda.');
                     }
@@ -90,24 +98,15 @@ class ExamAuthController extends Controller
                 }
             }
 
-            $credential->update([
-                'nim' => $student->nim,
-                'is_used' => true,
-                'used_at' => now()
-            ]);
-
-            DB::commit();
-
+            // simpan sementara
             session([
                 'exam_credential_id' => $credential->id,
                 'exam_exam_id' => $credential->exam_id,
-                'exam_nim' => $student->nim
+                'exam_nim_temp' => $student->nim
             ]);
 
             return redirect()->route('exam.identity');
         } catch (\Exception $e) {
-
-            DB::rollBack();
 
             return back()->with('error', 'Terjadi kesalahan sistem.');
         }
@@ -119,7 +118,11 @@ class ExamAuthController extends Controller
             return redirect()->route('exam.login');
         }
         $credential = ExamCredential::findOrFail(session('exam_credential_id'));
-        $student = Student::where('nim', $credential->nim)->first();
+        if ($credential->nim) {
+            $student = Student::where('nim', $credential->nim)->first();
+        } else {
+            $student = Student::where('nim', session('exam_nim_temp'))->first();
+        }
         return view('students.auth.identity', compact('credential', 'student'));
     }
 
@@ -131,7 +134,7 @@ class ExamAuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (!session()->has('exam_credential_id')) {
+        if (!session()->has('exam_credential_id') || !session()->has('exam_nim_temp')) {
             return redirect()->route('exam.examLogin');
         }
 
@@ -152,7 +155,7 @@ class ExamAuthController extends Controller
                 session()->forget([
                     'exam_credential_id',
                     'exam_exam_id',
-                    'exam_nim'
+                    'exam_nim_temp'
                 ]);
 
                 return redirect()
@@ -160,8 +163,28 @@ class ExamAuthController extends Controller
                     ->with('error', 'Credential tidak valid.');
             }
 
-            $student = Student::where('nim', $credential->nim)->first();
+            $nim = session('exam_nim_temp');
+            $nimExists = ExamCredential::where('exam_id', $exam->id)
+                ->where('nim', $nim)
+                ->where('id', '!=', $credential->id)
+                ->exists();
 
+            if ($nimExists) {
+                DB::rollBack();
+                return redirect()->route('exam.examLogin')
+                    ->with('error', 'NIM sudah memiliki credential lain.');
+            }
+
+            // kunci credential ke nim
+            if (!$credential->nim) {
+                $credential->update([
+                    'nim' => $nim,
+                    'is_used' => true,
+                    'used_at' => now()
+                ]);
+            }
+
+            $student = Student::where('nim', $nim)->first();
             $user = User::findOrFail($student->user_id);
 
             // Lock attempt untuk hindari double create
@@ -177,12 +200,12 @@ class ExamAuthController extends Controller
                     ->values();
 
                 $attempt = ExamAttempt::create([
-                    'user_id'        => $user->id,
-                    'exam_id'        => $exam->id,
+                    'user_id' => $user->id,
+                    'exam_id' => $exam->id,
                     'credential_id' => $credential->id,
-                    'status'         => 'in_progress',
+                    'status' => 'in_progress',
                     'question_order' => $questionOrder->toJson(),
-                    'started_at'     => now(),
+                    'started_at' => now(),
                 ]);
             }
 
@@ -191,8 +214,11 @@ class ExamAuthController extends Controller
             Auth::login($user);
 
             session([
+                'exam_nim' => $nim,
                 'context' => strtolower($student->type)
             ]);
+
+            session()->forget('exam_nim_temp');
 
             return redirect()->route('student.exams.do', $exam->exam_code);
         } catch (\Exception $e) {
@@ -203,13 +229,26 @@ class ExamAuthController extends Controller
 
     public function logout()
     {
+        $success = session('success');
+        $info = session('info');
+        $error = session('error');
+
         Auth::logout();
 
         session()->forget([
             'exam_credential_id',
             'exam_exam_id',
-            'exam_student_id'
+            'exam_nim',
+            'exam_nim_temp'
         ]);
-        return redirect()->route('exam.examLogin');
+
+        session()->invalidate();
+        session()->regenerateToken();
+
+        return redirect()->route('exam.examLogin')->with([
+            'success' => $success,
+            'info' => $info,
+            'error' => $error,
+        ]);
     }
 }

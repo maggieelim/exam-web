@@ -46,8 +46,7 @@ class ExamController extends Controller
 
         $credentials = [];
         $usedUsernames = []; // penampung lokal
-        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
+        $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         $total = count($students) + 10;
 
         for ($i = 0; $i < $total; $i++) {
