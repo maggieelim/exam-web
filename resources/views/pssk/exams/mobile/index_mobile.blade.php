@@ -6,10 +6,6 @@
         <h5 class="mb-0">Exams List</h5>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ route('exams.create') }}" class="btn btn-primary d-flex align-items-center justify-content-center"
-            style="height: 32px;">
-            <i class="fas fa-plus"></i> New Exam
-        </a>
         <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
             style="width: 32px; height: 32px;" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse"
             aria-expanded="false" aria-controls="filterCollapse" title="Filter Data">
@@ -90,7 +86,7 @@
                     </p>
                     {{-- Tombol Aksi --}}
                     <div class="my-auto pt-2">
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
                             @if ($exam->status === 'upcoming')
                             <button type="button" class="btn bg-gradient-success flex-fill start-exam-btn"
                                 data-exam-id="{{ $exam->id }}" data-exam-title="{{ $exam->title }}"
@@ -107,9 +103,24 @@
                                 title="Exam Participants">
                                 <i class="fas fa-users"></i> </a>
                             @else
-                            <a class="btn flex-fill bg-secondary text-white">Ended</a>
+                            @if ($exam->is_published)
+                            <a href="{{ route('lecturer.grade.published', [$exam->exam_code]) }}"
+                                class="btn bg-gradient-success flex-fill">Graded</a>
+                            <a href="{{ route('lecturer.results.show.published', [$exam->exam_code]) }}"
+                                class="btn bg-gradient-primary">
+                                <i class="fas fa-chart-line"></i>
+                            </a>
+                            @else
+                            <a href="{{ route('lecturer.grade.ungraded', [$exam->exam_code]) }}"
+                                class="btn bg-gradient-info flex-fill">Grade</a>
+                            <a href="{{ route('lecturer.results.show.ungraded', [$exam->exam_code]) }}"
+                                class="btn bg-gradient-primary">
+                                <i class="fas fa-chart-line"></i>
+                            </a>
                             @endif
-                            <div class="flex-fill  btn-group">
+                            @endif
+                            @if ($exam->status !=='previous')
+                            <div class="flex-fill btn-group">
                                 <a class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     <i class="fa-solid fa-pen "></i>
@@ -127,8 +138,18 @@
                                             <i class="fas fa-edit text-warning me-2"></i> Manage Questions
                                         </a>
                                     </li>
+                                    <li>
+                                        <form method="POST"
+                                            action="{{ route('exams.generate-credentials', $exam->id) }}">
+                                            @csrf
+                                            <button class="dropdown-item" type="submit"><i
+                                                    class="fa-solid text-info fa-key me-2"></i>
+                                                Generate Token</button>
+                                        </form>
+                                    </li>
                                 </ul>
                             </div>
+                            @endif
                             <a href="{{ route('exams.show.' . $status, [$exam->exam_code]) }}"
                                 class="btn flex-fill btn-outline-secondary" title="Lihat Detail">
                                 <i class="fas fa-info-circle "></i>

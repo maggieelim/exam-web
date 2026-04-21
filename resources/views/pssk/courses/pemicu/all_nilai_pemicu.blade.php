@@ -3,6 +3,31 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        .compact-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .compact-table td,
+        .compact-table th {
+            border: 1px solid #000;
+            padding: 8px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-sm {
+            font-size: 12px;
+        }
+
+        .group-header {
+            font-weight: bold;
+            background: #d9d9d9;
+        }
+    </style>
 </head>
 
 <body>
@@ -24,23 +49,28 @@
         </thead>
 
         <tbody>
+            @php
+            $globalRowNumber = 3; // Mulai dari baris 3 karena baris 1-2 adalah header
+            @endphp
+
             @foreach ($groupedStudents as $kelompok => $students)
+            @php
+            $colspan = 2 + ($preGroup * 2); // NIM + Nama + (preGroup * 2 kolom)
+            $globalRowNumber++; // Baris untuk header kelompok
+            @endphp
+
+            <!-- Baris Header Kelompok -->
             <tr>
-                @php
-                $colspan = 3 + ($preGroup * 2);
-                @endphp
-                <td class="group-header" style="font-weight: bold; background: #d9d9d9;">
+                <td class="group-header" colspan="{{ $colspan }}" style="font-weight: bold; background: #d9d9d9;">
                     Kelompok: {{ $kelompok }} (Jumlah = {{ $students->count() }} Siswa)
                 </td>
-                @for ($i = 2; $i <= $colspan; $i++) <td style="background: #d9d9d9;">
-                    </td>
-                    @endfor
             </tr>
 
             @foreach ($students as $cs)
             @php
             $studentScores = $scores[$cs->id] ?? collect();
             $lecturerName = $groupLecturer[$cs->kelompok] ?? '-';
+            $colIndex = 3; // Mulai dari kolom C (karena A=NIM, B=Nama)
             @endphp
 
             <tr>
@@ -59,15 +89,24 @@
                 $scoreD2 = $studentScores->where('teaching_schedule_id', $id2)->first();
 
                 $total = ($scoreD1->total_score ?? 0) + ($scoreD2->total_score ?? 0);
-                $maxScore = 24;
-                $percent = $maxScore > 0 ? ($total / $maxScore) * 100 : 0;
+
+                // convert angka ke huruf kolom Excel
+                $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
                 @endphp
 
                 <td class="text-center text-sm">{{ $total }}</td>
-                <td class="text-center text-sm">{{ number_format($percent, 2) }}</td>
-                @endforeach
+                <td class="text-center text-sm">
+                    =ROUND({{ $columnLetter }}{{ $globalRowNumber }}/24*100,2)
+                </td>
 
+                @php
+                $colIndex += 2; // karena tiap pemicu ada 2 kolom (Total & Nilai)
+                @endphp
+                @endforeach
             </tr>
+            @php
+            $globalRowNumber++; // Increment untuk baris berikutnya
+            @endphp
             @endforeach
             @endforeach
         </tbody>

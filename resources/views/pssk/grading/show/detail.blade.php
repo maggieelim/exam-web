@@ -21,10 +21,9 @@
                         <select name="difficulty_level" id="difficulty_level" class="form-control">
                             <option value="">-- All Levels --</option>
                             @foreach ($difficultyLevel as $level)
-                                <option value="{{ $level }}"
-                                    {{ request('difficulty_level') == $level ? 'selected' : '' }}>
-                                    {{ $level }}
-                                </option>
+                            <option value="{{ $level }}" {{ request('difficulty_level')==$level ? 'selected' : '' }}>
+                                {{ $level }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -44,15 +43,14 @@
     </div>
 </div>
 @forelse($questionAnalysisPaginator as $analysis)
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
-                <!-- Benar -->
-                <div class="d-flex align-items-center">
-                    <span class="fw-semibold">Correct:</span>
-                    <span class="ms-2">{{ $analysis['correct_count'] }}/{{ $analysis['total_students'] }}</span>
-                    <span
-                        class="badge ms-2 
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+            <!-- Benar -->
+            <div class="d-flex align-items-center">
+                <span class="fw-semibold">Correct:</span>
+                <span class="ms-2">{{ $analysis['correct_count'] }}/{{ $analysis['total_students'] }}</span>
+                <span class="badge ms-2 
             {{ $analysis['correct_percentage'] >= 80
                 ? 'bg-gradient-success'
                 : ($analysis['correct_percentage'] >= 60
@@ -60,15 +58,14 @@
                     : ($analysis['correct_percentage'] >= 40
                         ? 'bg-gradient-warning'
                         : 'bg-gradient-danger')) }}">
-                        {{ $analysis['correct_percentage'] }}%
-                    </span>
-                </div>
+                    {{ $analysis['correct_percentage'] }}%
+                </span>
+            </div>
 
-                <!-- Daya Pembeda -->
-                <div class="d-flex align-items-center">
-                    <span class="fw-semibold">Discrimination Index:</span>
-                    <span
-                        class="badge ms-2 
+            <!-- Daya Pembeda -->
+            <div class="d-flex align-items-center">
+                <span class="fw-semibold">Discrimination Index:</span>
+                <span class="badge ms-2 
             {{ $analysis['discrimination_index'] > 0.4
                 ? 'bg-gradient-success'
                 : ($analysis['discrimination_index'] >= 0.3
@@ -78,15 +75,14 @@
                         : ($analysis['discrimination_index'] >= 0.1
                             ? 'bg-gradient-orange'
                             : 'bg-gradient-danger'))) }}">
-                        {{ $analysis['discrimination_index'] }}
-                    </span>
-                </div>
+                    {{ $analysis['discrimination_index'] }}
+                </span>
+            </div>
 
-                <!-- Tingkat Kesulitan -->
-                <div class="d-flex align-items-center">
-                    <span class="fw-semibold">Difficulty:</span>
-                    <span
-                        class="badge ms-2 
+            <!-- Tingkat Kesulitan -->
+            <div class="d-flex align-items-center">
+                <span class="fw-semibold">Difficulty:</span>
+                <span class="badge ms-2 
             {{ $analysis['difficulty_level'] == 'Easy'
                 ? 'bg-gradient-success'
                 : ($analysis['difficulty_level'] == 'Medium'
@@ -94,62 +90,62 @@
                     : ($analysis['difficulty_level'] == 'Fair'
                         ? 'bg-gradient-warning'
                         : 'bg-gradient-danger')) }}">
-                        {{ $analysis['difficulty_level'] }}
-                    </span>
-                </div>
+                    {{ $analysis['difficulty_level'] }}
+                </span>
             </div>
+        </div>
 
-            <div class="mb-0">
-                @if (!empty($analysis['question_text']))
-                    <p class="fw-bold mb-1">{{ $analysis['question_text'] }}</p>
-                @endif
-                @if (!empty($analysis['question']))
-                    <p class="text-muted mb-0">{{ $analysis['question'] }}</p>
-                @endif
-            </div>
-
-            @if ($analysis['image'])
-                <div class="my-3">
-                    <img src="{{ asset('storage/' . $analysis['image']) }}" alt="Gambar Soal"
-                        class="img-fluid rounded shadow-sm" style="max-width: 400px;">
-                </div>
+        <div class="mb-0">
+            @if (!empty($analysis['question_text']))
+            <p class="fw-bold mb-1">{{ $analysis['question_text'] }}</p>
             @endif
+            @if (!empty($analysis['question']))
+            <p class="text-muted mb-0">{{ $analysis['question'] }}</p>
+            @endif
+        </div>
 
-            @if (!empty($optionsAnalysis[$analysis['question_id']]))
-                <div class="row mt-2">
-                    @foreach ($optionsAnalysis[$analysis['question_id']] as $optionIndex => $option)
-                        <div class="col-12">
-                            <div class="d-flex align-items-start  p-2 rounded hover-effect">
-                                {{-- Kolom Huruf Opsi --}}
-                                <div class="fw-bold text-center me-3" style="width: 35px; flex-shrink: 0;">
-                                    {{ chr(65 + $optionIndex) }}.
-                                </div>
-                                <div title="{{ $option['option_text'] ?? '' }}">
-                                    {{ $option['option_text'] ?? '' }}
-                                </div>
-                                <div class="text-center me-3" style="width: 35px; flex-shrink: 0;">
-                                    @if (!empty($option['is_correct']))
-                                        <span class="text-success">✔</span>
-                                    @endif
-                                </div>
-                                <div class="text-center me-3" style="width: 85px; flex-shrink: 0;">
-                                    <span class="badge bg-light text-dark px-2 py-1">
-                                        {{ $option['percentage'] ?? 0 }}%
-                                    </span>
-                                </div>
-                                <div class="text-center text-muted" style=" flex-shrink: 0;">
-                                    ({{ $option['count'] ?? 0 }} siswa)
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+        @if ($analysis['image'])
+        <div class="my-3">
+            <img src="{{ asset('storage/' . $analysis['image']) }}" alt="Gambar Soal"
+                class="img-fluid rounded shadow-sm" style="max-width: 400px;">
+        </div>
+        @endif
+
+        @if (!empty($optionsAnalysis[$analysis['question_id']]))
+        <div class="row mt-2">
+            @foreach ($optionsAnalysis[$analysis['question_id']] as $optionIndex => $option)
+            <div class="col-12">
+                <div class="d-flex align-items-start p-2 rounded hover-effect">
+                    {{-- Kolom Huruf Opsi --}}
+                    <div class="fw-bold text-center me-3" style="width: 35px; flex-shrink: 0;">
+                        {{ chr(65 + $optionIndex) }}.
+                    </div>
+                    <div title="{{ $option['option_text'] ?? '' }}">
+                        {{ $option['option_text'] ?? '' }}
+                    </div>
+                    <div class="text-center me-3" style="width: 35px; flex-shrink: 0;">
+                        @if (!empty($option['is_correct']))
+                        <span class="text-success">✔</span>
+                        @endif
+                    </div>
+                    <div class="text-center me-3" style="width: 85px; flex-shrink: 0;">
+                        <span class="badge bg-light text-dark px-2 py-1">
+                            {{ $option['percentage'] ?? 0 }}%
+                        </span>
+                    </div>
+                    <div class="text-center text-muted" style=" flex-shrink: 0;">
+                        ({{ $option['count'] ?? 0 }} siswa)
+                    </div>
                 </div>
+            </div>
+            @endforeach
         </div>
+    </div>
     @else
-        <div class="alert alert-warning m-2">
-            Tidak ada data analisis untuk soal ini.
-        </div>
-@endif
+    <div class="alert alert-warning m-2">
+        Tidak ada data analisis untuk soal ini.
+    </div>
+    @endif
 </div>
 @empty
 <div>

@@ -45,11 +45,15 @@ $charts = [
                         label: 'Number of Students',
                         data: Object.values(@json($chartData['scores'] ?? [])),
                         backgroundColor: [
-                            '#e63946', // merah lembut
-                            '#f77f00', // oranye terang
-                            '#ffba08', // kuning
-                            '#90be6d', // hijau muda
-                            '#4eaf04ff' // hijau tua
+                            '#dc3545', // E (merah tua)
+                            '#e5533d', // D
+                            '#f46a3a', // C
+                            '#f59e42', // C+
+                            '#ffc107', // B-
+                            '#d4d943', // B
+                            '#a3d977', // B+
+                            '#6fca9b', // A-
+                            '#198754' // A (hijau)
                         ],
                         borderWidth: 2,
                         borderColor: '#ffffff',

@@ -35,7 +35,7 @@
                                 <!-- Password -->
                                 <div class="mb-3">
                                     <label class="form-label">Exam Password</label>
-                                    <input type="password" class="form-control" name="password" autocomplete="off"
+                                    <input type="text" class="form-control" name="password" autocomplete="off"
                                         placeholder="Enter exam password">
 
                                     @error('password')

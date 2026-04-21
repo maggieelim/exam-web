@@ -75,19 +75,20 @@ class ExamQuestionController extends Controller
             'exam_id' => $exam->id,
             'name' => trim($validated['category_name']),
         ]);
+
+        $lastNumber = ExamQuestion::where('exam_id', $exam->id)
+            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(kode_soal, '-', -1) AS UNSIGNED)) as max_number")
+            ->value('max_number');
+
+        $nextNumber = $lastNumber ? $lastNumber + 1 : 1;
+
         // SIMPAN SOAL
         $question = ExamQuestion::create([
             'exam_id' => $exam->id,
             'category_id' => $category->id,
             'badan_soal' => $validated['badan_soal'],
             'kalimat_tanya' => $validated['kalimat_tanya'],
-            'kode_soal' => $exam->exam_code . '-' .
-                str_pad(
-                    ExamQuestion::where('exam_id', $exam->id)->count() + 1,
-                    3,
-                    '0',
-                    STR_PAD_LEFT
-                ),
+            'kode_soal' => $exam->exam_code . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT),
             'image' => isset($validated['image'])
                 ? $validated['image']->store('questions', 'public')
                 : null,
@@ -481,7 +482,7 @@ class ExamQuestionController extends Controller
     {
         $questions = [];
         $currentCategory = '-';
-        $questionRegex = '/(?:### Kategori:\s*(.+?)\n)?### Soal (\d+):\s*\n([\s\S]*?)\*Kunci:\s*([A-E,\s]+)/i';
+        $questionRegex = '/(?:#{0,3}\s*Kategori[^A-Za-z0-9]*\s*(.+?)\n)?#{0,3}\s*Soal[^0-9]*\s*(\d+)[\:\.]?\s*\n([\s\S]*?)\*?\s*Kunci[^A-E]*([A-E,\s]+)/i';
         preg_match_all($questionRegex, $text, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {

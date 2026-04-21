@@ -43,7 +43,7 @@
           </div>
 
           {{-- Semester Genap --}}
-          <h6 class="fw-bold  mt-2">Semester {{ $semester->semester_name }}</h6>
+          <h6 class="fw-bold mt-2">Semester {{ $semester->semester_name }}</h6>
           <div class="row mb-4">
             <div class="col-md-6 mb-3">
               <label for="semester_start" class="form-label">Tanggal Mulai Semester</label>

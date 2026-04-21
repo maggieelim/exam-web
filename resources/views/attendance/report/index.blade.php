@@ -55,7 +55,7 @@
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-wrap text-center">
                                     Kegiatan
                                 </th>
-                                <th class="text-uppercase text-dark text-sm font-weight-bolder  text-center">
+                                <th class="text-uppercase text-dark text-sm font-weight-bolder text-center">
                                     Tanggal
                                 </th>
                                 <th class="text-uppercase text-dark text-sm font-weight-bolder text-center text-wrap">

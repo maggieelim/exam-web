@@ -40,7 +40,7 @@
           </div>
 
           {{-- Semester Ganjil --}}
-          <h6 class="fw-bold  mt-2">Semester Ganjil</h6>
+          <h6 class="fw-bold mt-2">Semester Ganjil</h6>
           <div class="row mb-4">
             <div class="col-md-6 mb-3">
               <label for="odd_start" class="form-label">Tanggal Mulai Ganjil</label>

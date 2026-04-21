@@ -89,7 +89,7 @@ $selectedSemester = $semesters->firstWhere('id', $semesterId);
                     {{-- Tombol Aksi --}}
                     <div class="my-auto pt-2">
                         <div class="d-flex gap-2">
-                            <div class="flex-fill  btn-group">
+                            <div class="flex-fill btn-group">
                                 <a class="btn  btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     <i class="fa-solid fa-pen me-1"></i> Edit

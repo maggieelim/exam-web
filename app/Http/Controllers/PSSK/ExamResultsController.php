@@ -12,6 +12,7 @@ use App\Models\DifficultyLevel;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamAttempt;
+use App\Models\ExamQuestion;
 use App\Models\ExamStatistics;
 use App\Models\Lecturer;
 use App\Models\Student;
@@ -413,6 +414,15 @@ class ExamResultsController extends Controller
             ->appends($request->query())
             ->withPath(url()->current());
 
+        $orderedCodes = ExamQuestion::where('exam_id', $exam->id)->orderByRaw("CAST(SUBSTRING_INDEX(kode_soal, '-', -1) AS UNSIGNED) ASC")
+            ->pluck('kode_soal')
+            ->values();
+
+        $questionNumberMap = $orderedCodes
+            ->mapWithKeys(function ($code, $index) {
+                return [$code => $index + 1];
+            });
+
         $optionsAnalysis = $questionAnalysisPaginator
             ->getCollection()
             ->pluck('options_summary', 'exam_question_id');
@@ -435,7 +445,8 @@ class ExamResultsController extends Controller
                 'status',
                 'sort',
                 'dir',
-                'difficultyLevel'
+                'difficultyLevel',
+                'questionNumberMap'
             ));
         }
 
@@ -450,7 +461,8 @@ class ExamResultsController extends Controller
             'status',
             'sort',
             'dir',
-            'difficultyLevel'
+            'difficultyLevel',
+            'questionNumberMap'
         ));
     }
 
@@ -742,11 +754,15 @@ class ExamResultsController extends Controller
 
         // Score Distribution
         $scoreRanges = [
-            '0-20' => 0,
-            '21-40' => 0,
-            '41-60' => 0,
-            '61-80' => 0,
-            '81-100' => 0
+            '0-44.9 (E)' => 0,
+            '45-55.9 (D)' => 0,
+            '56-60.99 (C)' => 0,
+            '61-64.99 (C+)' => 0,
+            '65-69.99 (B-)' => 0,
+            '70-73.99 (B)' => 0,
+            '74-76.99 (B+)' => 0,
+            '77-79.99 (A-)' => 0,
+            '80-100 (A)' => 0,
         ];
 
         $attempts = ExamAttempt::where('exam_id', $exam->id)->get();
@@ -766,11 +782,15 @@ class ExamResultsController extends Controller
                 ? round(($correct / $exam->questions_count) * 100, 2)
                 : 0;
 
-            if ($percentage <= 20) $scoreRanges['0-20']++;
-            elseif ($percentage <= 40) $scoreRanges['21-40']++;
-            elseif ($percentage <= 60) $scoreRanges['41-60']++;
-            elseif ($percentage <= 80) $scoreRanges['61-80']++;
-            else $scoreRanges['81-100']++;
+            if ($percentage <= 44.9) $scoreRanges['0-44.9 (E)']++;
+            elseif ($percentage <= 55.9) $scoreRanges['45-55.9 (D)']++;
+            elseif ($percentage <= 60.99) $scoreRanges['56-60.99 (C)']++;
+            elseif ($percentage <= 64.99) $scoreRanges['61-64.99 (C+)']++;
+            elseif ($percentage <= 69.99) $scoreRanges['65-69.99 (B-)']++;
+            elseif ($percentage <= 73.99) $scoreRanges['70-73.99 (B)']++;
+            elseif ($percentage <= 76.99) $scoreRanges['74-76.99 (B+)']++;
+            elseif ($percentage <= 79.99) $scoreRanges['77-79.99 (A-)']++;
+            else $scoreRanges['80-100 (A)']++;
         }
         return [
             'difficulty' => $difficultyData,

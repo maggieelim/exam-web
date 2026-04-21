@@ -1,5 +1,5 @@
 <div class="mt-4">
-    <div class="d-flex flex-row justify-content-end  gap-2">
+    <div class="d-flex flex-row justify-content-end gap-2">
         {{-- <a href="{{ route('exams.questions.previous', $exam->exam_code) }}" class="btn btn-sm btn-warning">
             <i class="fas fa-file me-2"></i>
             Manage Questions
@@ -98,8 +98,7 @@
                 @endphp
                 <tr>
                     <td class="align-middle text-center text-sm">
-                        {{ (int) last(explode('-', $analysis->question->kode_soal)) }}
-                    </td>
+                        {{ $questionNumberMap[$analysis->question->kode_soal] ?? '-' }} </td>
                     <td class="align-middle truncate-text text-sm">
                         {{ $analysis->question->badan_soal ?: $analysis->question->kalimat_tanya }}
                     </td>

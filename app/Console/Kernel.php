@@ -26,6 +26,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('app:clean-exam-credentials')->weekly();
+
         $schedule->call(function () {
             AttendanceSessions::whereIn('status', ['active', 'upcoming'])
                 ->where('end_time', '<', now())
