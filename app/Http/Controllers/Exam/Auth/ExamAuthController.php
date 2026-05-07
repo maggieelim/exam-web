@@ -33,13 +33,21 @@ class ExamAuthController extends Controller
 
         try {
 
-            $credential = ExamCredential::where('username', $request->username)->first();
+            $credentials = ExamCredential::where('username', $request->username)->get();
 
-            if (!$credential || !Hash::check($request->password, $credential->password)) {
+            $credential = $credentials->first(function ($item) use ($request) {
+                return Hash::check($request->password, $item->password);
+            });
+
+            if (!$credential) {
                 return back()->with('error', 'Username atau password salah');
             }
 
             $exam = Exam::findOrFail($credential->exam_id);
+
+            if (!$exam) {
+                return back()->with('error', 'Ujian tidak ditemukan');
+            }
 
             if ($exam->status === 'upcoming') {
                 return back()->with('error', 'Ujian belum dimulai');
@@ -49,23 +57,10 @@ class ExamAuthController extends Controller
                 return back()->with('error', 'Ujian sudah berakhir');
             }
 
-            $student = Student::with('user')
-                ->where('nim', $request->nim)
-                ->first();
+            $student = Student::with('user')->where('nim', $request->nim)->first();
 
             if (!$student) {
                 return back()->with('error', 'NIM tidak ditemukan.');
-            }
-
-            $user = $student->user;
-
-            $nimExists = ExamCredential::where('exam_id', $credential->exam_id)
-                ->where('nim', $student->nim)
-                ->where('id', '!=', $credential->id)
-                ->exists();
-
-            if ($nimExists) {
-                return back()->with('error', 'Anda sudah memiliki credential untuk ujian ini.');
             }
 
             if ($credential->nim && $credential->nim !== $student->nim) {
@@ -80,12 +75,11 @@ class ExamAuthController extends Controller
                 return back()->with('error', 'Anda tidak terdaftar pada blok ini.');
             }
 
-            $attempt = ExamAttempt::where('user_id', $user->id)
+            $attempt = ExamAttempt::where('user_id', $student->user->id)
                 ->where('exam_id', $exam->id)
                 ->first();
 
             if ($attempt) {
-
                 if ($attempt->status === 'completed' || $attempt->status === 'timeout') {
                     if ($attempt->credential_id !== $credential->id) {
                         return back()->with('error', 'Anda sudah menyelesaikan ujian ini menggunakan token yang berbeda.');
@@ -96,6 +90,15 @@ class ExamAuthController extends Controller
                 if ($attempt->status === 'in_progress' && $attempt->credential_id !== $credential->id) {
                     return back()->with('error', 'Anda masih memiliki ujian yang sedang berlangsung.');
                 }
+            }
+
+            $nimExists = ExamCredential::where('exam_id', $credential->exam_id)
+                ->where('nim', $student->nim)
+                ->where('id', '!=', $credential->id)
+                ->exists();
+
+            if ($nimExists) {
+                return back()->with('error', 'Anda sudah memiliki credential untuk ujian ini.');
             }
 
             // simpan sementara

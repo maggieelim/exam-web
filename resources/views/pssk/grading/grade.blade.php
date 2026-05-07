@@ -5,7 +5,7 @@
     <div class="card mb-4 p-3">
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">{{ $exam->title }}</h5>
-            <div>
+            <div class="justify-content-end">
                 @if ($exam->is_published)
                 <button type="button" class="btn btn-sm btn-success" disabled>Published</button>
                 @else
@@ -63,20 +63,18 @@
     <div class="collapse" id="filterCollapse">
         <form method="GET" action="{{ route('lecturer.grade.' . $status, $exam->exam_code) }}">
             <input type="hidden" name="status" value="{{ $status }}">
-            <div class="mx-3">
-                <div class="row g-2">
-                    <!-- Input Blok -->
-                    <div class="col-md-12">
-                        <label for="blok" class="form-label mb-1">NIM/Name</label>
-                        <input type="text" name="name" class="form-control" placeholder="Search Name or NIM"
-                            value="{{ request('name') }}">
-                    </div>
-                    <!-- Buttons -->
-                    <div class="col-12 d-flex justify-content-end gap-2 mt-2">
-                        <a href="{{ route('lecturer.grade.' . $status, $exam->exam_code) }}"
-                            class="btn btn-light btn-sm">Reset</a>
-                        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-                    </div>
+            <div class="row g-2">
+                <!-- Input Blok -->
+                <div class="col-md-12">
+                    <label for="blok" class="form-label mb-1">NIM/Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Search Name or NIM"
+                        value="{{ request('name') }}">
+                </div>
+                <!-- Buttons -->
+                <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                    <a href="{{ route('lecturer.grade.' . $status, $exam->exam_code) }}"
+                        class="btn btn-light btn-sm">Reset</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                 </div>
             </div>
         </form>
@@ -146,6 +144,9 @@
                 </div>
             </div>
             @endforelse
+            <div class="d-flex justify-content-center">
+                <x-pagination :paginator="$attempts" />
+            </div>
         </div>
 
         <!-- DESKTOP VIEW -->

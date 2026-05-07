@@ -47,7 +47,7 @@ class ExamController extends Controller
         $credentials = [];
         $usedUsernames = []; // penampung lokal
         $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        $total = count($students) + 10;
+        $total = count($students) + 20;
 
         for ($i = 0; $i < $total; $i++) {
             $student = $students[$i] ?? null;
@@ -130,8 +130,6 @@ class ExamController extends Controller
                 'status' => 'completed',
                 'updated_at' => now(),
             ]);
-
-        app(ExamStatisticsController::class)->generate($exam);
 
         return redirect()
             ->route('exams.index', ['status' => 'previous'])

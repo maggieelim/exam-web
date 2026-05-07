@@ -91,7 +91,7 @@
                 $total = ($scoreD1->total_score ?? 0) + ($scoreD2->total_score ?? 0);
 
                 // convert angka ke huruf kolom Excel
-                $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                $columnLetter = Coordinate::stringFromColumnIndex($colIndex);
                 @endphp
 
                 <td class="text-center text-sm">{{ $total }}</td>

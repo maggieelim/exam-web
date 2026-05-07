@@ -4,19 +4,22 @@
 <div class="row">
     <div class="col-12">
         <div class="card mb-4">
-            <div class="card-body pb-2">
-                <div class="mb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start
-                gap-2">
-                    <h5>
-                        @if ($lecturer)
-                        {{ $lecturer->user->name }}'s Schedule
+            <div class="card mb-4">
+                <div class="card-body pb-2">
+                    <div class="mb-0 d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-2">
+                        <h5>
+                            @if ($lecturer)
+                            {{ $lecturer->user->name }}'s Schedule
+                            @else
+                            All Schedule
+                            @endif
+                        </h5>
+                        @if ($lecturer && $lecturer->user->id !== auth()->id())
+                        <a href="{{ url()->previous() }}" class="btn btn-sm btn-secondary">Back</a>
                         @endif
-                    </h5>
-                    @if ($lecturer->user->id !== auth()->id())
-                    <a href="{{ url()->previous() }}" class="btn btn-sm btn-secondary">Back</a>
-                    @endif
+                    </div>
+                    <div id="calendar" style="max-width: 100%; width: 100%;"></div>
                 </div>
-                <div id="calendar" style="max-width: 100%; width: 100%;"></div>
             </div>
         </div>
     </div>

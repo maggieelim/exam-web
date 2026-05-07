@@ -1,4 +1,3 @@
-<!-- Navbar -->
 <nav class="navbar navbar-main navbar-expand-lg px-3 mx-4 shadow-none border-radius-xl" id="navbarBlur"
     navbar-scroll="true">
     <div class="container-fluid py-2 px-0 d-flex flex-wrap align-items-center justify-content-between">
@@ -35,10 +34,30 @@
 
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userDropdown">
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url('/logout') }}">
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#"
+                                onclick="event.preventDefault(); document.getElementById('logout-change-password').submit();">
+                                <i class="fa fa-key"></i>
+                                Change Password
+                            </a>
+
+                            <!-- Logout biasa -->
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <i class="fa fa-sign-out text-danger"></i>
                                 <span>Sign Out</span>
                             </a>
+
+                            <!-- Hidden Form Logout + Redirect ke Forgot Password -->
+                            <form id="logout-change-password" action="{{ route('logout') }}" method="get"
+                                class="d-none">
+                                @csrf
+                                <input type="hidden" name="redirect_to" value="/login/forgot-password">
+                            </form>
+
+                            <!-- Hidden Form Logout Biasa -->
+                            <form id="logout-form" action="{{ route('logout') }}" method="get" class="d-none">
+                                @csrf
+                            </form>
                         </li>
                     </ul>
                 </li>
@@ -68,4 +87,3 @@
         </div>
     </div>
 </nav>
-<!-- End Navbar -->

@@ -157,6 +157,7 @@ class ExamQuestionController extends Controller
             $question->update([
                 'is_anulir' => true,
             ]);
+
             foreach ($question->options as $option) {
                 $option->update(['is_correct' => 1]);
             }
@@ -350,14 +351,12 @@ class ExamQuestionController extends Controller
             $correctAnswers = strtoupper($row[9] ?? '');
             $options = ['A', 'B', 'C', 'D', 'E'];
             foreach ($options as $i => $opt) {
-                if (isset($row[4 + $i]) && $row[4 + $i] !== '') {
-                    ExamQuestionAnswer::create([
-                        'exam_question_id' => $question->id,
-                        'option' => $opt,
-                        'text' => $row[4 + $i],
-                        'is_correct' => str_contains($correctAnswers, $opt) ? 1 : 0,
-                    ]);
-                }
+                ExamQuestionAnswer::create([
+                    'exam_question_id' => $question->id,
+                    'option' => $opt,
+                    'text' => $row[4 + $i] ?? '', // <-- tetap dibuat walaupun kosong
+                    'is_correct' => str_contains($correctAnswers, $opt) ? 1 : 0,
+                ]);
             }
         }
 
@@ -611,11 +610,13 @@ class ExamQuestionController extends Controller
             ]);
 
             // Simpan opsi jawaban
-            foreach ($questionData['options'] as $letter => $optionText) {
+            $letters = ['A', 'B', 'C', 'D', 'E'];
+
+            foreach ($letters as $letter) {
                 ExamQuestionAnswer::create([
                     'exam_question_id' => $examQuestion->id,
                     'option' => $letter,
-                    'text' => trim($optionText),
+                    'text' => $questionData['options'][$letter] ?? '', // default kosong
                     'is_correct' => in_array($letter, $questionData['correct_letters']) ? 1 : 0,
                 ]);
             }

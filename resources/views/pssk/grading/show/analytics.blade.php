@@ -43,11 +43,12 @@
     <h5 class="card-title mb-0">
       Detailed Question Analysis </h5>
     <div class="d-flex justify-content-center align-items-center gap-3 my-0">
-      <a href="{{ route('lecturer.results.downloadQuestions', $exam->exam_code) }}"
-        class="btn btn-sm btn-warning"><i class="fas fa-download"></i>
+      <a href="{{ route('lecturer.results.downloadQuestions', $exam->exam_code) }}" class="btn btn-sm btn-warning"><i
+          class="fas fa-download"></i>
         Download
       </a>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+        data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
         <i class="fas fa-filter"></i> Filter
       </button>
     </div>
@@ -63,7 +64,7 @@
             <select name="difficulty_level" id="difficulty_level" class="form-control">
               <option value="">-- All Levels --</option>
               @foreach($difficultyLevel as $level)
-              <option value="{{ $level }}" {{ request('difficulty_level') == $level ? 'selected' : '' }}>
+              <option value="{{ $level }}" {{ request('difficulty_level')==$level ? 'selected' : '' }}>
                 {{ $level }}
               </option>
               @endforeach
@@ -93,7 +94,8 @@
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">No</th>
             <th class="text-uppercase text-dark text-sm font-weight-bolder">Question</th>
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-              <a href="{{ request()->fullUrlWithQuery(['sort' => 'correct_percentage', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
+              <a
+                href="{{ request()->fullUrlWithQuery(['sort' => 'correct_percentage', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
                 Correct
                 @if(request('sort') === 'correct_percentage')
                 <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
@@ -101,7 +103,8 @@
               </a>
             </th>
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-              <a href="{{ request()->fullUrlWithQuery(['sort' => 'difficulty_level', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
+              <a
+                href="{{ request()->fullUrlWithQuery(['sort' => 'difficulty_level', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
                 Difficulty
                 @if(request('sort') === 'difficulty_level')
                 <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
@@ -109,7 +112,8 @@
               </a>
             </th>
             <th class="text-center text-uppercase text-dark text-sm font-weight-bolder">
-              <a href="{{ request()->fullUrlWithQuery(['sort' => 'discrimination_index', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
+              <a
+                href="{{ request()->fullUrlWithQuery(['sort' => 'discrimination_index', 'dir' => request('dir') === 'asc' ? 'desc' : 'asc', 'tab' => 'analytics']) }}">
                 Discrimination Index
                 @if(request('sort') === 'discrimination_index')
                 <i class="fas fa-sort-{{ request('dir') === 'asc' ? 'up' : 'down' }}"></i>
@@ -131,7 +135,8 @@
               <small class="text-muted small d-block">
                 {{ $analysis['correct_count'] }}/{{ $analysis['total_students'] }}
               </small>
-              <span class="badge 
+              <span
+                class="badge 
                                             {{ $analysis['correct_percentage'] >= 80 ? 'bg-gradient-success' : 
                                                ($analysis['correct_percentage'] >= 60 ? 'bg-gradient-info' : 
                                                ($analysis['correct_percentage'] >= 40 ? 'bg-gradient-warning' : 'bg-gradient-danger')) }}">
@@ -139,7 +144,8 @@
               </span>
             </td>
             <td class="text-center">
-              <span class="badge 
+              <span
+                class="badge 
                                             {{ $analysis['difficulty_level'] == 'Easy' ? 'bg-gradient-success' : 
                                                ($analysis['difficulty_level'] == 'Medium' ? 'bg-gradient-info' : 
                                                ($analysis['difficulty_level'] == 'Fair' ? 'bg-gradient-warning' : 'bg-gradient-danger')) }}">
@@ -147,7 +153,8 @@
               </span>
             </td>
             <td class="text-center">
-              <span class="badge 
+              <span
+                class="badge 
                                             {{ $analysis['discrimination_index'] > 0.4 ? 'bg-gradient-success' : 
                                                ($analysis['discrimination_index'] >= 0.3 ? 'bg-gradient-info' : 
                                                ($analysis['discrimination_index'] >= 0.2 ? 'bg-gradient-warning' : 
@@ -171,118 +178,3 @@
     </div>
   </div>
 </div>
-
-
-<!-- Chart Script -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Data dari controller
-    const chartData = @json($chartData ?? []);
-
-    // Distribusi Skor Chart
-    if (chartData.scores) {
-      const scoreCtx = document.getElementById('scoreDistributionChart').getContext('2d');
-      new Chart(scoreCtx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(chartData.scores),
-          datasets: [{
-            label: 'Number of Students',
-            data: Object.values(chartData.scores),
-            backgroundColor: [
-              '#dc3545', '#fd7e14', '#ffc107', '#20c997', '#198754'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            title: {
-              display: true,
-              text: 'Score Distribution'
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Number of Students'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Score Range (%)'
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // Tingkat Kesulitan Chart
-    if (chartData.difficulty) {
-      const difficultyCtx = document.getElementById('difficultyChart').getContext('2d');
-      new Chart(difficultyCtx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(chartData.difficulty),
-          datasets: [{
-            data: Object.values(chartData.difficulty),
-            backgroundColor: [
-              '#198754', '#20c997', '#ffc107', '#dc3545'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            },
-            title: {
-              display: true,
-              text: 'Difficulty Level Distribution'
-            }
-          }
-        }
-      });
-    }
-
-    // Daya Pembeda Chart
-    if (chartData.discrimination) {
-      const discriminationCtx = document.getElementById('discriminationChart').getContext('2d');
-      new Chart(discriminationCtx, {
-        type: 'pie',
-        data: {
-          labels: Object.keys(chartData.discrimination),
-          datasets: [{
-            data: Object.values(chartData.discrimination),
-            backgroundColor: [
-              '#198754', '#20c997', '#ffc107', '#fd7e14', '#dc3545'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            },
-            title: {
-              display: true,
-              text: 'Discrimination Index Quality'
-            }
-          }
-        }
-      });
-    }
-  });
-</script>

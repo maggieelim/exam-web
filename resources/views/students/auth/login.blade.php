@@ -36,9 +36,8 @@
 
                                     <label>Password</label>
                                     <div class="mb-3">
-                                        <input type="password" class="form-control" name="password"
-                                            placeholder="Password" autocomplete="new-password"
-                                            autocomplete="new-password">
+                                        <input type="text" class="form-control" name="password" placeholder="Password"
+                                            autocomplete="new-password" autocomplete="new-password">
                                         @error('password')
                                         <p class="text-danger text-xs mt-2">{{ $message }}</p>
                                         @enderror

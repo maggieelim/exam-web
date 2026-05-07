@@ -52,10 +52,16 @@ class SessionsController extends Controller
         }
     }
 
-    public function destroy()
+    public function destroy(Request $request)
     {
+        $redirectTo = $request->redirect_to ?? '/login';
+
         Auth::logout();
 
-        return redirect('/login')->with(['success' => 'You\'ve been logged out.']);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect($redirectTo)
+            ->with(['success' => 'You\'ve been logged out.']);
     }
 }

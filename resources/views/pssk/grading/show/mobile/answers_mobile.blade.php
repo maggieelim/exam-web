@@ -1,14 +1,13 @@
 <div class="d-flex justify-content-end gap-2">
     <!-- Tombol Download -->
     <a href="{{ route('lecturer.results.downloadQuestions', $exam->exam_code) }}" style="height: 32px;"
-        class="btn btn-warning d-flex align-items-center gap-2">
+        class="btn btn-warning d-flex align-items-center">
         <i class="fas fa-download"></i>
-        <span>Download</span>
     </a>
 
     <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-        style="width: 32px; height: 32px;" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false"
-        aria-controls="filterCollapse" title="Filter Data">
+        style="width: 32px; height: 32px;" data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+        aria-expanded="false" aria-controls="filterCollapse" title="Filter Data">
         <i class="fas fa-filter"></i>
     </button>
 </div>
@@ -24,10 +23,9 @@
                     <select name="difficulty_level" id="difficulty_level" class="form-control form-control-sm">
                         <option value="">-- All Levels --</option>
                         @foreach ($difficultyLevel as $level)
-                            <option value="{{ $level }}"
-                                {{ request('difficulty_level') == $level ? 'selected' : '' }}>
-                                {{ $level }}
-                            </option>
+                        <option value="{{ $level }}" {{ request('difficulty_level')==$level ? 'selected' : '' }}>
+                            {{ $level }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -47,149 +45,112 @@
 </div>
 
 <div class="row">
-    @forelse($questionAnalysisPaginator as $analysis)
-        <div class="col-12 col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <!-- Stats Header - Stacked untuk Mobile -->
-                    <div class="d-flex flex-column gap-2 mb-3">
-                        <!-- Correct -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-semibold small">Correct:</span>
-                            <div class="d-flex align-items-center gap-1">
-                                <span
-                                    class="small">{{ $analysis['correct_count'] }}/{{ $analysis['total_students'] }}</span>
-                                <span
-                                    class="badge 
-                                    {{ $analysis['correct_percentage'] >= 80
+    @foreach ($questionAnalysisPaginator as $index => $analysis)
+    @php
+    $isAnulir = $analysis->question->is_anulir ?? false;
+    @endphp
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <!-- Stats Header - Stacked untuk Mobile -->
+                <div class="mb-3">
+
+                    <!-- Nomor Soal -->
+                    <div class="fw-bold text-primary">
+                        No. {{ $questionNumberMap[$analysis->question->kode_soal] ?? '-' }}
+                    </div>
+
+                    <!-- Correct -->
+                    <div class="d-flex gap-2 align-items-center mb-1">
+                        <span class="fw-bold=">Correct: </span>
+                        @if ($isAnulir)
+                        <span class="badge bg-secondary">-</span>
+                        @else
+                        <span class="badge ms-2 
+            {{ $analysis['correct_percentage'] >= 75
+                ? 'bg-gradient-success'
+                : ($analysis['correct_percentage'] >= 60
+                    ? 'bg-gradient-info'
+                    : ($analysis['correct_percentage'] >= 20
+                        ? 'bg-gradient-warning'
+                        : 'bg-gradient-danger')) }}">
+                            {{ $analysis['correct_percentage'] }}%
+                        </span>
+                        @endif
+                    </div>
+
+                    <!-- Discrimination -->
+                    <div class="d-flex gap-2 align-items-center mb-1">
+                        <span class="fw-bold">Discrimination:</span>
+                        @if ($isAnulir)
+                        <span class="badge bg-secondary">-</span>
+                        @else
+                        @php
+                        $d = $analysis->discrimination_index;
+
+                        $class = match (true) {
+                        $d >= 0.4 => 'bg-gradient-success',
+                        $d >= 0.3 => 'bg-gradient-info',
+                        $d >= 0.2 => 'bg-gradient-warning',
+                        $d >= 0.01 => 'bg-gradient-secondary',
+                        default => 'bg-gradient-danger',
+                        };
+                        @endphp
+
+                        <span class="badge {{ $class }} text-white">
+                            {{ $analysis->discrimination_index }}
+                        </span>
+                        @endif
+                    </div>
+
+                    <!-- Difficulty -->
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="text-muted">Difficulty:</span>
+                        @if ($isAnulir)
+                        <span class="badge bg-secondary">-</span>
+                        @else
+                        <span class="badge 
+                                    {{ $analysis['difficulty_level'] == 'Easy'
                                         ? 'bg-gradient-success'
-                                        : ($analysis['correct_percentage'] >= 60
+                                        : ($analysis['difficulty_level'] == 'Medium'
                                             ? 'bg-gradient-info'
-                                            : ($analysis['correct_percentage'] >= 40
+                                            : ($analysis['difficulty_level'] == 'Fair'
                                                 ? 'bg-gradient-warning'
-                                                : 'bg-gradient-danger')) }}"
-                                    style="font-size: 0.7rem;">
-                                    {{ $analysis['correct_percentage'] }}%
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Discrimination Index -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-semibold small">Discrimination:</span>
-                            <span
-                                class="badge 
-                                {{ $analysis['discrimination_index'] > 0.4
-                                    ? 'bg-gradient-success'
-                                    : ($analysis['discrimination_index'] >= 0.3
-                                        ? 'bg-gradient-info'
-                                        : ($analysis['discrimination_index'] >= 0.2
-                                            ? 'bg-gradient-warning'
-                                            : ($analysis['discrimination_index'] >= 0.1
-                                                ? 'bg-gradient-orange'
-                                                : 'bg-gradient-danger'))) }}"
-                                style="font-size: 0.7rem;">
-                                {{ $analysis['discrimination_index'] }}
-                            </span>
-                        </div>
-
-                        <!-- Difficulty -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-semibold small">Difficulty:</span>
-                            <span
-                                class="badge 
-                                {{ $analysis['difficulty_level'] == 'Easy'
-                                    ? 'bg-gradient-success'
-                                    : ($analysis['difficulty_level'] == 'Medium'
-                                        ? 'bg-gradient-info'
-                                        : ($analysis['difficulty_level'] == 'Fair'
-                                            ? 'bg-gradient-warning'
-                                            : 'bg-gradient-danger')) }}"
-                                style="font-size: 0.7rem;">
-                                {{ $analysis['difficulty_level'] }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Question Content -->
-                    <div class="mb-3">
-                        @if (!empty($analysis['question_text']))
-                            <p class="fw-bold mb-1 question-text">
-                                {{ $analysis['question_text'] }}
-                            </p>
-                        @endif
-                        @if (!empty($analysis['question']))
-                            <p class="text-muted mb-0 small question-text">
-                                {{ $analysis['question'] }}
-                            </p>
+                                                : 'bg-gradient-danger')) }}">
+                            {{ $analysis['difficulty_level'] }}
+                        </span>
                         @endif
                     </div>
+                </div>
 
-                    <!-- Question Image -->
-                    @if ($analysis['image'])
-                        <div class="my-3 text-center">
-                            <img src="{{ asset('storage/' . $analysis['image']) }}" alt="Gambar Soal"
-                                class="img-fluid rounded shadow-sm w-100"
-                                style="max-height: 200px; object-fit: contain;">
-                        </div>
-                    @endif
+                <!-- Question Content -->
+                <div class="mb-2">
+                    <p class="question-text mb-1">
+                        {{ $analysis->question->badan_soal ?: $analysis->question->kalimat_tanya }}
+                    </p>
+                </div>
 
-                    <!-- Options Analysis -->
-                    @if (!empty($optionsAnalysis[$analysis['question_id']]))
-                        <div class="mt-3">
-                            <h6 class="small fw-bold mb-2">Answer Options:</h6>
-                            <div class="options-container">
-                                @foreach ($optionsAnalysis[$analysis['question_id']] as $optionIndex => $option)
-                                    <div class="option-item mb-2 p-2 rounded border">
-                                        <!-- Option Header -->
-                                        <div class="d-flex align-items-center justify-content-between mb-1">
-                                            <div class="d-flex align-items-center">
-                                                <span class="fw-bold me-2 option-letter">
-                                                    {{ chr(65 + $optionIndex) }}.
-                                                </span>
-                                                @if (!empty($option['is_correct']))
-                                                    <span class="badge bg-success text-white px-2 py-1 me-2"
-                                                        style="font-size: 0.65rem;">
-                                                        Correct Answer
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="badge bg-light text-dark px-2 py-1"
-                                                    style="font-size: 0.7rem;">
-                                                    {{ $option['percentage'] ?? 0 }}%
-                                                </span>
-                                                <span class="text-muted small" style="font-size: 0.7rem;">
-                                                    ({{ $option['count'] ?? 0 }})
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Option Text -->
-                                        <div class="option-text-container">
-                                            <div class="option-text">
-                                                {{ $option['option_text'] ?? '' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
+                <!-- Action -->
+                <div class="d-flex">
+                    @if ($isAnulir)
+                    <button type="button" class="mb-0 btn btn-sm btn-success w-100 ">Dianulir</button>
                     @else
-                        <div class="alert alert-warning py-2 small mb-0">
-                            Tidak ada data analisis untuk soal ini.
-                        </div>
+                    <form class="question-form w-100" data-question-id="{{ $analysis->question->id }}">
+                        @csrf
+                        @method('PUT')
+
+                        <button type="button" class="mb-0 anulir-btn btn btn-sm btn-warning w-100 "
+                            data-question-id="{{ $analysis->question->id }}"
+                            title="Anulir soal - semua jawaban dianggap benar">
+                            Anulir
+                        </button>
+                    </form>
                     @endif
                 </div>
             </div>
         </div>
-    @empty
-        <div class="col-12">
-            <div class="text-center text-muted py-4">
-                <i class="fas fa-info-circle me-2"></i>Tidak ada data analisis yang tersedia
-            </div>
-        </div>
-    @endforelse
+    </div>
+    @endforeach
 </div>
 
 <div class="d-flex justify-content-center mt-3">
@@ -198,80 +159,66 @@
 
 <style>
     .question-text {
-        word-wrap: break-word;
-        overflow-wrap: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        /* jumlah baris */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
         line-height: 1.4;
-    }
-
-    .option-item {
-        transition: background-color 0.2s ease;
-    }
-
-    .option-item:hover {
-        background-color: #f0f0f0;
-    }
-
-    .option-letter {
-        font-size: 0.9rem;
-        min-width: 20px;
-    }
-
-    .option-text-container {
-        margin-top: 0.5rem;
-    }
-
-    .option-text {
-        font-size: 0.85rem;
-        line-height: 1.4;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        color: #333;
-        padding: 0.5rem;
-        background: white;
-        border-radius: 4px;
-        border-left: 3px solid #cb0c9f;
-    }
-
-    .options-container {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    @media (max-width: 768px) {
-        .card-body {
-            padding: 1rem;
-        }
-
-        .option-item {
-            padding: 0.75rem;
-        }
-
-        .option-text {
-            font-size: 0.8rem;
-            padding: 0.4rem;
-        }
-
-        .options-container {
-            max-height: 300px;
-        }
-    }
-
-    /* Scrollbar styling untuk options container */
-    .options-container::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .options-container::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-    }
-
-    .options-container::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 3px;
-    }
-
-    .options-container::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
+        min-height: 2.8em;
     }
 </style>
+
+<script>
+    // ==== Event Delegation untuk tombol Anulir ====
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('.anulir-btn');
+        if (!target) return;
+
+        const questionId = target.dataset.questionId;
+        const confirmText =
+            'Yakin ingin menganulir soal ini? Semua jawaban siswa akan dianggap benar. Tindakan ini tidak dapat dibatalkan.';
+
+        if (!confirm(confirmText)) return;
+
+        handleAnulirAction(questionId, target);
+    });
+
+    // ==== Proses utama Anulir ====
+    function handleAnulirAction(questionId, button) {
+        const form = document.querySelector(`.question-form[data-question-id="${questionId}"]`);
+        const formData = new FormData(form);
+        formData.append('action', 'anulir');
+
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Anulir...`;
+
+        fetch(`/pssk/exams/{{ $exam->exam_code }}/questions/${questionId}`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(data.message || 'Terjadi kesalahan', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showNotification('Gagal memproses permintaan.', 'error');
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            });
+    }
+</script>

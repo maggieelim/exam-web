@@ -22,55 +22,42 @@ class AttendanceSessionsController extends Controller
 {
     public function getEvents(Request $request)
     {
-        if ($request->filled('lecturer_id')) {
-            $lecturer = Lecturer::with('courseLecturers')
-                ->findOrFail($request->lecturer_id);
-        } else {
-            $lecturer = Lecturer::with('courseLecturers')
-                ->where('user_id', Auth::id())
-                ->firstOrFail();
-        }
-        $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
+        $user = auth()->user();
 
-        $attendances =  AttendanceSessions::with(['course', 'activity', 'lecturerRecords'])
-            ->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
+        $query = AttendanceSessions::with(['course', 'activity', 'lecturerRecords']);
+
+        // ✅ ADMIN lihat semua (kecuali dia filter manual)
+        if (!$user->hasRole('admin') || $request->filled('lecturer_id')) {
+
+            if ($request->filled('lecturer_id')) {
+                $lecturer = Lecturer::with('courseLecturers')
+                    ->findOrFail($request->lecturer_id);
+            } else {
+                $lecturer = Lecturer::with('courseLecturers')
+                    ->where('user_id', $user->id)
+                    ->firstOrFail();
+            }
+
+            $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
+
+            $query->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
                 $q->whereIn('course_lecturer_id', $courseLecturerIds);
-            })
-            ->get()
-            ->map(function ($attendance) use ($courseLecturerIds) {
-                $hasAttendance = LecturerAttendanceRecords::where('attendance_session_id', $attendance->id)
-                    ->whereIn('course_lecturer_id', $courseLecturerIds)
-                    ->where('status', 'pending')
-                    ->exists();
-
-                // Tambahkan pengecekan jika sudah finished
-                if ($attendance->status === 'finished') {
-                    $url = route('attendances.report.show', [
-                        'course' => $attendance->course->slug,
-                        'semester_id' => $attendance->semester_id,
-                        'session' => $attendance->id
-                    ]);
-                } else {
-                    $url = $hasAttendance
-                        ? route('attendance.edit', $attendance->absensi_code)
-                        : route('attendance.show', $attendance->absensi_code);
-                }
-                return [
-                    'title' => $attendance->course->name . ' - ' . $attendance->activity->activity_name,
-                    'start' => $attendance->start_time,
-                    'end' => $attendance->end_time,
-                    'url' => $url,
-                    'extendedProps' => [
-                        'status' => $attendance->status,
-                        'total' => $attendance->total_attendance,
-                    ],
-                    'color' => match ($attendance->status) {
-                        'finished' => '#5fb374ff', // hijau
-                        'active' => '#5da4f0ff', // biru
-                        default => '#ecc13eff', // kuning
-                    },
-                ];
             });
+        }
+
+        $attendances = $query->get()->map(function ($attendance) {
+            return [
+                'title' => $attendance->course->name . ' - ' . $attendance->activity->activity_name,
+                'start' => $attendance->start_time,
+                'end' => $attendance->end_time,
+                'url' => '#',
+                'color' => match ($attendance->status) {
+                    'finished' => '#5fb374ff',
+                    'active' => '#5da4f0ff',
+                    default => '#ecc13eff',
+                },
+            ];
+        });
 
         return response()->json($attendances);
     }
@@ -108,16 +95,25 @@ class AttendanceSessionsController extends Controller
 
     public function index(Request $request)
     {
-        if ($request->filled('lecturer_id')) {
-            $lecturer = Lecturer::with('courseLecturers')
-                ->findOrFail($request->lecturer_id);
-        } else {
-            // default: dosen login
-            $lecturer = Lecturer::with('courseLecturers')
-                ->where('user_id', Auth::id())
-                ->firstOrFail();
+        $query = AttendanceSessions::with(['course', 'activity']);
+
+        if (!$request->filled('type')) {
+            // hanya dosen / koordinator yang difilter
+            if ($request->filled('lecturer_id')) {
+                $lecturer = Lecturer::with('courseLecturers')
+                    ->findOrFail($request->lecturer_id);
+            } else {
+                $lecturer = Lecturer::with('courseLecturers')
+                    ->where('user_id', Auth::id())
+                    ->firstOrFail();
+            }
+
+            $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
+
+            $query->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
+                $q->whereIn('course_lecturer_id', $courseLecturerIds);
+            });
         }
-        $courseLecturerIds = $lecturer->courseLecturers->pluck('id');
 
         $activeSemester = SemesterService::active();
         $semesterId = $request->get('semester_id', $activeSemester?->id);
@@ -127,12 +123,6 @@ class AttendanceSessionsController extends Controller
         $allowedSorts = ['kode_blok', 'start_time'];
         $sort = in_array($request->get('sort'), $allowedSorts) ? $request->get('sort') : 'start_time';
         $dir = $request->get('dir', 'desc');
-
-        // Query dasar + filter by lecturer
-        $query = AttendanceSessions::with(['course', 'activity'])
-            ->whereHas('lecturerRecords', function ($q) use ($courseLecturerIds) {
-                $q->whereIn('course_lecturer_id', $courseLecturerIds);
-            });
 
         // 🔍 Filter berdasarkan semester (jika ada)
         if ($semesterId) {
@@ -165,15 +155,15 @@ class AttendanceSessionsController extends Controller
             return $attendance;
         });
 
-        return view('attendance.index', compact(
-            'activeSemester',
-            'semesterId',
-            'semesters',
-            'sort',
-            'dir',
-            'attendances',
-            'lecturer'
-        ));
+        return view('attendance.index', [
+            'activeSemester' => $activeSemester,
+            'semesterId' => $semesterId,
+            'semesters' => $semesters,
+            'sort' => $sort,
+            'dir' => $dir,
+            'attendances' => $attendances,
+            'lecturer' => $lecturer ?? null,
+        ]);
     }
 
     public function create(Request $request)

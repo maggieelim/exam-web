@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamStatistics;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ExamStatisticsController extends Controller

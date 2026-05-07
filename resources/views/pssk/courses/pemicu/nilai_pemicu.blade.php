@@ -26,6 +26,11 @@
         </tr>
     </thead>
 
+    @php
+    use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+    $globalRowNumber = 4;
+    @endphp
+
     <tbody>
         @foreach ($groupedStudents as $kelompok => $students)
         <tr>
@@ -44,8 +49,14 @@
         $scoreD1 = $studentScores->where('teaching_schedule_id', $id1)->first();
         $scoreD2 = $studentScores->where('teaching_schedule_id', $id2)->first();
 
-        $total = ($scoreD1->total_score ?? 0) + ($scoreD2->total_score ?? 0);
-        $percent = 24 > 0 ? ($total / 24) * 100 : 0;
+        // posisi kolom nilai (C sampai J)
+        $startCol = 3;
+        $endCol = 10;
+
+        $startLetter = Coordinate::stringFromColumnIndex($startCol);
+        $endLetter = Coordinate::stringFromColumnIndex($endCol);
+
+        $currentRow = $globalRowNumber;
 
         $dosenD1 = $groupLecturer[$cs->kelompok][$id1] ?? '-';
         $dosenD2 = $groupLecturer[$cs->kelompok][$id2] ?? '-';
@@ -56,21 +67,28 @@
             <td>{{ ucwords(strtolower($cs->student->user->name)) }}</td>
 
             {{-- Diskusi 1 --}}
-            <td>{{ $scoreD1->disiplin ?? '-' }}</td>
-            <td>{{ $scoreD1->keaktifan ?? '-' }}</td>
-            <td>{{ $scoreD1->berpikir_kritis ?? '-' }}</td>
+            <td>{{ $scoreD1->disiplin ?? 0 }}</td>
+            <td>{{ $scoreD1->keaktifan ?? 0 }}</td>
+            <td>{{ $scoreD1->berpikir_kritis ?? 0 }}</td>
 
             {{-- Diskusi 2 --}}
-            <td>{{ $scoreD2->disiplin ?? '-' }}</td>
-            <td>{{ $scoreD2->keaktifan ?? '-' }}</td>
-            <td>{{ $scoreD2->berpikir_kritis ?? '-' }}</td>
-            <td>{{ $scoreD2->info_baru ?? '-' }}</td>
-            <td>{{ $scoreD2->analisis_rumusan ?? '-' }}</td>
+            <td>{{ $scoreD2->disiplin ?? 0 }}</td>
+            <td>{{ $scoreD2->keaktifan ?? 0 }}</td>
+            <td>{{ $scoreD2->berpikir_kritis ?? 0 }}</td>
+            <td>{{ $scoreD2->info_baru ?? 0 }}</td>
+            <td>{{ $scoreD2->analisis_rumusan ?? 0 }}</td>
 
-            <td>{{ $total }}</td>
-            <td>{{ number_format($percent, 2) }}</td>
+            {{-- TOTAL (Excel SUM) --}}
+            <td class="text-center text-sm">
+                =SUM({{ $startLetter }}{{ $currentRow }}:{{ $endLetter }}{{ $currentRow }})
+            </td>
 
-            {{-- PERBAIKAN DI SINI --}}
+            {{-- NILAI (Excel ROUND) --}}
+            <td class="text-center text-sm">
+                =ROUND(K{{ $currentRow }}/24*100,2)
+            </td>
+
+            {{-- DOSEN --}}
             @if ($dosenD1 !== '-' && $dosenD2 !== '-' && $dosenD1 !== $dosenD2)
             <td class="text-wrap text-sm">{{ $dosenD1 }}</td>
             <td class="text-wrap text-sm">{{ $dosenD2 }}</td>
@@ -80,6 +98,10 @@
             </td>
             @endif
         </tr>
+
+        @php
+        $globalRowNumber++;
+        @endphp
         @endforeach
         @endforeach
     </tbody>
