@@ -203,7 +203,6 @@ Sistem memiliki beberapa role user, misalnya:
 * Admin
 * Dosen
 * Mahasiswa
-* Penguji
 
 Role dapat dicek pada:
 
@@ -237,9 +236,7 @@ app/Http/Controllers/Auth/
 
 Menampilkan:
 
-* Statistik ujian
 * Data peserta
-* Grafik hasil
 * Ringkasan aktivitas
 
 Lokasi:
@@ -309,12 +306,6 @@ Semua routing web terdapat di:
 
 ```bash
 routes/web.php
-```
-
-API route:
-
-```bash
-routes/api.php
 ```
 
 Contoh:
@@ -456,16 +447,6 @@ chmod -R 775 storage bootstrap/cache
 
 # Deployment Guide
 
-## Production Build
-
-```bash
-composer install --optimize-autoloader --no-dev
-npm run build
-php artisan optimize
-```
-
----
-
 ## Queue & Scheduler
 
 Gunakan:
@@ -575,13 +556,7 @@ refactor: optimize dashboard query
 
 ## Potential Features
 
-* CBT mode
-* Randomized questions
-* Anti-cheat monitoring
-* Real-time exam
 * Webcam proctoring
-* PDF export
-* Excel export
 * Notification system
 
 ---
