@@ -196,22 +196,6 @@ http://127.0.0.1:8000
 
 ---
 
-## Frontend Asset Build
-
-Development:
-
-```bash
-npm run dev
-```
-
-Production:
-
-```bash
-npm run build
-```
-
----
-
 # Authentication
 
 Sistem memiliki beberapa role user, misalnya:
